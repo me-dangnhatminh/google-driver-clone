@@ -11,7 +11,9 @@ export class AppController {
 
   @Get()
   getHello(): string {
-    this.userService.emit('hello', 'Hello from Storage');
+    this.userService.send({ cmd: 'hello' }, '').subscribe((res) => {
+      console.log(res);
+    });
     return this.appService.getHello();
   }
 }
