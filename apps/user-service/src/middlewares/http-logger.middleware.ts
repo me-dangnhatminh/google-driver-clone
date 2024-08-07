@@ -13,9 +13,14 @@ export class HTTPLogger implements NestMiddleware {
     response.on('close', () => {
       const { statusCode } = response;
       const contentLength = response.get('content-length');
-
       const msg = `${method} ${url} ${statusCode} ${contentLength} - ${userAgent} ${ip}`;
-      this.logger.log(msg);
+
+      const isErrored = statusCode >= 400;
+      if (isErrored) {
+        this.logger.error(msg);
+      } else {
+        this.logger.log(msg);
+      }
     });
 
     next();
