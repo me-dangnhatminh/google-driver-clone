@@ -21,27 +21,8 @@ export class RabbitMQSubscriber<EventBase extends IEvent = IEvent>
     private readonly amqp: AmqpConnection,
   ) {}
 
-  connect() {
-    this.amqp.createSubscriber<string>(
-      async (message) => {
-        if (this.subject$) {
-          const parsedJson = JSON.parse(message);
-          console.log('RabbitMQSubscriber', parsedJson);
-        }
-      },
-      {
-        errorHandler: (channel, msg, e) => {
-          throw e;
-        },
-        queue: 'storage-service',
-      },
-      `handler_storage-service`,
-    );
-  }
-
   bridgeEventsTo<T extends EventBase>(subject: Subject<T>) {
     this.subject$ = subject;
-    this.connect();
   }
 }
 
@@ -55,16 +36,11 @@ export class RabbitMQPublisher<EventBase extends IEvent = IEvent>
   ) {}
 
   publish<T extends EventBase>(event: T) {
-    const exchange = '';
     const eventName = event['name'] ?? event.constructor.name; // TODO: fix
-
-    const message = JSON.stringify(event);
-    return this.amqpConnection
-      .publish(exchange, eventName, message)
-      .then(() => {
-        console.log('RabbitMQPublisher', event);
-        this.subject$.next(event);
-      });
+    return this.amqpConnection.publish('', eventName, event).then(() => {
+      console.log('RabbitMQPublisher', event);
+      this.subject$.next(event);
+    });
   }
 
   bridgeEventsTo<T extends EventBase>(subject: Subject<T>) {
@@ -73,12 +49,8 @@ export class RabbitMQPublisher<EventBase extends IEvent = IEvent>
 }
 
 export class PlanedEvent implements IEvent {
-  constructor(
-    public readonly payload: any,
-    public readonly name: string = 'planed',
-  ) {
-    this.constructor.prototype.name = name;
-  }
+  public readonly name: string = 'planed';
+  constructor(public readonly payload: any) {}
 }
 
 @EventsHandler(PlanedEvent)

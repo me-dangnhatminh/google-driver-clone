@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
-import { TCPController } from './tcp.controller';
 import { AppService } from './app.service';
 import { PersistencesModule } from './persistence';
 import { RabbitCQRSModule } from './adapters';
-import { HTTPController } from './http.controller';
+
+import { TCPController } from './controllers/tcp.controller';
+import { HTTPController } from './controllers/http.controller';
 
 @Module({
   imports: [RabbitCQRSModule, PersistencesModule],

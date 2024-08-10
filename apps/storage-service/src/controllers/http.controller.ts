@@ -1,6 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { EventBus } from '@nestjs/cqrs';
-import { PlanedEvent } from './adapters';
+import { PlanedEvent } from '../adapters';
 
 @Controller()
 export class HTTPController {
