@@ -1,15 +1,12 @@
 import { Controller, Get } from '@nestjs/common';
-import { EventBus } from '@nestjs/cqrs';
-import { PlanedEvent } from '../adapters';
+import { StorageService } from 'src/app';
 
 @Controller()
 export class HTTPController {
-  constructor(private readonly eventBus: EventBus) {}
+  constructor(private readonly storageService: StorageService) {}
 
   @Get()
-  getHello(): string {
-    const event = new PlanedEvent({ abc: 'Hello World!' });
-    this.eventBus.publish(event);
-    return 'Hello World!';
+  getHello() {
+    return this.storageService.getHello();
   }
 }

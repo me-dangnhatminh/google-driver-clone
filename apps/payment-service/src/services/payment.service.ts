@@ -26,19 +26,15 @@ export class PaymentService {
     };
   }
 
-  subscribe() {
+  async subscribe() {
     const event: PlanedEvent = {
       name: 'planed',
       id: '1',
       timestamp: Date.now(),
-      payload: {
-        planId: '1',
-        name: 'basic',
-        amount: 100,
-      },
+      payload: { planId: '1', name: 'basic', amount: 100 },
     };
 
-    this.client.emit(event.name, event);
+    this.client.emit('planed', event);
 
     return 'Subscribe';
   }

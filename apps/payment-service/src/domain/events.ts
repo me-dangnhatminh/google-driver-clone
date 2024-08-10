@@ -1,14 +1,18 @@
-export type PlanedPayload = {
-  name: string;
-  planId: string;
-  amount: number;
+export type IEvent<TName extends string = string, TPayload = unknown> = {
+  id: string;
+  name: TName;
+  timestamp: number;
+  payload: TPayload;
 };
 
-export type PlanedEvent = {
-  name: 'planed';
-  id: string;
-  timestamp: number;
-  payload: PlanedPayload;
-};
+export type PlanedPayload = PaymentEvent['payload'];
+export type PlanedEvent = IEvent<
+  'planed',
+  {
+    name: string;
+    planId: string;
+    amount: number;
+  }
+>;
 
 export type PaymentEvent = PlanedEvent;

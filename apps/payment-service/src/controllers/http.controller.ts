@@ -1,6 +1,7 @@
 import * as common from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { PaymentService } from '../services';
+import { Ctx, EventPattern, Payload, RmqContext } from '@nestjs/microservices';
 
 const payments = [
   {
@@ -34,12 +35,23 @@ export class HTTPController {
   }
 
   @common.Get('subscribe')
-  subscribe(): string {
+  subscribe() {
     return this.paymentService.subscribe();
   }
 
   @common.Get('checkout')
   checkout(): string {
     return 'Checkout';
+  }
+
+  // ======================
+  @EventPattern('planed')
+  planedEvent(@Payload() data: number[], @Ctx() context: RmqContext) {
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
+
+    console.log('PaymentService: planed event', data);
+
+    channel.ack(originalMsg);
   }
 }
