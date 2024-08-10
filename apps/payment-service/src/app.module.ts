@@ -1,8 +1,14 @@
-import { Module, Provider } from '@nestjs/common';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  Provider,
+} from '@nestjs/common';
 import { MurLockModule } from 'murlock';
 import { services } from './services';
 import { controllers } from './controllers';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { HTTPLogger } from './middlewares';
 
 const providers: Provider[] = [];
 providers.push(...services);
@@ -30,4 +36,8 @@ providers.push(...services);
   controllers,
   providers,
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(HTTPLogger).forRoutes('*');
+  }
+}

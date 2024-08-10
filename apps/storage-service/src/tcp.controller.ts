@@ -5,7 +5,7 @@ import { Ctx, EventPattern, Payload, RmqContext } from '@nestjs/microservices';
 export class TCPController {
   constructor() {}
 
-  @EventPattern('planed')
+  @EventPattern('PlanedEvent')
   async handlePlaned(
     @Payload('payload') payload: Record<string, any>,
     @Ctx() context: RmqContext,

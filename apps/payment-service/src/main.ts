@@ -1,7 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { VersioningType } from '@nestjs/common';
+import { Logger, VersioningType } from '@nestjs/common';
 import setupSwagger from './docs';
+
+const logger = new Logger('PaymentService');
+const port = process.env.PORT || 4000;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -11,8 +14,8 @@ async function bootstrap() {
 
   setupSwagger(app);
 
-  await app.listen(4000, () => {
-    console.log('Payment Service is running on http://localhost:4000');
+  await app.listen(port, () => {
+    logger.log('Payment Service is running on http://localhost:' + port);
   });
 }
 bootstrap();
