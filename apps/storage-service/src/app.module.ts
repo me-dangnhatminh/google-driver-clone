@@ -1,14 +1,19 @@
-import { Module } from '@nestjs/common';
-import { AppService } from './app.service';
-import { PersistencesModule } from './persistence';
-import { RabbitCQRSModule } from './adapters';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 
-import { TCPController } from './controllers/tcp.controller';
-import { HTTPController } from './controllers/http.controller';
+import { services } from './app';
+
+import { RabbitCQRSModule } from './infa/adapters';
+import { PersistencesModule } from './infa/persistence';
+import { controllers } from './infa/controllers';
+import { HTTPLogger } from './infa/middlewares';
 
 @Module({
-  imports: [RabbitCQRSModule, PersistencesModule],
-  controllers: [TCPController, HTTPController],
-  providers: [AppService],
+  imports: [PersistencesModule, RabbitCQRSModule],
+  controllers,
+  providers: [...services],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(HTTPLogger).forRoutes('*');
+  }
+}
