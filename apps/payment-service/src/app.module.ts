@@ -5,18 +5,26 @@ import {
   Provider,
 } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { HTTPLogger } from './middlewares';
+import { HTTPLogger } from './infa/middlewares';
 import { CacheModule } from '@nestjs/cache-manager';
 import * as CacheManager from 'cache-manager-redis-yet';
 
-import { services } from './services';
+import { services } from './app/services';
 import { controllers } from './infa/controllers';
+import { ConfigModule } from '@nestjs/config';
+import { PersistencesModule } from './infa/persistence';
 
 const providers: Provider[] = [];
 providers.push(...services);
-
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+      cache: true,
+      expandVariables: true,
+    }),
+    PersistencesModule,
     CacheModule.register({
       isGlobal: true,
       store: CacheManager.redisStore,

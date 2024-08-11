@@ -1,11 +1,48 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, VersioningType } from '@nestjs/common';
-import setupSwagger from './docs';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import {
+  DocumentBuilder,
+  SwaggerCustomOptions,
+  SwaggerModule,
+} from '@nestjs/swagger';
+
+export function setupSwagger(app) {
+  const docPrefix = 'docs';
+  const docName = 'Payment Service API';
+  const docDesc = 'The payment service API description';
+  const docVersion = '1.0';
+
+  const documentBuild = new DocumentBuilder()
+    .setTitle(docName)
+    .setDescription(docDesc)
+    .setVersion(docVersion)
+    .addBearerAuth()
+    .build();
+
+  const document = SwaggerModule.createDocument(app, documentBuild, {
+    deepScanRoutes: true,
+  });
+
+  const customOptions: SwaggerCustomOptions = {
+    explorer: true,
+    customSiteTitle: docName,
+    swaggerOptions: {
+      docExpansion: 'none',
+      persistAuthorization: true,
+      displayOperationId: true,
+      operationsSorter: 'method',
+      tagsSorter: 'alpha',
+      tryItOutEnabled: true,
+      filter: true,
+    },
+  };
+
+  SwaggerModule.setup(docPrefix, app, document, customOptions);
+}
 
 async function bootstrap() {
-  const logger = new Logger('PaymentService');
   const app = await NestFactory.create(AppModule);
 
   app.setGlobalPrefix('api');
@@ -33,10 +70,16 @@ async function bootstrap() {
     },
   });
 
-  const port = 4000;
   await app.startAllMicroservices();
+
+  const host = '0.0.0.0';
+  const port = 4000;
+  const appName = 'Payment Service';
+
   await app.listen(port, () => {
-    logger.log('Payment Service is running on http://localhost:' + port);
+    Logger.log(`${appName} is running on http://${host}:${port}`, '🚀');
+    Logger.log(`Swagger is running on http://${host}:${port}/docs`, '📚');
+    Logger.log(`RabbitMQ is running on http://${host}:15672`, '🐇');
   });
 }
 bootstrap();

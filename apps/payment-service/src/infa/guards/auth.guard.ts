@@ -6,7 +6,7 @@ import {
 import { Request } from 'express';
 
 import { Reflector } from '@nestjs/core';
-import { IdentityService } from 'src/services';
+import { IdentityService } from 'src/app/services';
 
 const PUBLIC_ROUTE_KEY = 'public'; // TODO: import from common constants
 

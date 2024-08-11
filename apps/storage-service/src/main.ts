@@ -32,7 +32,7 @@ async function bootstrap() {
 
   await app.startAllMicroservices();
   await app.listen(port, host, () => {
-    logger.log(`${appName} is running at http://${host}:${port}`);
+    logger.log(`🚀 ${appName} is running on http://${host}:${port}`);
   });
 }
 bootstrap();

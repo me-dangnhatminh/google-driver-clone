@@ -1,3 +1,3 @@
-import { HTTPController } from './http.controller';
+import { PaymentController } from './payment.controller';
 
-export const controllers = [HTTPController];
+export const controllers = [PaymentController];
