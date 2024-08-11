@@ -1,10 +1,13 @@
+import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+
 import { PlanedEvent } from 'src/domain/events';
 
 @Injectable()
 export class PaymentService {
   constructor(
+    @Inject(CACHE_MANAGER) private readonly cache: Cache,
     @Inject('PAYMENT_SERVICE') private readonly client: ClientProxy,
   ) {}
 

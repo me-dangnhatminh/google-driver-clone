@@ -4,10 +4,8 @@ import { Logger, VersioningType } from '@nestjs/common';
 import setupSwagger from './docs';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 
-const logger = new Logger('PaymentService');
-const port = process.env.PORT || 4000;
-
 async function bootstrap() {
+  const logger = new Logger('PaymentService');
   const app = await NestFactory.create(AppModule);
 
   app.setGlobalPrefix('api');
@@ -35,6 +33,7 @@ async function bootstrap() {
     },
   });
 
+  const port = 4000;
   await app.startAllMicroservices();
   await app.listen(port, () => {
     logger.log('Payment Service is running on http://localhost:' + port);

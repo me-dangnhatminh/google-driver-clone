@@ -4,19 +4,24 @@ import {
   NestModule,
   Provider,
 } from '@nestjs/common';
-import { MurLockModule } from 'murlock';
-import { services } from './services';
-import { controllers } from './infa/controllers';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { HTTPLogger } from './middlewares';
 import { CacheModule } from '@nestjs/cache-manager';
+import * as CacheManager from 'cache-manager-redis-yet';
+
+import { services } from './services';
+import { controllers } from './infa/controllers';
 
 const providers: Provider[] = [];
 providers.push(...services);
 
 @Module({
   imports: [
-    CacheModule.register(),
+    CacheModule.register({
+      isGlobal: true,
+      store: CacheManager.redisStore,
+      url: 'redis://localhost:6379',
+    }),
     ClientsModule.register([
       {
         name: 'PAYMENT_SERVICE',
@@ -27,22 +32,7 @@ providers.push(...services);
           queueOptions: { durable: false },
         },
       },
-      {
-        name: 'IDENTITY_SERVICE',
-        transport: Transport.RMQ,
-        options: {
-          urls: ['amqp://localhost:5672'],
-          queue: 'identity_queue',
-          queueOptions: { durable: false },
-        },
-      },
     ]),
-    MurLockModule.forRoot({
-      logLevel: 'debug',
-      maxAttempts: 3,
-      wait: 1000,
-      redisOptions: { url: 'redis://localhost:6379' },
-    }),
   ],
   controllers,
   providers,
