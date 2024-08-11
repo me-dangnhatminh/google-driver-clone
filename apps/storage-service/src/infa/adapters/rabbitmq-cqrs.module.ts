@@ -22,7 +22,7 @@ export class RabbitMQSubscriber<EventBase extends IEvent = IEvent>
   ) {}
 
   bridgeEventsTo<T extends EventBase>(subject: Subject<T>) {
-    this.subject$ = subject;
+    this.subject$ = subject as unknown as Subject<EventBase>;
   }
 }
 
@@ -35,16 +35,16 @@ export class RabbitMQPublisher<EventBase extends IEvent = IEvent>
     private readonly amqpConnection: AmqpConnection,
   ) {}
 
+  bridgeEventsTo<T extends EventBase>(subject: Subject<T>) {
+    this.subject$ = subject as unknown as Subject<EventBase>;
+  }
+
   publish<T extends EventBase>(event: T) {
     const eventName = event['name'] ?? event.constructor.name; // TODO: fix
     return this.amqpConnection.publish('', eventName, event).then(() => {
       console.log('RabbitMQPublisher', event);
       this.subject$.next(event);
     });
-  }
-
-  bridgeEventsTo<T extends EventBase>(subject: Subject<T>) {
-    this.subject$ = subject;
   }
 }
 
