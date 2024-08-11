@@ -1,12 +1,15 @@
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://dangnhatminh:dangnhatminh@localhost:5432/developmentdb?schema=public"
+  url      = env("CONNECTION_STRING")
 }
 
 generator client {
   provider = "prisma-client-js"
 }
 
+// =================================================================== //
+// =========================== FILE SYSTEM =========================== //
+// =================================================================== //
 model FileRef {
   id         String    @id @map("id")
   name       String    @map("name")

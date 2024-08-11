@@ -1,4 +1,5 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 
 import configs from './configs';
 import providers from './app';
@@ -7,7 +8,6 @@ import { RabbitCQRSModule } from './infa/adapters';
 import { PersistencesModule } from './infa/persistence';
 import { controllers } from './infa/controllers';
 import { HTTPLogger } from './infa/middlewares';
-import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -18,8 +18,8 @@ import { ConfigModule } from '@nestjs/config';
       envFilePath: ['.env'],
       expandVariables: true,
     }),
-    PersistencesModule,
     RabbitCQRSModule,
+    PersistencesModule,
   ],
   controllers,
   providers,

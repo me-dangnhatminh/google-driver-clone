@@ -3,12 +3,11 @@ import { AppModule } from './app.module';
 import { auth } from 'express-openid-connect';
 import { Logger } from '@nestjs/common';
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 const BASE_URL = process.env.BASE_URL;
 const AUTH0_DOMAIN = process.env.AUTH0_DOMAIN;
 const AUTH0_CLIENT_ID = process.env.AUTH0_CLIENT_ID;
 const AUTH0_SECRET = process.env.AUTH0_SECRET;
-console.log('BASE_URL', BASE_URL);
 
 const auth0Middleware = auth({
   authRequired: false,

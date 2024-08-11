@@ -1,8 +1,9 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { HTTPController, TCPController } from './api';
+import { AuthController } from './controllers';
 
 import { HTTPLogger } from './middlewares';
+import { AuthService } from './services/auth.service';
 
 @Module({
   imports: [
@@ -12,8 +13,8 @@ import { HTTPLogger } from './middlewares';
       isGlobal: true,
     }),
   ],
-  controllers: [HTTPController, TCPController],
-  providers: [],
+  controllers: [AuthController],
+  providers: [AuthService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

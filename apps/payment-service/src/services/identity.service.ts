@@ -1,71 +1,28 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import * as rx from 'rxjs';
 
-import {
-  GetUsers200ResponseOneOfInner,
-  ManagementClient,
-  UserInfoClient,
-} from 'auth0';
+export class UserDTO {
+  sub: string;
+  user_id: string;
+  email: string;
+  name: string;
+  picture: string;
+}
 
-export const management = new ManagementClient({
-  domain: process.env.AUTH0_DOMAIN,
-  clientId: process.env.AUTH0_MANAGEMENT_ID,
-  clientSecret: process.env.AUTH0_MANAGEMENT_SECRET,
-});
-
-export const userInfo = new UserInfoClient({
-  domain: process.env.AUTH0_DOMAIN,
-});
+export class TokenValidateCommand {
+  name: 'validateToken';
+  constructor(public data: { token: string }) {}
+}
 
 @Injectable()
 export class IdentityService {
-  constructor() {}
+  constructor(
+    @Inject('IDENTITY_SERVICE') private readonly identityService: ClientProxy,
+  ) {}
 
-  async validate(token: string) {
-    return userInfo.getUserInfo(token).then((res) => ({
-      sub: res.data.sub,
-      user_id: res.data.sub,
-      email: res.data.email,
-      name: res.data.name,
-      picture: res.data.picture,
-    }));
-  }
-
-  async getAll(): Promise<any> {
-    return await management.users.getAll();
-  }
-
-  async listUsers(ids: string[]): Promise<
-    Array<{
-      user_id: string;
-      email: string;
-      name: string;
-      picture: string;
-    }>
-  > {
-    if (ids.length === 0) return [];
-
-    const allUsers: GetUsers200ResponseOneOfInner[] = [];
-    const queryIds = ids.map((id) => `user_id:${id}`).join(' OR ');
-    let page = 0;
-    while (true) {
-      const {
-        data: { users, total },
-      } = await management.users.getAll({
-        include_totals: true,
-        page: page++,
-        q: queryIds,
-      });
-      allUsers.push(...users);
-      if (allUsers.length === total) break;
-    }
-
-    return allUsers
-      .filter((user) => ids.includes(user.user_id))
-      .map((user) => ({
-        user_id: user.user_id,
-        email: user.email,
-        name: user.name,
-        picture: user.picture,
-      }));
+  validateToken(accessToken: string) {
+    const cmd = new TokenValidateCommand({ token: accessToken });
+    return rx.firstValueFrom(this.identityService.send(cmd.name, cmd.data));
   }
 }

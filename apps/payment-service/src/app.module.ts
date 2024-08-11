@@ -25,6 +25,15 @@ providers.push(...services);
           queueOptions: { durable: false },
         },
       },
+      {
+        name: 'IDENTITY_SERVICE',
+        transport: Transport.RMQ,
+        options: {
+          urls: ['amqp://localhost:5672'],
+          queue: 'identity_queue',
+          queueOptions: { durable: false },
+        },
+      },
     ]),
     MurLockModule.forRoot({
       logLevel: 'debug',
