@@ -1,24 +1,28 @@
-import { Injectable } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Inject, Injectable } from '@nestjs/common';
 
-import { ManagementClient, UserInfoClient } from 'auth0';
+import { UserInfoClient, ResponseError } from 'auth0';
+import { Cache } from 'cache-manager';
 
-export const management = new ManagementClient({
-  domain: process.env.AUTH0_DOMAIN,
-  clientId: process.env.AUTH0_MANAGEMENT_ID,
-  clientSecret: process.env.AUTH0_MANAGEMENT_SECRET,
-});
+// export const management = new ManagementClient({
+//   domain: process.env.AUTH0_DOMAIN,
+//   clientId: process.env.AUTH0_MANAGEMENT_CLIENT_ID,
+//   clientSecret: process.env.AUTH0_MANAGEMENT_CLIENT_SECRET,
+// });
 
 export const userInfo = new UserInfoClient({
-  domain: process.env.AUTH0_DOMAIN,
+  domain: 'dangnhatminh.us.auth0.com',
 });
 
 @Injectable()
 export class AuthService {
-  constructor() {}
+  constructor(@Inject(CACHE_MANAGER) private readonly cache: Cache) {}
 
-  validateToken(accessToken: string) {
-    // save in cache
-    return userInfo
+  async validateToken(accessToken: string) {
+    const cacheKey = `auth0:${accessToken}`;
+    const cached = await this.cache.get(cacheKey);
+    if (cached) return cached;
+    return await userInfo
       .getUserInfo(accessToken)
       .then((res) => ({
         sub: res.data.sub,
@@ -28,8 +32,15 @@ export class AuthService {
         picture: res.data.picture,
       }))
       .catch((err) => {
-        console.error(err);
-        return null;
+        if (err instanceof ResponseError) {
+          console.error(err.headers.get('WWW-Authenticate'));
+          if (err.statusCode === 401) return null;
+        }
+        throw err;
+      })
+      .then((data) => {
+        this.cache.set(cacheKey, data, 3600); // 1 hour
+        return data;
       });
   }
 }

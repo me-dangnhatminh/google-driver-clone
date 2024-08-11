@@ -6,15 +6,17 @@ import {
 } from '@nestjs/common';
 import { MurLockModule } from 'murlock';
 import { services } from './services';
-import { controllers } from './controllers';
+import { controllers } from './infa/controllers';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { HTTPLogger } from './middlewares';
+import { CacheModule } from '@nestjs/cache-manager';
 
 const providers: Provider[] = [];
 providers.push(...services);
 
 @Module({
   imports: [
+    CacheModule.register(),
     ClientsModule.register([
       {
         name: 'PAYMENT_SERVICE',

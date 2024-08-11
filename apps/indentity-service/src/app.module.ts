@@ -1,9 +1,12 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AuthController } from './controllers';
+
+import controllers from './controllers';
 
 import { HTTPLogger } from './middlewares';
 import { AuthService } from './services/auth.service';
+import { TerminusModule } from '@nestjs/terminus';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
@@ -12,8 +15,10 @@ import { AuthService } from './services/auth.service';
       expandVariables: true,
       isGlobal: true,
     }),
+    CacheModule.register(),
+    TerminusModule,
   ],
-  controllers: [AuthController],
+  controllers,
   providers: [AuthService],
 })
 export class AppModule implements NestModule {

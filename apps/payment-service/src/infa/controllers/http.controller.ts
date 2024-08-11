@@ -1,8 +1,9 @@
 import * as common from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { PaymentService } from '../services';
+import { PaymentService } from '../../services';
 import { Ctx, EventPattern, Payload, RmqContext } from '@nestjs/microservices';
 import { AuthGuard } from 'src/infa/guards/auth.guard';
+import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
 
 const payments = [
   {
@@ -23,7 +24,10 @@ const payments = [
 @ApiTags('payment')
 @ApiBearerAuth()
 export class HTTPController {
-  constructor(private readonly paymentService: PaymentService) {}
+  constructor(
+    @common.Inject(CACHE_MANAGER) private readonly cache: Cache,
+    private readonly paymentService: PaymentService,
+  ) {}
 
   // ======================
   @EventPattern('planed')

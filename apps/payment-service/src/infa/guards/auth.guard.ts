@@ -18,7 +18,7 @@ export class AuthGuard {
   ) {}
 
   async canActivate(context: ExecutionContext) {
-    const request: Request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest();
     const isRpc = context.getType() === 'rpc';
     const isPublic = this.reflector.getAllAndOverride<boolean>(
       PUBLIC_ROUTE_KEY,
@@ -27,17 +27,16 @@ export class AuthGuard {
     if (isPublic || isRpc) {
       return true;
     }
-    let token: string = request.headers.authorization;
-    console.log('token', request.headers);
+    let token: string = request.headers['authorization'];
     if (!token) {
-      throw new UnauthorizedException('AccessTokenInvalid');
+      throw new UnauthorizedException('access_token_is_required');
     }
     token = token.replace('Bearer ', '');
-    const response = await this.indentifyService.validateToken(token);
-    if (!response) {
-      throw new UnauthorizedException('auth.accessTokenUnauthorized');
+    const user = await this.indentifyService.validateToken(token);
+    if (!user) {
+      throw new UnauthorizedException('invalid_access_token');
     }
-    request['user'] = response;
+    request.user = user;
     return true;
   }
 }

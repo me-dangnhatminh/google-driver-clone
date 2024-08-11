@@ -1,6 +1,5 @@
-import { Controller, Get, Req } from '@nestjs/common';
-import { MessagePattern } from '@nestjs/microservices';
-import { Request } from 'express';
+import { Controller } from '@nestjs/common';
+import { MessagePattern, Payload, Transport } from '@nestjs/microservices';
 import { AuthService } from 'src/services/auth.service';
 
 @Controller({
@@ -11,20 +10,8 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   // ======================
-  @MessagePattern({ cmd: 'validateToken' })
-  validateToken(data) {
+  @MessagePattern('validateToken', Transport.RMQ)
+  validateToken(@Payload() data: { token: string }) {
     return this.authService.validateToken(data.token);
-  }
-
-  // ======================
-  @Get()
-  getHello(@Req() req: Request) {
-    if (!req.oidc.isAuthenticated()) {
-      return { isAuthenticated: false };
-    }
-    return {
-      user: req.oidc.user,
-      token: req.oidc.accessToken,
-    };
   }
 }

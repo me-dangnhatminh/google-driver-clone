@@ -22,7 +22,16 @@ async function bootstrap() {
       queue: 'payment_queue',
       noAck: false,
       queueOptions: { durable: false },
-      consumerTag: 'payment-service',
+    },
+  });
+
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.RMQ,
+    options: {
+      urls: ['amqp://localhost:5672'],
+      queue: 'identity_queue.token',
+      prefetchCount: 1,
+      queueOptions: { durable: false },
     },
   });
 
