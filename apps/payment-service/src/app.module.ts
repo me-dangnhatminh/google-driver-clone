@@ -5,17 +5,23 @@ import {
   Provider,
 } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { HTTPLogger } from './infa/middlewares';
 import { CacheModule } from '@nestjs/cache-manager';
-import * as CacheManager from 'cache-manager-redis-yet';
+import { redisStore } from 'cache-manager-redis-yet';
+import { ConfigModule } from '@nestjs/config';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 
 import { services } from './app/services';
+
 import { controllers } from './infa/controllers';
-import { ConfigModule } from '@nestjs/config';
 import { PersistencesModule } from './infa/persistence';
+import { ResponseInterceptor } from './infa/interceptors';
+import { HTTPLogger } from './infa/middlewares';
 
 const providers: Provider[] = [];
+providers.push({ provide: APP_INTERCEPTOR, useClass: ResponseInterceptor });
+
 providers.push(...services);
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -24,12 +30,13 @@ providers.push(...services);
       cache: true,
       expandVariables: true,
     }),
-    PersistencesModule,
     CacheModule.register({
       isGlobal: true,
-      store: CacheManager.redisStore,
-      url: 'redis://localhost:6379',
+      store() {
+        return redisStore({ url: 'redis://localhost:6379' });
+      },
     }),
+    PersistencesModule,
     ClientsModule.register([
       {
         name: 'PAYMENT_SERVICE',

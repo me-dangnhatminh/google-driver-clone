@@ -26,7 +26,6 @@ const auth0Middleware = auth({
   },
   afterCallback: (req, res, session) => {
     const accessToken = session.access_token;
-    console.log(accessToken);
     return session;
   },
 });

@@ -1,20 +1,27 @@
-import { Plan } from 'src/domain/models';
 import { z } from 'zod';
+import { Plan, Tier } from 'src/domain';
 
-export const CreatePlanDTO = Plan.pick({
-  name: true,
-  price: true,
-  currency: true,
-  intervalDays: true,
+export const PlanDTO = Plan.omit({
+  createdAt: true,
+  updatedAt: true,
+  removedAt: true,
 });
 
-export const UpdatePlanDTO = CreatePlanDTO.partial();
+export const CreatePlanDTO = Plan.omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  removedAt: true,
+});
 
-export const SubscriptionDTO = z.object({
-  planId: z.string(),
-  customerId: z.string(),
+export const CreateTierDTO = Tier.pick({
+  name: true,
+  description: true,
+  price: true,
+  currency: true,
+  billingCycle: true,
+  featureLimit: true,
 });
 
 export type CreatePlanDTO = z.infer<typeof CreatePlanDTO>;
-export type UpdatePlanDTO = z.infer<typeof UpdatePlanDTO>;
-export type SubscriptionDTO = z.infer<typeof SubscriptionDTO>;
+export type CreateTierDTO = z.infer<typeof CreateTierDTO>;
