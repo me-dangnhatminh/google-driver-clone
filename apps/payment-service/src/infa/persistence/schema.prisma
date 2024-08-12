@@ -7,6 +7,8 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// Payment System use Freemium Model (Free + Premium)
+
 model Plan {
   id           String @id @map("id")
   name         String @map("name")

@@ -1,4 +1,4 @@
-import { Plan } from 'src/domain';
+import { Plan } from 'src/domain/models';
 import { z } from 'zod';
 
 export const CreatePlanDTO = Plan.pick({

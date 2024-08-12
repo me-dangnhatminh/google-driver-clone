@@ -6,7 +6,7 @@ import { PrismaClient } from '@prisma/client';
 
 import { PlanedEvent } from 'src/domain/events';
 import { CreatePlanDTO, SubscriptionDTO, UpdatePlanDTO } from '../dtos';
-import { Plan } from 'src/domain';
+import { Plan } from 'src/domain/models';
 
 @Injectable()
 export class PaymentService {
