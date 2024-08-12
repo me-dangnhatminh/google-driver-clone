@@ -48,41 +48,51 @@ export class AppError extends Error {
 
   constructor(issues: AppIssue[]) {
     super();
-    const actualProto = new.target.prototype;
-    if (Object.setPrototypeOf) {
-      Object.setPrototypeOf(this, actualProto);
-    } else {
-      (this as any).__proto__ = actualProto;
-    }
     this.name = AppError.name;
     this.issues = issues;
+    Error.captureStackTrace(this, AppError);
+    /**
+     * This is necessary because of how TypeScript extends built-in Error class
+     * https://stackoverflow.com/questions/41102060/typescript-extending-error-class
+     */
+    // const actualProto = new.target.prototype;
+    // if (Object.setPrototypeOf) {
+    //   Object.setPrototypeOf(this, actualProto);
+    // } else {
+    //   (this as any).__proto__ = actualProto;
+    // }
   }
-  static new(...issues: AppIssue[]) {
-    return new AppError(structuredClone(issues));
+
+  static new(issues: AppIssue[]) {
+    const error = new AppError(issues);
+    Error.captureStackTrace(error, this.new);
+    return error;
   }
 
   addIssue(issue: AppIssue) {
-    return new AppError([
-      ...structuredClone(this.issues),
-      structuredClone(issue),
-    ]);
+    const clone = structuredClone(this.issues);
+    clone.concat(structuredClone(issue));
+    this.issues = clone;
+    const error = AppError.new(clone);
+    Error.captureStackTrace(error, this.addIssue);
+    return error;
   }
 
   addIssues(issues: AppIssue[]) {
-    return new AppError([
-      ...structuredClone(this.issues),
-      ...structuredClone(issues),
-    ]);
-  }
-
-  throw(): never {
-    throw this;
+    const clone = structuredClone(this.issues);
+    clone.concat(structuredClone(issues));
+    return new AppError(clone);
   }
 
   static throw(issues: AppIssue[] | AppError): never {
     if (issues instanceof AppError) return issues.throw();
     const error = new AppError(issues);
+    Error.captureStackTrace(error, this.throw);
     return error.throw();
+  }
+
+  throw(): never {
+    throw this;
   }
 }
 
