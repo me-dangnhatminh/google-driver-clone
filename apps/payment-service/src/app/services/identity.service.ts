@@ -6,18 +6,18 @@ const userInfo = new UserInfoClient({
   domain: 'dangnhatminh.us.auth0.com',
 });
 
-export class UserDTO {
+export type UserDTO = {
   sub: string;
   user_id: string;
   email: string;
   name: string;
   picture: string;
-}
+};
 
 @Injectable()
 export class IdentityService {
   constructor(@Inject(CACHE_MANAGER) private readonly cache: Cache) {}
-  async validateToken(accessToken: string): Promise<UserDTO | null> {
+  async validateToken(accessToken: string) {
     // const cacheKey = `auth0:${accessToken}`;
 
     // const cached = await this.cache.get<UserDTO>(cacheKey);

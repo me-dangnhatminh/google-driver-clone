@@ -25,7 +25,7 @@ export class ResponseInterceptor implements NestInterceptor {
 
     return of({
       statusCode,
-      // timestamp: new Date().toISOString(),
+      timestamp: new Date().toISOString(),
       message,
       data: responseBody,
     });

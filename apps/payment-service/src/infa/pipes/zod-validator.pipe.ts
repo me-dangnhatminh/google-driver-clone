@@ -9,7 +9,11 @@ export class ZodValidator implements PipeTransform {
     const result = this.schema.safeParse(value);
     if (result.success) return result.data;
     const msg = result.error.errors
-      .map((e) => `${e.path.join('.')}: ${e.message}`)
+      .map((e) => {
+        const path = e.path.join('.');
+        if (path === '') return e.message;
+        else return `${path}: ${e.message}`;
+      })
       .join(', ');
     throw new BadRequestException(msg);
   }

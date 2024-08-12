@@ -8,7 +8,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { CacheModule } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-redis-yet';
 import { ConfigModule } from '@nestjs/config';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 
 import { services } from './app/services';
 
@@ -16,9 +16,13 @@ import { controllers } from './infa/controllers';
 import { PersistencesModule } from './infa/persistence';
 import { ResponseInterceptor } from './infa/interceptors';
 import { HTTPLogger } from './infa/middlewares';
+import { HttpExceptionFilter } from './infa/filters';
 
 const providers: Provider[] = [];
-providers.push({ provide: APP_INTERCEPTOR, useClass: ResponseInterceptor });
+providers.push(
+  { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
+  { provide: APP_FILTER, useClass: HttpExceptionFilter },
+);
 
 providers.push(...services);
 

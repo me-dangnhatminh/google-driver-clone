@@ -1,15 +1,14 @@
 import * as common from '@nestjs/common';
 import * as swagger from '@nestjs/swagger';
+import { Response } from 'express';
 
+import { UUID } from 'src/domain';
 import { CreatePlanDTO, PlanDTO } from 'src/app/dtos';
+import { PaymentService } from 'src/app/services';
 
 import { AuthRequired } from '../decorators';
 import { useZod } from '../pipes';
-
 import { CreatePlanOperation, GetPlanByIdOperation } from '../docs';
-import { PaymentService } from 'src/app/services';
-import { Response } from 'express';
-import { UUID } from 'src/domain';
 
 @AuthRequired()
 @common.Controller({ path: 'payment', version: '1' })
@@ -36,9 +35,8 @@ export class PaymentController {
 
   @common.Get('plans/:id')
   @swagger.ApiOperation(GetPlanByIdOperation)
-  async getPlanById(@common.Param('id', useZod(UUID)) id: string) {
-    const plan = await this.paymentService.getPlanById(id);
-    return PlanDTO.parse(plan);
+  async getPlanById(@common.Param('id', useZod(UUID)) id: UUID) {
+    return await this.paymentService.getPlanById(id);
   }
 }
 // @common.UseGuards(AuthGuard)

@@ -23,5 +23,6 @@ export const CreateTierDTO = Tier.pick({
   featureLimit: true,
 });
 
+export type PlanDTO = z.infer<typeof PlanDTO>;
 export type CreatePlanDTO = z.infer<typeof CreatePlanDTO>;
 export type CreateTierDTO = z.infer<typeof CreateTierDTO>;
