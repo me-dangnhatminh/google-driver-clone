@@ -3,20 +3,11 @@ import {
   NestInterceptor,
   ExecutionContext,
   CallHandler,
+  Logger,
 } from '@nestjs/common';
 import { HttpArgumentsHost } from '@nestjs/common/interfaces';
 import { Observable, firstValueFrom, of } from 'rxjs';
 // import { I18nService } from 'nestjs-i18n';
-
-const formatter = new Intl.DateTimeFormat('en-US', {
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-  second: '2-digit',
-  hour12: true,
-});
 
 @Injectable()
 export class ResponseInterceptor implements NestInterceptor {
@@ -33,7 +24,7 @@ export class ResponseInterceptor implements NestInterceptor {
 
     return of({
       statusCode,
-      timestamp: formatter.format(new Date()),
+      timestamp: Logger.getTimestamp(),
       message: 'success',
       data: responseBody,
     });

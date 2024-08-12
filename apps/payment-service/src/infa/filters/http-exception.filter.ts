@@ -9,16 +9,6 @@ import {
 import { Response } from 'express';
 // import { I18nService } from 'nestjs-i18n';
 
-const formatter = new Intl.DateTimeFormat('en-US', {
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-  second: '2-digit',
-  hour12: true,
-});
-
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
@@ -39,7 +29,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     const errorResponse = {
       statusCode,
-      timestamp: formatter.format(new Date()),
+      timestamp: Logger.getTimestamp(),
       message,
     };
 
