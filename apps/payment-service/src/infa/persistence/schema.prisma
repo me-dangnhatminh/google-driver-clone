@@ -7,60 +7,29 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Payment System use Freemium Model (Free + Premium)
-
-model Plan {
-  id           String @id @map("id")
-  name         String @map("name")
-  description  String @map("description")
-  currency     String @map("currency")
-  price        Float  @map("price")
-  intervalDays Int    @map("interval_days")
-  trialDays    Int    @map("trial_days")
-  metadata     Json?  @map("metadata")
-
-  createdAt DateTime  @map("created_at")
-  updatedAt DateTime  @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
-
-  subscription Subscription[]
-
-  @@map("plans")
+model Product {
+  id          String    @id @map("id")
+  name        String    @map("name")
+  description String?   @map("description")
+  createdAt   DateTime  @map("created_at")
+  updatedAt   DateTime? @map("updated_at")
 }
 
-model Subscription {
-  id         String   @id @map("id")
-  customerId String   @unique @map("customer_id")
-  planId     String   @map("plan_id")
-  status     String   @map("status")
-  startedAt  DateTime @map("started_at")
-  endedAt    DateTime @map("ended_at")
-  metadata   Json?    @map("metadata")
+model Price {
+  id        String @id @map("id")
+  productId String @map("product_id")
+  tierId    String @map("tier_id")
 
-  createdAt DateTime  @map("created_at")
-  updatedAt DateTime  @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
-
-  plan Plan @relation(fields: [planId], references: [id])
-
-  @@map("subscriptions")
+  // monthly, yearly, one-time
 }
 
-model Payment {
-  id             String @id @map("id")
-  customerId     String @map("customer_id")
-  subscriptionId String @map("subscription_id")
+model Tier {
+  id          String  @id @map("id")
+  name        String  @map("name")
+  description String? @map("description")
 
-  status   String @map("status") // pending, success, failed
-  amount   Float  @map("amount")
-  currency String @map("currency")
+  metadata String? @map("metadata")
 
-  metadata Json? @map("metadata")
-
-  refoundAt DateTime? @map("refound_at")
   createdAt DateTime  @map("created_at")
-  updatedAt DateTime  @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
-
-  @@map("payments")
+  updatedAt DateTime? @map("updated_at")
 }

@@ -17,6 +17,7 @@ import { PersistencesModule } from './infa/persistence';
 import { ResponseInterceptor } from './infa/interceptors';
 import { HTTPLogger } from './infa/middlewares';
 import { HttpExceptionFilter } from './infa/filters';
+import { StripeModule } from '@golevelup/nestjs-stripe';
 
 const providers: Provider[] = [];
 providers.push(
@@ -41,6 +42,13 @@ providers.push(...services);
       },
     }),
     PersistencesModule,
+    StripeModule.forRootAsync(StripeModule, {
+      useFactory: () => {
+        return {
+          apiKey: String(process.env.STRIPE_SECRET_KEY),
+        };
+      },
+    }),
     ClientsModule.register([
       {
         name: 'PAYMENT_SERVICE',
