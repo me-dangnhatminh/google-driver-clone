@@ -2,8 +2,9 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { auth } from 'express-openid-connect';
 import { Logger } from '@nestjs/common';
-import { Transport } from '@nestjs/microservices';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import * as path from 'path';
+import { ReflectionService } from '@grpc/reflection';
 
 const PORT = process.env.PORT;
 const BASE_URL = process.env.BASE_URL;
@@ -42,20 +43,21 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // app.connectMicroservice({
-  //   transport: Transport.RMQ,
-  //   options: {
-  //     urls: ['amqp://localhost:5672'],
-  //     queue: 'identity_queue',
-  //     queueOptions: { durable: false },
-  //   },
-  // });
-
-  app.connectMicroservice({
+  app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.GRPC,
     options: {
-      package: 'identity',
+      package: 'identity', // ['identity', 'user']
+      loader: {
+        keepCase: true,
+        longs: String,
+        enums: String,
+        defaults: true,
+        oneofs: true,
+      },
       protoPath: path.resolve('protos/identity.proto'),
+      onLoadPackageDefinition(pkg, server) {
+        new ReflectionService(pkg).addToServer(server);
+      },
     },
   });
 
@@ -63,7 +65,8 @@ async function bootstrap() {
   const port = 4040;
   const appName = 'Identity Service';
 
-  await app.startAllMicroservices();
+  // await  app.startAllMicroservices(); // DeprecationWarning: Calling start() is no longer necessary. It can be safely omitted
+
   await app.listen(PORT, () => {
     Logger.log(`${appName} is running on http://${host}:${port}`, '🚀');
     Logger.log(`RabbitMQ is running on http://${host}:15672`, '🐇');

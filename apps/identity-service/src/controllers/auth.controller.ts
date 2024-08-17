@@ -1,5 +1,5 @@
 import { Controller } from '@nestjs/common';
-import { MessagePattern, Payload, Transport } from '@nestjs/microservices';
+import { GrpcMethod, Payload } from '@nestjs/microservices';
 import { AuthService } from 'src/services/auth.service';
 
 @Controller({
@@ -10,7 +10,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   // ======================
-  @MessagePattern('validateToken', Transport.RMQ)
+  @GrpcMethod('AuthService', 'ValidateToken')
   validateToken(@Payload() data: { token: string }) {
     return this.authService.validateToken(data.token);
   }

@@ -2,47 +2,59 @@ syntax = "proto3";
 
 package identity;
 
-// message User {
-//   string id = 1;
-//   string name = 2;
-//   string email = 3;
-//   repeated string roles = 4;
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
 
-//   string created_at = 5;
-//   string updated_at = 6;
-//   string deleted_at = 7;
-// }
+service UserService {
+  rpc GetUserById(GetUserByIdDTO) returns (UserDTO);
+  rpc CreateUser(CreateUserDTO) returns (UserDTO);
+  rpc UpdateUser(UpdateUserDTO) returns (UserDTO);
+  rpc DeleteUser(DeleteUserDTO) returns (google.protobuf.Empty);
+  rpc ListUsers(PaginationOptions) returns (stream UserDTO);
+}
 
-// service IIdentityService {
-//   rpc GetUserById(GetUserByIdDTO) returns (User);
-//   rpc CreateUser(CreateUserDTO) returns (User);
-//   rpc UpdateUser(UpdateUserDTO) returns (User);
-//   rpc DeleteUser(DeleteUserDTO) returns (User);
-//   rpc ListUsers(PaginationOptions) returns (stream User);
-// }
+service AuthService {
+  rpc VerifyToken(google.protobuf.Empty) returns (google.protobuf.Empty);
+}
 
-// message PaginationOptions {
-//   string cursor = 1 [default = ""];
-//   int32 limit = 2 [default = 10];
-// }
+service HealthCheck {
+  rpc Check(google.protobuf.Empty) returns (google.protobuf.Empty);
+}
 
-// message GetUserByIdDTO {
-//   string user_id = 1;
-// }
+message UserDTO {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+  repeated string roles = 4; // user, admin, superadmin
 
-// message CreateUserDTO {
-//   string name = 1;
-//   string email = 2;
-//   repeated string roles = 3;
-// }
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+  google.protobuf.Timestamp deleted_at = 7;
+}
 
-// message UpdateUserDTO {
-//   string user_id = 1;
-//   string name = 2;
-//   string email = 3;
-//   repeated string roles = 4;
-// }
 
-// message DeleteUserDTO {
-//   string user_id = 1;
-// }
+message PaginationOptions {
+  string cursor = 1;
+  int32 limit = 2;
+}
+
+message GetUserByIdDTO {
+  string user_id = 1;
+}
+
+message CreateUserDTO {
+  string name = 1;
+  string email = 2;
+  repeated string roles = 3;
+}
+
+message UpdateUserDTO {
+  string user_id = 1;
+  string name = 2;
+  string email = 3;
+  repeated string roles = 4;
+}
+
+message DeleteUserDTO {
+  string user_id = 1;
+}

@@ -4,19 +4,18 @@ import { Inject, Injectable } from '@nestjs/common';
 import { UserInfoClient, ResponseError } from 'auth0';
 import { Cache } from 'cache-manager';
 
-export const userInfo = new UserInfoClient({
-  domain: 'dangnhatminh.us.auth0.com',
-});
-
 @Injectable()
 export class AuthService {
-  constructor(@Inject(CACHE_MANAGER) private readonly cache: Cache) {}
+  constructor(
+    @Inject(CACHE_MANAGER) private readonly cache: Cache,
+    private readonly userInfo: UserInfoClient,
+  ) {}
 
   async validateToken(accessToken: string) {
     const cacheKey = `auth0:${accessToken}`;
     const cached = await this.cache.get(cacheKey);
     if (cached) return cached;
-    return await userInfo
+    return await this.userInfo
       .getUserInfo(accessToken)
       .then((res) => ({
         sub: res.data.sub,

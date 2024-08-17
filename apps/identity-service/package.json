@@ -20,6 +20,9 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@grpc/grpc-js": "^1.11.1",
+    "@grpc/proto-loader": "^0.7.13",
+    "@grpc/reflection": "^1.0.4",
     "@nestjs/axios": "^3.0.2",
     "@nestjs/cache-manager": "^2.2.2",
     "@nestjs/common": "^10.0.0",
@@ -40,8 +43,6 @@
     "rxjs": "^7.8.1"
   },
   "devDependencies": {
-    "@grpc/grpc-js": "^1.11.1",
-    "@grpc/proto-loader": "^0.7.13",
     "@nestjs/cli": "^10.0.0",
     "@nestjs/schematics": "^10.0.0",
     "@nestjs/testing": "^10.0.0",
