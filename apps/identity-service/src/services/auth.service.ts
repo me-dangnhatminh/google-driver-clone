@@ -4,12 +4,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import { UserInfoClient, ResponseError } from 'auth0';
 import { Cache } from 'cache-manager';
 
-// export const management = new ManagementClient({
-//   domain: process.env.AUTH0_DOMAIN,
-//   clientId: process.env.AUTH0_MANAGEMENT_CLIENT_ID,
-//   clientSecret: process.env.AUTH0_MANAGEMENT_CLIENT_SECRET,
-// });
-
 export const userInfo = new UserInfoClient({
   domain: 'dangnhatminh.us.auth0.com',
 });
@@ -33,7 +27,8 @@ export class AuthService {
       }))
       .catch((err) => {
         if (err instanceof ResponseError) {
-          console.error(err.headers.get('WWW-Authenticate'));
+          const msg = err.headers.get('WWW-Authenticate');
+          console.error(`Auth0 error: ${msg}`);
           if (err.statusCode === 401) return null;
         }
         throw err;

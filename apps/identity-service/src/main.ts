@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { auth } from 'express-openid-connect';
 import { Logger } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
+import * as path from 'path';
 
 const PORT = process.env.PORT;
 const BASE_URL = process.env.BASE_URL;
@@ -25,7 +26,6 @@ const auth0Middleware = auth({
     scope: 'openid profile email',
   },
   afterCallback: (req, res, session) => {
-    const accessToken = session.access_token;
     return session;
   },
 });
@@ -42,18 +42,31 @@ async function bootstrap() {
     credentials: true,
   });
 
+  // app.connectMicroservice({
+  //   transport: Transport.RMQ,
+  //   options: {
+  //     urls: ['amqp://localhost:5672'],
+  //     queue: 'identity_queue',
+  //     queueOptions: { durable: false },
+  //   },
+  // });
+
   app.connectMicroservice({
-    transport: Transport.RMQ,
+    transport: Transport.GRPC,
     options: {
-      urls: ['amqp://localhost:5672'],
-      queue: 'identity_queue',
-      queueOptions: { durable: false },
+      package: 'identity',
+      protoPath: path.resolve('protos/identity.proto'),
     },
   });
 
+  const host = '0.0.0.0';
+  const port = 4040;
+  const appName = 'Identity Service';
+
   await app.startAllMicroservices();
   await app.listen(PORT, () => {
-    Logger.log(`Server is running on http://localhost:${PORT}`, 'Bootstrap');
+    Logger.log(`${appName} is running on http://${host}:${port}`, '🚀');
+    Logger.log(`RabbitMQ is running on http://${host}:15672`, '🐇');
   });
 }
 bootstrap();

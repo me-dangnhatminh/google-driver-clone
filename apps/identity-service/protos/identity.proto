@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package identity;
+
+// message User {
+//   string id = 1;
+//   string name = 2;
+//   string email = 3;
+//   repeated string roles = 4;
+
+//   string created_at = 5;
+//   string updated_at = 6;
+//   string deleted_at = 7;
+// }
+
+// service IIdentityService {
+//   rpc GetUserById(GetUserByIdDTO) returns (User);
+//   rpc CreateUser(CreateUserDTO) returns (User);
+//   rpc UpdateUser(UpdateUserDTO) returns (User);
+//   rpc DeleteUser(DeleteUserDTO) returns (User);
+//   rpc ListUsers(PaginationOptions) returns (stream User);
+// }
+
+// message PaginationOptions {
+//   string cursor = 1 [default = ""];
+//   int32 limit = 2 [default = 10];
+// }
+
+// message GetUserByIdDTO {
+//   string user_id = 1;
+// }
+
+// message CreateUserDTO {
+//   string name = 1;
+//   string email = 2;
+//   repeated string roles = 3;
+// }
+
+// message UpdateUserDTO {
+//   string user_id = 1;
+//   string name = 2;
+//   string email = 3;
+//   repeated string roles = 4;
+// }
+
+// message DeleteUserDTO {
+//   string user_id = 1;
+// }
