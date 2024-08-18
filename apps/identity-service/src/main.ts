@@ -5,6 +5,7 @@ import { Logger } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import * as path from 'path';
 import { ReflectionService } from '@grpc/reflection';
+import setupSwagger from './infa/docs';
 
 const PORT = process.env.PORT;
 const BASE_URL = process.env.BASE_URL;
@@ -33,6 +34,7 @@ const auth0Middleware = auth({
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
   app.use(auth0Middleware);
 
   app.enableCors({
@@ -65,11 +67,12 @@ async function bootstrap() {
   const port = 4040;
   const appName = 'Identity Service';
 
-  // await  app.startAllMicroservices(); // DeprecationWarning: Calling start() is no longer necessary. It can be safely omitted
+  setupSwagger(app);
 
   await app.listen(PORT, () => {
     Logger.log(`${appName} is running on http://${host}:${port}`, '🚀');
     Logger.log(`RabbitMQ is running on http://${host}:15672`, '🐇');
+    Logger.log(`Swagger is running on http://${host}:${PORT}/docs`, '📚');
   });
 }
 bootstrap();

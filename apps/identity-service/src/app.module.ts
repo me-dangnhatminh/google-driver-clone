@@ -1,15 +1,13 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
-import controllers from './controllers';
-
-import { HTTPLogger } from './middlewares';
-import { AuthService } from './services/auth.service';
 import { TerminusModule } from '@nestjs/terminus';
 import { CacheModule } from '@nestjs/cache-manager';
-import { Auth0Module } from './adapters';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import * as path from 'path';
+
+import { AuthService } from 'src/app';
+import { controllers, HTTPLogger, Auth0Module } from 'src/infa';
 
 @Module({
   imports: [
@@ -23,7 +21,7 @@ import * as path from 'path';
         name: 'IDENTITY_SERVICE',
         transport: Transport.GRPC,
         options: {
-          url: 'localhost:5000',
+          url: process.env.IDENTITY_SERVICE_URL,
           package: 'identity',
           protoPath: path.resolve('protos/identity.proto'),
         },

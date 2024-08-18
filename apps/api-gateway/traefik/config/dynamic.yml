@@ -1,0 +1,60 @@
+# Traefik dynamic configuration file
+# See https://doc.traefik.io/traefik/getting-started/configuration-overview/#the-dynamic-configuration
+
+tcp:
+  routers:
+    redis:
+      rule: HostSNI(`*`)
+      entryPoints: redis
+      service: redis
+
+  services:
+    redis:
+      loadBalancer:
+        servers:
+          - address: "redis-10238.c283.us-east-1-4.ec2.redns.redis-cloud.com:10238"
+
+http:
+  middlewares:
+    auth:
+      basicAuth:
+        usersFile: /etc/config/users.htpasswd
+        removeHeader: true
+
+    api-stripPrefix:
+      stripPrefix:
+        prefixes: ["/identity", "/storage"]
+
+  routers:
+    dashboard:
+      rule: Host(`traefik.{{env "BASE_DOMAIN"}}`)
+      service: api@internal
+      entrypoints: https
+      middlewares:
+        - auth
+      tls: {}
+
+    identity:
+      rule: Host(`api.{{env "BASE_DOMAIN"}}`) && PathPrefix(`/identity`)
+      service: identity
+      entrypoints: https
+      middlewares:
+        - api-stripPrefix
+      tls: {}
+
+    payment:
+      rule: Host(`api.{{env "BASE_DOMAIN"}}`) && PathPrefix(`/payment`)
+      service: payment
+      entrypoints: https
+      tls: {}
+
+  services:
+    identity:
+      loadBalancer:
+        servers:
+          - url: http://localhost:3000
+
+    payment:
+      loadBalancer:
+        servers:
+          - url: http://localhost:4000

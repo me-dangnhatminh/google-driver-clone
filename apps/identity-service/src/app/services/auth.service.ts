@@ -3,13 +3,31 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { UserInfoClient, ResponseError } from 'auth0';
 import { Cache } from 'cache-manager';
+import { Observable } from 'rxjs';
+import {
+  IAuthService,
+  UserCreateDTO,
+  UserDTO,
+} from 'src/contracts/auth-service.abstract';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements IAuthService {
   constructor(
     @Inject(CACHE_MANAGER) private readonly cache: Cache,
     private readonly userInfo: UserInfoClient,
   ) {}
+
+  create(dto: UserCreateDTO): Promise<UserDTO> {
+    throw new Error('Method not implemented.' + dto);
+  }
+
+  getById(id: string): Promise<UserDTO> {
+    throw new Error('Method not implemented.' + id);
+  }
+
+  list(): Observable<UserDTO[]> {
+    throw new Error('Method not implemented.');
+  }
 
   async validateToken(accessToken: string) {
     const cacheKey = `auth0:${accessToken}`;

@@ -1,0 +1,26 @@
+version: "3.9"
+
+networks:
+  proxy-network:
+    external: true
+
+services:
+  reverse-proxy:
+    image: traefik:v2.11
+    container_name: traefik
+    restart: always
+    # network_mode: host
+    networks:
+      - proxy-network
+    ports:
+      - 80:80/tcp # HTTP
+      - 443:443/tcp # HTTPS
+      - 443:443/udp # HTTPS via HTTP/3 QUIC UDP
+    env_file: .env
+    environment:
+      - CF_API_EMAIL=${CF_API_EMAIL}
+      - BASE_DOMAIN=${BASE_DOMAIN}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/config:/etc/config:ro

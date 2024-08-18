@@ -5,15 +5,15 @@ package identity;
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 
-service UserService {
-  rpc GetUserById(GetUserByIdDTO) returns (UserDTO);
-  rpc CreateUser(CreateUserDTO) returns (UserDTO);
-  rpc UpdateUser(UpdateUserDTO) returns (UserDTO);
-  rpc DeleteUser(DeleteUserDTO) returns (google.protobuf.Empty);
-  rpc ListUsers(PaginationOptions) returns (stream UserDTO);
+service IUserService {
+  rpc getById(GetUserByIdDTO) returns (UserDTO);
+  rpc create(CreateUserDTO) returns (UserDTO);
+  rpc update(UpdateUserDTO) returns (UserDTO);
+  rpc delete(DeleteUserDTO) returns (google.protobuf.Empty);
+  rpc list(PaginationOptions) returns (stream UserDTO);
 }
 
-service AuthService {
+service IAuthService {
   rpc VerifyToken(google.protobuf.Empty) returns (google.protobuf.Empty);
 }
 
@@ -25,7 +25,7 @@ message UserDTO {
   string id = 1;
   string name = 2;
   string email = 3;
-  repeated string roles = 4; // user, admin, superadmin
+  repeated string roles = 4 [deprecated = true]; // Deprecated
 
   google.protobuf.Timestamp created_at = 5;
   google.protobuf.Timestamp updated_at = 6;

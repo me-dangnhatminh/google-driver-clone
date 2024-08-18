@@ -38,7 +38,14 @@ providers.push(...services);
     CacheModule.register({
       isGlobal: true,
       store() {
-        return redisStore({ url: 'redis://localhost:6379' });
+        return redisStore({
+          url: 'redis://redis.me-dangnhatminh.id.vn:6379',
+          username: 'default',
+          password: 'Nrf4OFJ4YqSZGlUsIauxP6mJ0JzXL1cB',
+        }).catch((err) => {
+          console.error(err);
+          throw err;
+        });
       },
     }),
     PersistencesModule,
