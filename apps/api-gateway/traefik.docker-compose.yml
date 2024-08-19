@@ -16,8 +16,8 @@ services:
       - 80:80/tcp # HTTP
       - 443:443/tcp # HTTPS
       - 443:443/udp # HTTPS via HTTP/3 QUIC UDP
-      - 5432:5432
-      - 6379:6379
+      - 6379:6379/tcp # Redis
+      - 5432:5432/tcp # Postgres
     env_file: .env
     environment:
       - BASE_DOMAIN=${BASE_DOMAIN}
@@ -28,5 +28,3 @@ services:
       - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
       - ./traefik/config:/etc/config:ro
       - ./traefik/letsencrypt/acme.json:/etc/letsencrypt/acme.json
-    # command: >
-    #   sh -c "chmod 600 /etc/letsencrypt/acme.json && traefik --configfile=/etc/traefik/traefik.yml"
