@@ -39,9 +39,7 @@ providers.push(...services);
       isGlobal: true,
       store() {
         return redisStore({
-          url: 'redis://redis.me-dangnhatminh.id.vn:6379',
-          username: 'default',
-          password: 'Nrf4OFJ4YqSZGlUsIauxP6mJ0JzXL1cB',
+          url: 'redis://redis.me-dangnhatminh.id.vn',
         }).catch((err) => {
           console.error(err);
           throw err;

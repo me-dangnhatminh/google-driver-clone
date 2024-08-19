@@ -6,7 +6,7 @@ networks:
 
 services:
   reverse-proxy:
-    image: traefik:v2.11
+    image: traefik:v3.1.2
     container_name: traefik
     restart: always
     # network_mode: host
@@ -16,11 +16,17 @@ services:
       - 80:80/tcp # HTTP
       - 443:443/tcp # HTTPS
       - 443:443/udp # HTTPS via HTTP/3 QUIC UDP
+      - 5432:5432
+      - 6379:6379
     env_file: .env
     environment:
-      - CF_API_EMAIL=${CF_API_EMAIL}
       - BASE_DOMAIN=${BASE_DOMAIN}
+      - CF_API_EMAIL=${CF_API_EMAIL} # Your Cloudflare Email
+      - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN} # Your Cloudflare DNS API Token with ZONE read, DNS edit
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
       - ./traefik/config:/etc/config:ro
+      - ./traefik/letsencrypt/acme.json:/etc/letsencrypt/acme.json
+    # command: >
+    #   sh -c "chmod 600 /etc/letsencrypt/acme.json && traefik --configfile=/etc/traefik/traefik.yml"

@@ -4,21 +4,34 @@
 tcp:
   routers:
     redis:
-      rule: HostSNI(`*`)
+      rule: HostSNI(`redis.{{env "BASE_DOMAIN"}}`)
       entryPoints: redis
       service: redis
+      tls:
+        passthrough: true
+
+    postgres:
+      rule: HostSNI(`postgres.{{env "BASE_DOMAIN"}}`)
+      entryPoints: postgres
+      service: postgres
+      tls:
+        passthrough: true
 
   services:
     redis:
       loadBalancer:
         servers:
-          - address: "redis-10238.c283.us-east-1-4.ec2.redns.redis-cloud.com:10238"
+          - address: "my-redis:6379"
+    postgres:
+      loadBalancer:
+        servers:
+          - address: "my-postgres:5432"
 
 http:
   middlewares:
     auth:
       basicAuth:
-        usersFile: /etc/config/users.htpasswd
+        usersFile: /etc/config/pass/users.htpasswd
         removeHeader: true
 
     api-stripPrefix:
@@ -32,7 +45,8 @@ http:
       entrypoints: https
       middlewares:
         - auth
-      tls: {}
+      tls:
+        certResolver: cloudflare
 
     identity:
       rule: Host(`api.{{env "BASE_DOMAIN"}}`) && PathPrefix(`/identity`)
