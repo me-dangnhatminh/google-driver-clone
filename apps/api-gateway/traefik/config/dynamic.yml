@@ -32,7 +32,6 @@ http:
     auth:
       basicAuth:
         usersFile: /etc/config/pass/users.htpasswd
-        removeHeader: true
 
     api-stripPrefix:
       stripPrefix:

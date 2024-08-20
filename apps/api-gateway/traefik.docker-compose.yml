@@ -16,13 +16,14 @@ services:
       - 80:80/tcp # HTTP
       - 443:443/tcp # HTTPS
       - 443:443/udp # HTTPS via HTTP/3 QUIC UDP
-      - 6379:6379/tcp # Redis
-      - 5432:5432/tcp # Postgres
+      # - 6379:6379/tcp # Redis
+      # - 5432:5432/tcp # Postgres
     env_file: .env
     environment:
       - BASE_DOMAIN=${BASE_DOMAIN}
       - CF_API_EMAIL=${CF_API_EMAIL} # Your Cloudflare Email
       - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN} # Your Cloudflare DNS API Token with ZONE read, DNS edit
+      # or use CF_ZONE_API_TOKEN=${CF_ZONE_API_TOKEN}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
