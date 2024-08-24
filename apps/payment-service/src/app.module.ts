@@ -39,7 +39,7 @@ providers.push(...services);
       isGlobal: true,
       store() {
         return redisStore({
-          url: 'redis://redis.me-dangnhatminh.id.vn',
+          url: 'redis://localhost:6379',
         }).catch((err) => {
           console.error(err);
           throw err;
