@@ -16,16 +16,20 @@ services:
       - 80:80/tcp # HTTP
       - 443:443/tcp # HTTPS
       - 443:443/udp # HTTPS via HTTP/3 QUIC UDP
+      - 8080:8080/tcp # Dashboard
       - 5432:5432/tcp # Postgres
       - 6379:6379/tcp # Redis
     env_file: .env
     environment:
       - BASE_DOMAIN=${BASE_DOMAIN}
       - CF_API_EMAIL=${CF_API_EMAIL} # Your Cloudflare Email
-      - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN} # Your Cloudflare DNS API Token with ZONE read, DNS edit
+      # - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN} # Your Cloudflare DNS API Token, ZONE.ZONE.READ, ZONE.DNS.EDIT
       # or use CF_ZONE_API_TOKEN=${CF_ZONE_API_TOKEN}
+      # CF_DNS_API_TOKEN for auto load certificate
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
       - ./traefik/config:/etc/config:ro
-      - ./traefik/letsencrypt/acme.json:/etc/letsencrypt/acme.json
+      # - ./traefik/letsencrypt/acme.json:/etc/letsencrypt/acme.json
+    # command: >
+    #   sh -c "chmod 600 /etc/letsencrypt/acme.json && traefik --configfile=/etc/traefik/traefik.yml"

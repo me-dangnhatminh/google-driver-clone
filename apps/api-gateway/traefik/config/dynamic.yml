@@ -1,6 +1,11 @@
 # Traefik dynamic configuration file
 # See https://doc.traefik.io/traefik/getting-started/configuration-overview/#the-dynamic-configuration
 
+tls:
+  certificates:
+    - certFile: /etc/config/certs/cert.pem
+      keyFile: /etc/config/certs/key.pem
+
 tcp:
   routers:
     postgres:
@@ -33,11 +38,17 @@ http:
 
     api-stripPrefix:
       stripPrefix:
-        prefixes: ["/identity", "/storage"]
+        prefixes:
+          - "/identity"
+          - "/payment"
+
+    dash-stripPrefix:
+      stripPrefix:
+        prefixes: "/traefik"
 
   routers:
     dashboard:
-      rule: Host(`abc.{{env "BASE_DOMAIN"}}`)
+      rule: Host(`traefik.{{env "BASE_DOMAIN"}}`)
       service: api@internal
       entrypoints: https
       middlewares:
