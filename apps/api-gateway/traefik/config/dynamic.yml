@@ -37,13 +37,18 @@ http:
 
   routers:
     dashboard:
-      rule: Host(`traefik.{{env "BASE_DOMAIN"}}`)
+      rule: Host(`abc.{{env "BASE_DOMAIN"}}`)
       service: api@internal
       entrypoints: https
       middlewares:
         - auth
-      tls:
-        certResolver: cloudflare
+      tls: {}
+
+    portainer:
+      rule: Host(`portainer.{{env "BASE_DOMAIN"}}`)
+      service: portainer
+      entrypoints: https
+      tls: {}
 
     identity:
       rule: Host(`api.{{env "BASE_DOMAIN"}}`) && PathPrefix(`/identity`)
@@ -60,6 +65,11 @@ http:
       tls: {}
 
   services:
+    portainer:
+      loadBalancer:
+        servers:
+          - url: http://portainer:9000
+
     identity:
       loadBalancer:
         servers:

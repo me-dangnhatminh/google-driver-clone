@@ -51,4 +51,4 @@ providers:
   file:
     directory: "/etc/config" # Load files from the dynamic configuration directory
     watch: true # Watch for modifications
-  providersThrottleDuration: "2s" # Configuration reload frequency
+  providersThrottleDuration: "2s" # Configuration reload frequency.
