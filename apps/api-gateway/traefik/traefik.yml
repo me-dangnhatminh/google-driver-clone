@@ -37,9 +37,6 @@ entryPoints:
           permanent: false # if false, redirect use 302 status
   https:
     address: :443
-    http:
-      tls:
-        certResolver: cloudflare
   postgres:
     address: :5432
   redis:

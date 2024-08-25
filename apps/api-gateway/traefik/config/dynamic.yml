@@ -3,7 +3,7 @@
 
 tls:
   certificates:
-    - certFile: /etc/config/certs/cert.pem
+    - certFile: /etc/config/certs/cert.pem # time to live 25/8/2024 + 15 years
       keyFile: /etc/config/certs/key.pem
 
 tcp:
