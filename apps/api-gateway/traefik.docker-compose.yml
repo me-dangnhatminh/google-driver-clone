@@ -16,6 +16,7 @@ services:
       - 80:80/tcp # HTTP
       - 443:443/tcp # HTTPS
       - 443:443/udp # HTTPS via HTTP/3 QUIC UDP
+      - 5432:5432/tcp # Postgres
     env_file: .env
     environment:
       - BASE_DOMAIN=${BASE_DOMAIN}

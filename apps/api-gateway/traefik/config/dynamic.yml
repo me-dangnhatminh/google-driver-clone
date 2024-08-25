@@ -3,29 +3,17 @@
 
 tcp:
   routers:
-    redis:
-      rule: HostSNI(`redis.{{env "BASE_DOMAIN"}}`)
-      entryPoints: redis
-      service: redis
-      tls:
-        passthrough: true
-
     postgres:
       rule: HostSNI(`postgres.{{env "BASE_DOMAIN"}}`)
       entryPoints: postgres
       service: postgres
-      tls:
-        passthrough: true
+      tls: {}
 
   services:
-    redis:
-      loadBalancer:
-        servers:
-          - address: "my-redis:6379"
     postgres:
       loadBalancer:
         servers:
-          - address: "my-postgres:5432"
+          - address: "172.29.0.1:5432"
 
 http:
   middlewares:
