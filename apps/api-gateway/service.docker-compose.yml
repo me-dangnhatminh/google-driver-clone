@@ -16,3 +16,10 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+
+  redis:
+    image: redis:6.0.9
+    container_name: my-redis
+    restart: always
+    networks:
+      - proxy-network

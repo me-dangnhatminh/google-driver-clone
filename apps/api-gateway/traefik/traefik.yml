@@ -37,14 +37,16 @@ entryPoints:
         certResolver: cloudflare
   postgres:
     address: :5432
+  redis:
+    address: :6379
 
 providers:
   docker:
     endpoint: "unix:///var/run/docker.sock" # Listen to the UNIX Docker socket
     exposedByDefault: false # Only expose container that are explicitly enabled (using label traefik.enabled)
     network: "proxy-network" # Default network to use for connections to all containers.
-    # swarmMode: false # Activates the Swarm Mode (instead of standalone Docker). v3 not support standalone mode
-    # swarmModeRefreshSeconds: "15" # Defines the polling interval (in seconds) in Swarm Mode. v3 not support standalone mode
+    # swarmMode: false # Activates the Swarm Mode (instead of standalone Docker). [v3 not support standalone mode]
+    # swarmModeRefreshSeconds: "15" # Defines the polling interval (in seconds) in Swarm Mode. [v3 not support standalone mode]
     watch: true # Watch Docker Swarm events
   file:
     directory: "/etc/config" # Load files from the dynamic configuration directory
