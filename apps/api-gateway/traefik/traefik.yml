@@ -41,8 +41,6 @@ entryPoints:
     address: :5432
   redis:
     address: :6379
-  grpc:
-    address: :50051
 
 providers:
   docker:

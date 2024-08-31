@@ -14,18 +14,18 @@ service IUserService {
 }
 
 service IAuthService {
-  rpc VerifyToken(google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc verifyToken(google.protobuf.Empty) returns (google.protobuf.Empty);
 }
 
 service HealthCheck {
-  rpc Check(google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc check(google.protobuf.Empty) returns (google.protobuf.Empty);
 }
 
 message UserDTO {
   string id = 1;
   string name = 2;
   string email = 3;
-  repeated string roles = 4 [deprecated = true]; // Deprecated
+  repeated string roles = 4;
 
   google.protobuf.Timestamp created_at = 5;
   google.protobuf.Timestamp updated_at = 6;

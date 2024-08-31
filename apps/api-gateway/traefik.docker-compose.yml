@@ -1,5 +1,8 @@
 version: "3.9"
 
+# https://developers.cloudflare.com/fundamentals/reference/network-ports/
+# cloudflare free port support
+
 networks:
   proxy-network:
     external: true
@@ -12,9 +15,9 @@ services:
     networks:
       - proxy-network
     ports:
-      - 80:80/tcp # HTTP
-      - 443:443/tcp # HTTPS
-      - 443:443/udp # HTTPS via HTTP/3 QUIC UDP
+      - 80:80/tcp
+      - 443:443/tcp
+      - 443:443/udp
     env_file: .env
     environment:
       - BASE_DOMAIN=${BASE_DOMAIN}

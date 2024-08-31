@@ -8,22 +8,15 @@ tls:
 
 tcp:
   routers:
-    postgres:
-      rule: HostSNI(`*`)
-      entryPoints: postgres
-      service: postgres
-
-    redis:
-      rule: HostSNI(`*`)
-      entryPoints: redis
-      service: redis
-
   services:
+    identity:
+      loadBalancer:
+        servers:
+          - address: 172.17.0.1:3001
     postgres:
       loadBalancer:
         servers:
           - address: my-postgres:5432
-
     redis:
       loadBalancer:
         servers:

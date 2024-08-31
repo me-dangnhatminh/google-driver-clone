@@ -10,8 +10,14 @@ export class HttpController {
   ) {}
 
   @Get()
-  async createUser() {
-    const authService = this.client.getService<any>('IUserService');
-    return await authService.getById('1');
+  async list() {
+    const userService = this.client.getService<any>('IUserService');
+    const users = await userService
+      .list({
+        cursor: '1',
+        limit: 10,
+      })
+      .toPromise();
+    return users;
   }
 }

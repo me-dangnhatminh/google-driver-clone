@@ -10,9 +10,4 @@ export class AuthController {
   create(@Payload() data: { email: string; password: string }) {
     console.log('create', data);
   }
-
-  // ======================
-  validateToken(@Payload() data: { token: string }) {
-    return this.authService.validateToken(data.token);
-  }
 }

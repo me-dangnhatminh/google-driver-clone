@@ -3,7 +3,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { UserInfoClient } from 'auth0';
 import { Cache } from 'cache-manager';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import {
   IAuthService,
   UserCreateDTO,
@@ -25,13 +25,10 @@ export class AuthService implements IAuthService {
     return { id: id, email: 'fake@mail', roles: ['user'] };
   }
 
-  list(
-    filter?: Partial<UserDTO>,
-    limit?: number,
-    offset?: number,
-  ): Observable<UserDTO[]> {
-    console.log('list', filter, limit, offset);
-    const subject = new Observable<UserDTO[]>();
-    return subject;
+  list(filter?: Partial<UserDTO>, limit?: number, offset?: number) {
+    const subject = new Subject<UserDTO[]>();
+    subject.next([{ id: 'fake-id', email: 'fake@mail', roles: ['user'] }]);
+    subject.complete();
+    return subject.asObservable();
   }
 }
