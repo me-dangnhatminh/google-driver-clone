@@ -9,11 +9,9 @@ tls:
 tcp:
   routers:
     postgres:
-      rule: HostSNI(`postgres.{{env "BASE_DOMAIN"}}`)
+      rule: HostSNI(`*`)
       entryPoints: postgres
       service: postgres
-      tls:
-        passthrough: true
 
     redis:
       rule: HostSNI(`*`)
@@ -89,4 +87,4 @@ http:
     payment:
       loadBalancer:
         servers:
-          - url: http://localhost:4000
+          - url: http://0.0.0.0:4000

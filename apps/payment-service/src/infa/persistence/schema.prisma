@@ -1,6 +1,6 @@
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://dangnhatminh:dangnhatminh@postgres.me-dangnhatminh.id.vn:5432/dev_payment_master?schema=public"
+  url      = "postgresql://postgres:postgres@localhost:5432/dev_payment_service"
 }
 
 generator client {

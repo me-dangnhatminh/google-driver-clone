@@ -27,13 +27,16 @@ services:
     networks:
       - proxy-network
 
-  # portainer:
-  #   image: portainer/portainer-ce:latest
-  #   container_name: my-portainer
-  #   restart: always
-  #   networks:
-  #     - proxy-network
-  #   env_file: .env
-  #   volumes:
-  #     - /var/run/docker.sock:/var/run/docker.sock
-  #     - portainer_data:/data
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: my-rabbitmq
+    restart: always
+    env_file: .env
+    networks:
+      - proxy-network
+    ports:
+      - 15672:15672
+      - 5672:5672
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
