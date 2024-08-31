@@ -1,8 +1,7 @@
-import { RootController } from './root.controller';
-import { AuthController } from './auth.controller';
 import { HttpController } from './http.controller';
+import { UserGrpcController } from './user.grpc-controller';
 
 export * from './auth.controller';
 
-export const controllers = [RootController, AuthController, HttpController];
+export const controllers = [UserGrpcController, HttpController];
 export default controllers;

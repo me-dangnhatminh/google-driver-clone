@@ -21,6 +21,8 @@ export class HTTPLogger implements NestMiddleware {
         this.logger.error(msg);
       } else if (statusCode >= 400) {
         this.logger.warn(msg);
+      } else {
+        this.logger.log(msg);
       }
     });
 

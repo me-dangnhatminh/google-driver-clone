@@ -5,6 +5,8 @@ import { Logger } from '@nestjs/common';
 import { WinstonModule } from 'nest-winston';
 import setupSwagger from './infa/docs';
 import winston from './logger';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { ReflectionService } from '@grpc/reflection';
 
 const BASE_URL = process.env.BASE_URL;
 const AUTH0_DOMAIN = process.env.AUTH0_DOMAIN;
@@ -35,7 +37,9 @@ async function bootstrap() {
     logger: WinstonModule.createLogger({ instance: winston }),
   });
 
-  const logger = app.get(Logger);
+  app.setGlobalPrefix('identity');
+
+  const logger = new Logger('bootstrap');
 
   app.use(auth0Middleware);
   app.enableCors({
@@ -51,12 +55,32 @@ async function bootstrap() {
   const port = 3000;
   const appName = 'Identity Service';
 
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.GRPC,
+    options: {
+      package: 'identity',
+      protoPath: 'protos/identity.proto',
+      url: '0.0.0.0:3001',
+      loader: {
+        keepCase: true,
+        longs: String,
+        enums: String,
+        defaults: true,
+        oneofs: true,
+      },
+      onLoadPackageDefinition(pkg, server) {
+        new ReflectionService(pkg).addToServer(server);
+      },
+    },
+  });
+
   setupSwagger(app).then((res) => {
     logger.log(`Swagger is running on http://${host}:${port}/${res.docPrefix}`);
   });
 
+  // await app.startAllMicroservices();
   await app.listen(port, () => {
-    logger.log(`${appName} is running on http://${host}:${port}`, '🚀');
+    logger.log(`${appName} is running on http://${host}:${port}`);
   });
 }
 bootstrap();

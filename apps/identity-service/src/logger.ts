@@ -1,27 +1,24 @@
 import 'winston-daily-rotate-file';
 import { createLogger, format, transports } from 'winston';
 
-const APP_NAME = process.env.APP_NAME ?? 'app';
-
-// format: format.combine(
-//   format.cli(),
-//   format.splat(),
-//   format.timestamp(),
-//   format.printf(({ level, timestamp, stack, message }) => {
-//     return `${timestamp} [${level}] ${stack ?? message}`;
-//   }),
-// ),
 export const logger = createLogger({
-  level: 'info',
-  defaultMeta: { service: APP_NAME },
+  level: process.env.LOG_LEVEL ?? 'info',
+  defaultMeta: { service: process.env.APP_NAME ?? 'app' },
   transports: [
     new transports.Console({
       format: format.combine(
+        format.colorize({
+          colors: {
+            info: 'blue',
+            error: 'red',
+            warn: 'yellow',
+          },
+        }),
         format.cli(),
         format.splat(),
         format.timestamp(),
         format.printf(({ level, timestamp, stack, message }) => {
-          return `${timestamp} [${level}] ${stack ?? message}`;
+          return `${timestamp} [${level}] ${message} ${stack ? `\n${stack}` : ''}`;
         }),
       ),
     }),

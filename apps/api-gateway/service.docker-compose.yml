@@ -45,6 +45,7 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
     container_name: my-elasticsearch
@@ -81,7 +82,6 @@ services:
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
 
-  # add filebeat here
   filebeat:
     image: docker.elastic.co/beats/filebeat:7.10.2
     container_name: my-filebeat

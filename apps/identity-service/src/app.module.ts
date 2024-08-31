@@ -1,4 +1,4 @@
-import { Logger, MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
 import { TerminusModule } from '@nestjs/terminus';
@@ -36,7 +36,7 @@ import { controllers, HTTPLogger, Auth0Module } from 'src/infa';
     }),
   ],
   controllers,
-  providers: [Logger, AuthService],
+  providers: [AuthService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

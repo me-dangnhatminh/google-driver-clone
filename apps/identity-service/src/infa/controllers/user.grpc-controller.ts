@@ -1,6 +1,8 @@
+import { Controller } from '@nestjs/common';
 import { GrpcMethod, Payload } from '@nestjs/microservices';
 
-export class UserController {
+@Controller()
+export class UserGrpcController {
   @GrpcMethod('IUserService', 'create')
   create(@Payload() data: { email: string; password: string }) {
     console.log('create', data);
