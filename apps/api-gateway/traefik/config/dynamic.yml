@@ -34,15 +34,14 @@ http:
       basicAuth:
         usersFile: /etc/config/pass/users.htpasswd
 
+    dash-stripPrefix:
+      stripPrefix:
+        prefixes: "/traefik"
+
     api-stripPrefix:
       stripPrefix:
         prefixes:
           - "/identity"
-          - "/payment"
-
-    dash-stripPrefix:
-      stripPrefix:
-        prefixes: "/traefik"
 
   routers:
     dashboard:
@@ -53,12 +52,6 @@ http:
         - auth
       tls: {}
 
-    portainer:
-      rule: Host(`portainer.{{env "BASE_DOMAIN"}}`)
-      service: portainer
-      entrypoints: https
-      tls: {}
-
     identity:
       rule: Host(`api.{{env "BASE_DOMAIN"}}`) && PathPrefix(`/identity`)
       service: identity
@@ -67,24 +60,8 @@ http:
         - api-stripPrefix
       tls: {}
 
-    payment:
-      rule: Host(`api.{{env "BASE_DOMAIN"}}`) && PathPrefix(`/payment`)
-      service: payment
-      entrypoints: https
-      tls: {}
-
   services:
-    portainer:
-      loadBalancer:
-        servers:
-          - url: http://portainer:9000
-
     identity:
       loadBalancer:
         servers:
-          - url: http://localhost:3000
-
-    payment:
-      loadBalancer:
-        servers:
-          - url: http://0.0.0.0:4000
+          - url: http://172.17.0.1:3000 # This is the Docker Gateway IP
