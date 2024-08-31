@@ -34,15 +34,6 @@ http:
       basicAuth:
         usersFile: /etc/config/pass/users.htpasswd
 
-    dash-stripPrefix:
-      stripPrefix:
-        prefixes: "/traefik"
-
-    api-stripPrefix:
-      stripPrefix:
-        prefixes:
-          - "/identity"
-
   routers:
     dashboard:
       rule: Host(`traefik.{{env "BASE_DOMAIN"}}`)
@@ -53,7 +44,7 @@ http:
       tls: {}
 
     identity:
-      rule: Host(`api.{{env "BASE_DOMAIN"}}`) && PathPrefix(`/identity`)
+      rule: Host(`identity.{{env "BASE_DOMAIN"}}`)
       service: identity
       entrypoints: https
       tls: {}
@@ -63,3 +54,4 @@ http:
       loadBalancer:
         servers:
           - url: http://172.17.0.1:3000 # This is the Docker Gateway IP
+

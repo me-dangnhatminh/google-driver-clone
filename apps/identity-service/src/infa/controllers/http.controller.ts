@@ -12,6 +12,6 @@ export class HttpController {
   @Get()
   async createUser() {
     const authService = this.client.getService<any>('IUserService');
-    return await authService.list();
+    return await authService.getById('1');
   }
 }

@@ -21,7 +21,7 @@ import { controllers, HTTPLogger, Auth0Module } from 'src/infa';
         name: 'IDENTITY_SERVICE',
         transport: Transport.GRPC,
         options: {
-          url: process.env.IDENTITY_SERVICE_URL,
+          url: 'localhost:3001', // TODO: use api-gateway
           package: 'identity',
           protoPath: path.resolve('protos/identity.proto'),
         },

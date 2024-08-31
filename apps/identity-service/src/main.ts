@@ -37,8 +37,6 @@ async function bootstrap() {
     logger: WinstonModule.createLogger({ instance: winston }),
   });
 
-  app.setGlobalPrefix('identity');
-
   const logger = new Logger('bootstrap');
 
   app.use(auth0Middleware);
@@ -78,7 +76,7 @@ async function bootstrap() {
     logger.log(`Swagger is running on http://${host}:${port}/${res.docPrefix}`);
   });
 
-  // await app.startAllMicroservices();
+  await app.startAllMicroservices();
   await app.listen(port, () => {
     logger.log(`${appName} is running on http://${host}:${port}`);
   });
