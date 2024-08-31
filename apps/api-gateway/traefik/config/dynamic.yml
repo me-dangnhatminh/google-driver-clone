@@ -56,8 +56,6 @@ http:
       rule: Host(`api.{{env "BASE_DOMAIN"}}`) && PathPrefix(`/identity`)
       service: identity
       entrypoints: https
-      middlewares:
-        - api-stripPrefix
       tls: {}
 
   services:

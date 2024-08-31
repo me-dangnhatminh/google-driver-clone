@@ -2,7 +2,7 @@ import { Controller, Get, Inject } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
 import { ApiTags } from '@nestjs/swagger';
 
-@Controller('users')
+@Controller('identity/users')
 @ApiTags('users')
 export class HttpController {
   constructor(

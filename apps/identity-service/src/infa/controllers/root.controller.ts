@@ -3,7 +3,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { HealthCheckService, HttpHealthIndicator } from '@nestjs/terminus';
 import { Request } from 'express';
 
-@Controller()
+@Controller('identity')
 @ApiTags('root')
 export class RootController {
   constructor(
