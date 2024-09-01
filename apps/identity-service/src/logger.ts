@@ -41,12 +41,7 @@ export const logger = createLogger({
       maxFiles: '14d',
     }),
     new ElasticsearchTransport({
-      level: 'debug',
-      index: 'myapp-logs',
-      indexSuffixPattern: 'YYYY-MM-DD',
-      transformer: ({ level, message, timestamp, ...meta }) => {
-        return { '@timestamp': timestamp, level, message, meta };
-      },
+      level: 'info',
       clientOpts: {
         // TODO: Use environment variables
         node: 'http://localhost:9200',
