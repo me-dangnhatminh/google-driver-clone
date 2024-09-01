@@ -13,7 +13,7 @@ export class HTTPLogger implements NestMiddleware {
 
     response.on('finish', () => {
       const { statusCode } = response;
-      const contentLength = response.get('content-length');
+      const contentLength = response.get('content-length') || 0;
       const responseTime = Date.now() - startTime;
       const msg = `${method} ${url} ${statusCode} ${contentLength} - ${userAgent} ${ip} - ${responseTime}ms`;
 
