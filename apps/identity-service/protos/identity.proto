@@ -5,12 +5,13 @@ package identity;
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 
-service IUserService {
-  rpc getById(GetUserByIdDTO) returns (UserDTO);
-  rpc create(CreateUserDTO) returns (UserDTO);
-  rpc update(UpdateUserDTO) returns (UserDTO);
-  rpc delete(DeleteUserDTO) returns (google.protobuf.Empty);
-  rpc list(PaginationOptions) returns (stream UserDTO);
+service UserService {
+  rpc getById(GetByIdReq) returns (UserDTO);
+  rpc getByEmail(GetByEmailReq) returns (UserDTO);
+  rpc create(CreateUserReq) returns (UserDTO);
+  rpc update(UpdateUserReq) returns (UserDTO);
+  rpc delete(DeleteUserReq) returns (google.protobuf.Empty);
+  rpc list(PaginationOptions) returns (UserListDTO);
 }
 
 message UserDTO {
@@ -20,29 +21,39 @@ message UserDTO {
   repeated string roles = 4;
 }
 
-
-message PaginationOptions {
-  string cursor = 1;
-  int32 limit = 2;
+message UserListDTO {
+  repeated UserDTO users = 1;
+  optional string cursor = 2;
+  int32 limit = 3;
+  int32 total = 4;
 }
 
-message GetUserByIdDTO {
+message GetByIdReq {
   string id = 1;
 }
 
-message CreateUserDTO {
-  string name = 1;
-  string email = 2;
-  repeated string roles = 3;
+message GetByEmailReq {
+  string email = 1;
 }
 
-message UpdateUserDTO {
-  string id = 1;
-  string name = 2;
-  string email = 3;
+message UpdateUserReq {
+  optional string id = 1;
+  optional string email = 3;
+  optional string name = 2;
   repeated string roles = 4;
 }
 
-message DeleteUserDTO {
+message CreateUserReq {
+  optional string email = 1;
+  optional string name = 2;
+  repeated string roles = 3;
+}
+
+message DeleteUserReq {
   string id = 1;
+}
+
+message PaginationOptions {
+  optional string cursor = 1;
+  optional int32 limit = 2;
 }

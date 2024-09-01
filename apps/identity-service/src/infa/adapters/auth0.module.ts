@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { DynamicModule, Module } from '@nestjs/common';
-import { UserInfoClient } from 'auth0';
+import { UserInfoClient, ManagementClient } from 'auth0';
 
 @Module({})
 export class Auth0Module {
@@ -13,8 +13,16 @@ export class Auth0Module {
       module: Auth0Module,
       providers: [
         { provide: UserInfoClient, useValue: new UserInfoClient(options) },
+        {
+          provide: ManagementClient,
+          useValue: new ManagementClient({
+            domain: options.domain,
+            clientId: options.clientId,
+            clientSecret: options.clientSecret,
+          }),
+        },
       ],
-      exports: [UserInfoClient],
+      exports: [UserInfoClient, ManagementClient],
     };
   }
 }

@@ -6,13 +6,13 @@ import { ApiTags } from '@nestjs/swagger';
 @ApiTags('Users')
 export class HttpController {
   private readonly userService: any;
+
   constructor(@Inject('IDENTITY_SERVICE') private readonly client: ClientGrpc) {
-    this.userService = this.client.getService<any>('IUserService');
+    this.userService = this.client.getService<any>('UserService');
   }
 
   @Get()
-  async list() {
-    const res = await this.userService.getById({ id: '1' });
-    return res;
+  list() {
+    return this.userService.list({});
   }
 }

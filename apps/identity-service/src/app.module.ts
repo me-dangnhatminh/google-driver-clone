@@ -6,22 +6,21 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import * as path from 'path';
 
-import { AuthService } from 'src/app';
 import { controllers, HTTPLogger, Auth0Module } from 'src/infa';
 
 @Module({
   imports: [
-    CacheModule.register(),
     ConfigModule.forRoot({
       envFilePath: '.env',
       expandVariables: true,
       isGlobal: true,
     }),
+    CacheModule.register(),
     TerminusModule,
     Auth0Module.forRoot({
       domain: process.env.AUTH0_DOMAIN,
       clientId: process.env.AUTH0_CLIENT_ID,
-      clientSecret: process.env.AUTH0_CLIENT,
+      clientSecret: process.env.AUTH0_SECRET,
     }),
     ClientsModule.register([
       {
@@ -36,7 +35,7 @@ import { controllers, HTTPLogger, Auth0Module } from 'src/infa';
     ]),
   ],
   controllers,
-  providers: [AuthService],
+  providers: [],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

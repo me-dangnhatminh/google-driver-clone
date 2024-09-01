@@ -1,8 +1,8 @@
 import { Controller } from '@nestjs/common';
-import { GrpcMethod, GrpcStreamMethod } from '@nestjs/microservices';
+import { GrpcMethod } from '@nestjs/microservices';
+import { ManagementClient } from 'auth0';
 import * as rx from 'rxjs';
 
-import { AuthService } from 'src/app';
 import { UserDTO } from 'src/contracts';
 
 const userRepo: UserDTO[] = [
@@ -12,7 +12,6 @@ const userRepo: UserDTO[] = [
     email: 'email1',
     roles: ['admin'],
   },
-
   {
     id: '2',
     name: 'name2',
@@ -23,15 +22,37 @@ const userRepo: UserDTO[] = [
 
 @Controller()
 export class UserGrpcController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly userManagement: ManagementClient) {}
 
-  @GrpcStreamMethod('IUserService', 'list')
+  @GrpcMethod('UserService', 'list')
   list() {
-    return rx.of(userRepo);
+    const fetch = this.userManagement.users.getAll({});
+    const users = rx.from(fetch).pipe(
+      rx.map((u) => u.data),
+      rx.map((u) =>
+        u.map((user) => ({
+          id: user.user_id,
+          name: user.name,
+          email: user.email,
+          roles: ['user'],
+        })),
+      ),
+    );
+
+    return users.pipe(
+      rx.map((u) => ({
+        users: u,
+        cursor: null,
+        limit: 10,
+        total: u.length,
+      })),
+    );
   }
 
-  @GrpcMethod('IUserService', 'getById')
-  getById(data: any) {
-    return userRepo.find((u) => u.id === data.id);
+  @GrpcMethod('UserService', 'getById')
+  getById(messages: any) {
+    const id = messages.id;
+    const finded = userRepo.find((u) => u.id === id);
+    return rx.of(finded);
   }
 }
