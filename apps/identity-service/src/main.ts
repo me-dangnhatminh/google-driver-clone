@@ -58,7 +58,7 @@ async function bootstrap() {
     options: {
       package: 'identity',
       protoPath: 'protos/identity.proto',
-      url: '0.0.0.0:3001',
+      url: 'localhost:3001',
       loader: {
         keepCase: true,
         longs: String,

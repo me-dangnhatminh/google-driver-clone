@@ -1,33 +1,37 @@
 import { Controller } from '@nestjs/common';
-import { GrpcMethod, GrpcStreamMethod, Payload } from '@nestjs/microservices';
+import { GrpcMethod, GrpcStreamMethod } from '@nestjs/microservices';
+import * as rx from 'rxjs';
+
 import { AuthService } from 'src/app';
+import { UserDTO } from 'src/contracts';
+
+const userRepo: UserDTO[] = [
+  {
+    id: '1',
+    name: 'name1',
+    email: 'email1',
+    roles: ['admin'],
+  },
+
+  {
+    id: '2',
+    name: 'name2',
+    email: 'email2',
+    roles: ['user'],
+  },
+];
 
 @Controller()
 export class UserGrpcController {
   constructor(private readonly authService: AuthService) {}
 
-  @GrpcStreamMethod('IUserService')
-  list(
-    @Payload()
-    data: {
-      cursor: string;
-      limit: number;
-    },
-  ) {
-    console.log('list', data);
-    return this.authService.list();
+  @GrpcStreamMethod('IUserService', 'list')
+  list() {
+    return rx.of(userRepo);
   }
 
   @GrpcMethod('IUserService', 'getById')
-  getById(@Payload() data: { id: string }) {
-    return this.authService.getById(data.id);
-  }
-
-  @GrpcMethod('IUserService', 'create')
-  create(@Payload() data: { email: string; password: string }) {
-    return this.authService.create({
-      email: data.email,
-      password: data.password,
-    });
+  getById(data: any) {
+    return userRepo.find((u) => u.id === data.id);
   }
 }

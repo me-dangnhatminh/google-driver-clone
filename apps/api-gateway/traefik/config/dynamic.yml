@@ -8,19 +8,20 @@ tls:
 
 tcp:
   routers:
+    identity:
+      rule: HostSNI(`identity.{{env "BASE_DOMAIN"}}`)
+      service: identity
+      entryPoints:
+        - https
+      tls:
+        passthrough: true
+
   services:
     identity:
       loadBalancer:
         servers:
           - address: 172.17.0.1:3001
-    postgres:
-      loadBalancer:
-        servers:
-          - address: my-postgres:5432
-    redis:
-      loadBalancer:
-        servers:
-          - address: my-redis:6379
+
 http:
   middlewares:
     auth:
@@ -46,5 +47,4 @@ http:
     identity:
       loadBalancer:
         servers:
-          - url: http://172.17.0.1:3000 # This is the Docker Gateway IP
-
+          - url: http://172.17.0.1:3000

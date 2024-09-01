@@ -5,19 +5,14 @@ import { ApiTags } from '@nestjs/swagger';
 @Controller('users')
 @ApiTags('Users')
 export class HttpController {
-  constructor(
-    @Inject('IDENTITY_SERVICE') private readonly client: ClientGrpc,
-  ) {}
+  private readonly userService: any;
+  constructor(@Inject('IDENTITY_SERVICE') private readonly client: ClientGrpc) {
+    this.userService = this.client.getService<any>('IUserService');
+  }
 
   @Get()
   async list() {
-    const userService = this.client.getService<any>('IUserService');
-    const users = await userService
-      .list({
-        cursor: '1',
-        limit: 10,
-      })
-      .toPromise();
-    return users;
+    const res = await this.userService.getById({ id: '1' });
+    return res;
   }
 }

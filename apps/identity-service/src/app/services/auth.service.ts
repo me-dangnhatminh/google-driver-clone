@@ -1,8 +1,5 @@
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Inject, Injectable } from '@nestjs/common';
-
+import { Injectable } from '@nestjs/common';
 import { UserInfoClient } from 'auth0';
-import { Cache } from 'cache-manager';
 import { Observable, Subject } from 'rxjs';
 import {
   IAuthService,
@@ -12,23 +9,34 @@ import {
 
 @Injectable()
 export class AuthService implements IAuthService {
-  constructor(
-    @Inject(CACHE_MANAGER) private readonly cache: Cache,
-    private readonly userInfo: UserInfoClient,
-  ) {}
+  private users: UserDTO[] = [
+    {
+      id: '1',
+      name: 'John Doe',
+      email: 'john.doe@example.com',
+      roles: ['user'],
+    },
+    {
+      id: '2',
+      name: 'Jane Doe',
+      email: 'jane.doe@example.com',
+      roles: ['user'],
+    },
+  ];
+  constructor(private readonly userInfo: UserInfoClient) {}
 
   async create(dto: UserCreateDTO): Promise<UserDTO> {
-    return { id: 'fake-id', email: dto.email, roles: dto.roles || ['user'] };
+    throw new Error('Method not implemented.');
   }
 
   async getById(id: string): Promise<UserDTO> {
-    return { id: id, email: 'fake@mail', roles: ['user'] };
+    throw new Error('Method not implemented.');
   }
 
-  list(filter?: Partial<UserDTO>, limit?: number, offset?: number) {
-    const subject = new Subject<UserDTO[]>();
-    subject.next([{ id: 'fake-id', email: 'fake@mail', roles: ['user'] }]);
-    subject.complete();
-    return subject.asObservable();
+  list(cursor?: string, limit?: number): Observable<UserDTO> {
+    const userStream = new Subject<UserDTO>();
+    this.users.forEach((user) => userStream.next(user));
+    userStream.complete();
+    return userStream.asObservable();
   }
 }

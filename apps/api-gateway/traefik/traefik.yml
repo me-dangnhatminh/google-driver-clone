@@ -37,10 +37,6 @@ entryPoints:
           permanent: false # if false, redirect use 302 status
   https:
     address: :443
-  postgres:
-    address: :5432
-  redis:
-    address: :6379
 
 providers:
   docker:

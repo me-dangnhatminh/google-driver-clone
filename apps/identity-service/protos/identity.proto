@@ -13,23 +13,11 @@ service IUserService {
   rpc list(PaginationOptions) returns (stream UserDTO);
 }
 
-service IAuthService {
-  rpc verifyToken(google.protobuf.Empty) returns (google.protobuf.Empty);
-}
-
-service HealthCheck {
-  rpc check(google.protobuf.Empty) returns (google.protobuf.Empty);
-}
-
 message UserDTO {
   string id = 1;
   string name = 2;
   string email = 3;
   repeated string roles = 4;
-
-  google.protobuf.Timestamp created_at = 5;
-  google.protobuf.Timestamp updated_at = 6;
-  google.protobuf.Timestamp deleted_at = 7;
 }
 
 
@@ -39,7 +27,7 @@ message PaginationOptions {
 }
 
 message GetUserByIdDTO {
-  string user_id = 1;
+  string id = 1;
 }
 
 message CreateUserDTO {
@@ -49,12 +37,12 @@ message CreateUserDTO {
 }
 
 message UpdateUserDTO {
-  string user_id = 1;
+  string id = 1;
   string name = 2;
   string email = 3;
   repeated string roles = 4;
 }
 
 message DeleteUserDTO {
-  string user_id = 1;
+  string id = 1;
 }
