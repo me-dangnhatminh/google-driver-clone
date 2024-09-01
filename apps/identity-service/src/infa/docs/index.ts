@@ -4,8 +4,8 @@ import {
   SwaggerModule,
 } from '@nestjs/swagger';
 
-export async function setupSwagger(app) {
-  const docPrefix = 'docs';
+export function setupSwagger(app) {
+  const docPrefix = 'api/docs';
   const docName = 'Identity Service';
   const docDesc = 'API Documentation';
   const docVersion = '1.0';

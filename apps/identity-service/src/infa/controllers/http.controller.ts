@@ -3,7 +3,7 @@ import { ClientGrpc } from '@nestjs/microservices';
 import { ApiTags } from '@nestjs/swagger';
 
 @Controller('users')
-@ApiTags('Users')
+@ApiTags('users')
 export class HttpController {
   private readonly userService: any;
 

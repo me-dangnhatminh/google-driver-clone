@@ -7,26 +7,17 @@ tls:
       keyFile: /etc/config/certs/key.pem
 
 tcp:
-  routers:
-    identity:
-      rule: HostSNI(`identity.{{env "BASE_DOMAIN"}}`)
-      service: identity
-      entryPoints:
-        - https
-      tls:
-        passthrough: true
-
-  services:
-    identity:
-      loadBalancer:
-        servers:
-          - address: 172.17.0.1:3001
 
 http:
   middlewares:
     auth:
       basicAuth:
         usersFile: /etc/config/pass/users.htpasswd
+
+    api-stripPrefix:
+      stripPrefix:
+        prefixes:
+          - /api
 
   routers:
     dashboard:
@@ -38,7 +29,7 @@ http:
       tls: {}
 
     identity:
-      rule: Host(`identity.{{env "BASE_DOMAIN"}}`)
+      rule: Host(`identity.{{env "BASE_DOMAIN"}}`) && PathPrefix(`/api`)
       service: identity
       entrypoints: https
       tls: {}
