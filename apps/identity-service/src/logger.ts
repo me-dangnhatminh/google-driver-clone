@@ -1,6 +1,7 @@
 import 'winston-daily-rotate-file';
 import { createLogger, format, transports } from 'winston';
 import { WinstonModule } from 'nest-winston';
+import { ElasticsearchTransport } from 'winston-elasticsearch';
 
 export const logger = createLogger({
   level: process.env.LOG_LEVEL ?? 'info',
@@ -24,7 +25,7 @@ export const logger = createLogger({
       ),
     }),
     new transports.DailyRotateFile({
-      filename: 'logs/%DATE%-error.log',
+      filename: 'logs/myapp.%DATE%.error.log',
       level: 'error',
       datePattern: 'YYYY-MM-DD',
       format: format.combine(format.timestamp(), format.json()),
@@ -32,12 +33,24 @@ export const logger = createLogger({
       maxFiles: '14d',
     }),
     new transports.DailyRotateFile({
-      filename: 'logs/%DATE%-combined.log',
-      level: 'error',
+      filename: 'logs/myapp.%DATE%.combined.log',
+      level: 'info',
       datePattern: 'YYYY-MM-DD',
       format: format.combine(format.timestamp(), format.json()),
       zippedArchive: false,
       maxFiles: '14d',
+    }),
+    new ElasticsearchTransport({
+      level: 'debug',
+      index: 'myapp-logs',
+      indexSuffixPattern: 'YYYY-MM-DD',
+      transformer: ({ level, message, timestamp, ...meta }) => {
+        return { '@timestamp': timestamp, level, message, meta };
+      },
+      clientOpts: {
+        // TODO: Use environment variables
+        node: 'http://localhost:9200',
+      },
     }),
   ],
 });

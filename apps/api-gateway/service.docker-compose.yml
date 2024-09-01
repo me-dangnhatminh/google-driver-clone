@@ -6,7 +6,6 @@ networks:
 
 volumes:
   portainer_data: {}
-  logstash_pipeline: {}
 
 services:
   postgres:
@@ -45,53 +44,3 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
-
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.2
-    container_name: my-elasticsearch
-    restart: always
-    networks:
-      - proxy-network
-    ports:
-      - 9200:9200
-    environment:
-      - discovery.type=single-node
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-
-  kibana:
-    image: docker.elastic.co/kibana/kibana:7.10.2
-    container_name: my-kibana
-    restart: always
-    networks:
-      - proxy-network
-    ports:
-      - 5601:5601
-    environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-
-  logstash:
-    image: docker.elastic.co/logstash/logstash:7.10.2
-    container_name: my-logstash
-    restart: always
-    networks:
-      - proxy-network
-    ports:
-      - 5000:5000
-    volumes:
-      - logstash_pipeline:/usr/share/logstash/pipeline
-    environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-
-  filebeat:
-    image: docker.elastic.co/beats/filebeat:7.10.2
-    container_name: my-filebeat
-    restart: always
-    networks:
-      - proxy-network
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - /var/log:/var/log
-    depends_on:
-      - logstash
-      - elasticsearch
