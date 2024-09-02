@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { Logger } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { ReflectionService } from '@grpc/reflection';
+import * as path from 'path';
 
 import { AppModule } from './app.module';
 import setupSwagger from './infa/docs';
@@ -28,7 +29,7 @@ async function bootstrap() {
     transport: Transport.GRPC,
     options: {
       package: 'identity',
-      protoPath: 'protos/identity.proto',
+      protoPath: ['identity.proto'],
       url: 'localhost:3001',
       loader: {
         keepCase: true,
@@ -36,6 +37,7 @@ async function bootstrap() {
         enums: String,
         defaults: true,
         oneofs: true,
+        includeDirs: [path.resolve(__dirname, '../../../protos')],
       },
       onLoadPackageDefinition(pkg, server) {
         new ReflectionService(pkg).addToServer(server);

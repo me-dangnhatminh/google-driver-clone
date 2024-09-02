@@ -1,10 +1,10 @@
 import { HealthController } from './health.controller';
-import { HttpController } from './http.controller';
+import { UserRESTController } from './user.rest-controller';
 import { UserGrpcController } from './user.grpc-controller';
 
 export const controllers = [
   HealthController,
   UserGrpcController,
-  HttpController,
+  UserRESTController,
 ];
 export default controllers;

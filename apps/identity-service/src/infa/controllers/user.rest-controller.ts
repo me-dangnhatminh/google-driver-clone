@@ -4,7 +4,7 @@ import { ApiTags } from '@nestjs/swagger';
 
 @Controller('users')
 @ApiTags('users')
-export class HttpController {
+export class UserRESTController {
   private readonly userService: any;
 
   constructor(@Inject('IDENTITY_SERVICE') private readonly client: ClientGrpc) {
