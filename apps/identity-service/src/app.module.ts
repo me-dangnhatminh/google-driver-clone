@@ -10,14 +10,13 @@ import * as path from 'path';
 
 import { controllers, HTTPLogger, Auth0Module } from 'src/infa';
 
-path.resolve(__dirname, '../../../protos/identity.proto');
-
 @Module({
   imports: [
     ConfigModule.forRoot({
       envFilePath: ['config/envs/.env'],
       expandVariables: true,
       isGlobal: true,
+      cache: true,
     }),
     TerminusModule,
     HttpModule,
@@ -43,22 +42,29 @@ path.resolve(__dirname, '../../../protos/identity.proto');
       },
     }),
 
-    ClientsModule.register([
+    ClientsModule.registerAsync([
       {
+        inject: [ConfigService],
         name: 'IDENTITY_SERVICE',
-        transport: Transport.GRPC,
-        options: {
-          url: 'localhost:3001',
-          package: 'identity',
-          protoPath: ['identity.proto'],
-          loader: {
-            keepCase: true,
-            longs: String,
-            enums: String,
-            defaults: true,
-            oneofs: true,
-            includeDirs: [path.resolve(__dirname, '../../../protos')],
-          },
+        useFactory: (configService: ConfigService) => {
+          const url = `${configService.get('IDENTITY_SERVICE_URL') || 'localhost:50051'}`;
+          const protoDir = `${configService.get('PROTO_DIR') || path.resolve(__dirname, '../../../protos')}`;
+          return {
+            transport: Transport.GRPC,
+            options: {
+              url,
+              package: 'identity',
+              protoPath: ['identity.proto'],
+              loader: {
+                includeDirs: [protoDir],
+                keepCase: true,
+                longs: String,
+                enums: String,
+                defaults: true,
+                oneofs: true,
+              },
+            },
+          };
         },
       },
     ]),
@@ -71,3 +77,21 @@ export class AppModule implements NestModule {
     consumer.apply(HTTPLogger).forRoutes('*');
   }
 }
+
+// {
+//   name: 'IDENTITY_SERVICE',
+//   transport: Transport.GRPC,
+//   options: {
+//     url: 'localhost:50051',
+//     package: 'identity',
+//     protoPath: ['identity.proto'],
+//     loader: {
+//       keepCase: true,
+//       longs: String,
+//       enums: String,
+//       defaults: true,
+//       oneofs: true,
+//       includeDirs: [path.resolve(__dirname, '../../../protos')],
+//     },
+//   },
+// },

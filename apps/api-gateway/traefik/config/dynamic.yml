@@ -28,14 +28,23 @@ http:
         - auth
       tls: {}
 
-    identity:
+    identity-api:
       rule: Host(`identity.{{env "BASE_DOMAIN"}}`) && PathPrefix(`/api`)
-      service: identity
+      service: identity-api
       entrypoints: https
       tls: {}
 
+    identity-grpc:
+      rule: Host(`identity-grpc.{{env "BASE_DOMAIN"}}`)
+      service: identity-grpc
+      entrypoints: https
+
   services:
-    identity:
+    identity-api:
       loadBalancer:
         servers:
           - url: http://172.17.0.1:3000
+    identity-grpc:
+      loadBalancer:
+        servers:
+          - url: http://172.17.0.1:50051
