@@ -6,8 +6,8 @@ import { UserInfoClient, ManagementClient } from 'auth0';
 export class Auth0Module {
   static forRoot(options: {
     domain: string;
-    clientId?: string;
-    clientSecret?: string;
+    clientId: string;
+    clientSecret: string;
   }): DynamicModule {
     return {
       module: Auth0Module,
@@ -15,11 +15,7 @@ export class Auth0Module {
         { provide: UserInfoClient, useValue: new UserInfoClient(options) },
         {
           provide: ManagementClient,
-          useValue: new ManagementClient({
-            domain: options.domain,
-            clientId: options.clientId ?? '',
-            clientSecret: options.clientSecret ?? '',
-          }),
+          useValue: new ManagementClient(options),
         },
       ],
       exports: [UserInfoClient, ManagementClient],

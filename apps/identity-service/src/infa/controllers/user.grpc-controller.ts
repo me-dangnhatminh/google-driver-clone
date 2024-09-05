@@ -8,7 +8,7 @@ export class UserGrpcController {
   constructor(private readonly userManagement: ManagementClient) {}
 
   @GrpcMethod('UserService', 'list')
-  list(messages: any) {
+  list() {
     const fetch = this.userManagement.users.getAll({
       fields: 'user_id,name,email',
     });
@@ -43,5 +43,10 @@ export class UserGrpcController {
         roles: ['user'],
       })),
     );
+  }
+
+  @GrpcMethod('UserService', 'create')
+  create(messages: any) {
+    return rx.of(messages);
   }
 }

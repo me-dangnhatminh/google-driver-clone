@@ -23,11 +23,6 @@ import config, { Config, RedisConfig } from 'src/config';
     }),
     TerminusModule,
     HttpModule,
-    Auth0Module.forRoot({
-      domain: process.env.AUTH0_DOMAIN ?? '',
-      clientId: process.env.AUTH0_CLIENT_ID,
-      clientSecret: process.env.AUTH0_SECRET,
-    }),
     CacheModule.register({
       inject: [ConfigService],
       useFactory: async (configService: ConfigService<Config, true>) => {
@@ -41,6 +36,12 @@ import config, { Config, RedisConfig } from 'src/config';
         Logger.log(`Redis connected: ${url}`, CacheModule.name);
         return { store };
       },
+    }),
+
+    Auth0Module.forRoot({
+      domain: process.env.AUTH0_DOMAIN ?? '',
+      clientId: process.env.AUTH0_CLIENT_ID ?? '',
+      clientSecret: process.env.AUTH0_SECRET ?? '',
     }),
 
     ClientsModule.registerAsync([
