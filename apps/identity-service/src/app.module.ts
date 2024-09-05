@@ -34,11 +34,8 @@ import { controllers, HTTPLogger, Auth0Module } from 'src/infa';
         const port = configService.get('REDIS_PORT') || 6379;
         const username = configService.get('REDIS_USERNAME');
         const password = configService.get('REDIS_PASSWORD');
-        const store = await redisStore({
-          url: `redis://${host}:${port}/${db}`,
-          username,
-          password,
-        });
+        const url = `redis://${host}:${port}/${db}`;
+        const store = await redisStore({ url, username, password });
         return { store };
       },
     }),
@@ -49,15 +46,17 @@ import { controllers, HTTPLogger, Auth0Module } from 'src/infa';
         name: 'IDENTITY_SERVICE',
         useFactory: (configService: ConfigService) => {
           const url = `${configService.get('IDENTITY_SERVICE_URL') || 'localhost:50051'}`;
-          const protoDir = `${configService.get('PROTO_DIR') || path.resolve(__dirname, '../../../protos')}`;
+          const protoDir =
+            configService.get('PROTO_DIR') ||
+            path.resolve(__dirname, '../../../protos');
+
           Logger.log(`Identity Service URL used: ${url}`, 'ClientsModule');
+
           return {
             transport: Transport.GRPC,
             options: {
               url,
               credentials: grpc.credentials.createSsl(),
-              maxSendMessageLength: 1024 * 1024 * 2000, // 100MB
-              maxReceiveMessageLength: 1024 * 1024 * 2000, // 100MB
               package: 'identity',
               protoPath: ['identity.proto'],
               loader: {
@@ -82,21 +81,3 @@ export class AppModule implements NestModule {
     consumer.apply(HTTPLogger).forRoutes('*');
   }
 }
-
-// {
-//   name: 'IDENTITY_SERVICE',
-//   transport: Transport.GRPC,
-//   options: {
-//     url: 'localhost:50051',
-//     package: 'identity',
-//     protoPath: ['identity.proto'],
-//     loader: {
-//       keepCase: true,
-//       longs: String,
-//       enums: String,
-//       defaults: true,
-//       oneofs: true,
-//       includeDirs: [path.resolve(__dirname, '../../../protos')],
-//     },
-//   },
-// },
