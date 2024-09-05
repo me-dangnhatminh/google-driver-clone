@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { Logger, MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import { TerminusModule } from '@nestjs/terminus';
@@ -7,6 +7,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { HttpModule } from '@nestjs/axios';
 import { redisStore } from 'cache-manager-redis-yet';
 import * as path from 'path';
+import * as grpc from '@grpc/grpc-js';
 
 import { controllers, HTTPLogger, Auth0Module } from 'src/infa';
 
@@ -49,10 +50,14 @@ import { controllers, HTTPLogger, Auth0Module } from 'src/infa';
         useFactory: (configService: ConfigService) => {
           const url = `${configService.get('IDENTITY_SERVICE_URL') || 'localhost:50051'}`;
           const protoDir = `${configService.get('PROTO_DIR') || path.resolve(__dirname, '../../../protos')}`;
+          Logger.log(`Identity Service URL used: ${url}`, 'ClientsModule');
           return {
             transport: Transport.GRPC,
             options: {
               url,
+              credentials: grpc.credentials.createSsl(),
+              maxSendMessageLength: 1024 * 1024 * 2000, // 100MB
+              maxReceiveMessageLength: 1024 * 1024 * 2000, // 100MB
               package: 'identity',
               protoPath: ['identity.proto'],
               loader: {

@@ -38,6 +38,7 @@ http:
       rule: Host(`identity-grpc.{{env "BASE_DOMAIN"}}`)
       service: identity-grpc
       entrypoints: https
+      tls: {}
 
   services:
     identity-api:
@@ -47,4 +48,4 @@ http:
     identity-grpc:
       loadBalancer:
         servers:
-          - url: http://172.17.0.1:50051
+          - url: h2c://172.17.0.1:50051

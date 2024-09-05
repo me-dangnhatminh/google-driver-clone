@@ -3,6 +3,7 @@ import { Logger } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { ReflectionService } from '@grpc/reflection';
 import { ConfigService } from '@nestjs/config';
+import * as grpc from '@grpc/grpc-js';
 import * as path from 'path';
 
 import { AppModule } from './app.module';
@@ -43,7 +44,6 @@ async function bootstrap() {
     options: {
       package: 'identity',
       protoPath: ['identity.proto'],
-      url: `${host}:${50051}`,
       loader: {
         keepCase: true,
         longs: String,
@@ -52,19 +52,30 @@ async function bootstrap() {
         oneofs: true,
         includeDirs: [path.resolve(__dirname, '../../../protos')],
       },
-      onLoadPackageDefinition(pkg, server) {
-        new ReflectionService(pkg).addToServer(server);
+      onLoadPackageDefinition: (pkg, server: grpc.Server) => {
+        server.bindAsync(
+          '0.0.0.0:50051',
+          grpc.ServerCredentials.createInsecure(),
+          (err, port) => {
+            if (err) return logger.error(err);
+            logger.log(`gRPC listening on: ${port}`);
+          },
+        );
+
+        const reflection = new ReflectionService(pkg);
+        return reflection.addToServer(server);
       },
     },
   });
 
   const doc = setupSwagger(app).docPrefix;
   await app.startAllMicroservices();
-  await app.listen(port, host);
+  await app.listen(port, host).then(() => {
+    logger.log(`${appName} is running on http://${host}:${port}`);
+    logger.log(`Documentation is running on http://${host}:${port}/${doc}`);
+  });
 
-  logger.log(`GRPC Server is running on ${host}:${50051}`);
-  logger.log(`${appName} is running on http://${host}:${port}`);
-  logger.log(`Documentation is running on http://${host}:${port}/${doc}`);
+  return app;
 }
 
 bootstrap();
