@@ -6,38 +6,39 @@ import { ConfigService } from '@nestjs/config';
 import * as grpc from '@grpc/grpc-js';
 import * as path from 'path';
 
+import { AppConfig, Config, CorsConfig, GrpcConfig } from './config';
+
 import { AppModule } from './app.module';
 import setupSwagger from './infa/docs';
 import winston from './logger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { logger: winston });
-  const configService = app.get(ConfigService);
+  const configService = app.get(ConfigService<Config, true>);
   const logger = new Logger('bootstrap');
 
-  const nodeEnv = configService.get('NODE_ENV') || 'development';
-  const appName = configService.get('APP_NAME') || 'App';
-  const host = configService.get('HOST') || '0.0.0.0';
-  const port = configService.get('PORT') || 3000;
-  const allowedOrigins: Set<string> =
-    `${configService.get('ALLOWED_ORIGINS') || ''}`
-      .split(',')
-      .map((origin) => origin.trim())
-      .reduce((acc, origin) => {
-        acc.add(origin);
-        return acc;
-      }, new Set<string>());
+  const appConfig = configService.get<AppConfig>('app');
+  const corsConfig = configService.get<CorsConfig>('cors');
+  const grpcConfig = configService.get<GrpcConfig>('grpc');
 
   app.setGlobalPrefix('api');
-  app.enableCors({
-    origin: (origin, callback) => {
-      if (nodeEnv === 'development' || !origin) return callback(null, true);
-      if (allowedOrigins.has(origin)) return callback(null, true);
-      return callback(new Error('Not allowed by CORS'));
-    },
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true,
-  });
+
+  if (corsConfig.enabled) {
+    const originMap: Set<string> = new Set<string>();
+    corsConfig.origin
+      .split(',')
+      .map((origin) => origin.trim())
+      .forEach(originMap.add, originMap);
+    app.enableCors({
+      origin: (origin, callback) => {
+        const allowed = corsConfig.origin === '*' || originMap.has(origin);
+        if (allowed) return callback(null, true);
+        return callback(new Error('Not allowed by CORS'));
+      },
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+      credentials: true,
+    });
+  }
 
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.GRPC,
@@ -50,15 +51,15 @@ async function bootstrap() {
         enums: String,
         defaults: true,
         oneofs: true,
-        includeDirs: [path.resolve(__dirname, '../../../protos')],
+        includeDirs: [path.resolve(__dirname, '../../../protos')], // TODO: add config
       },
       onLoadPackageDefinition: (pkg, server: grpc.Server) => {
         server.bindAsync(
-          '0.0.0.0:50051',
+          `${grpcConfig.host}:${grpcConfig.port}`,
           grpc.ServerCredentials.createInsecure(),
           (err, port) => {
             if (err) return logger.error(err);
-            logger.log(`gRPC listening on: ${port}`);
+            logger.log(`gRPC listening on ${port}`);
           },
         );
 
@@ -70,9 +71,10 @@ async function bootstrap() {
 
   const doc = setupSwagger(app).docPrefix;
   await app.startAllMicroservices();
-  await app.listen(port, host).then(() => {
-    logger.log(`${appName} is running on http://${host}:${port}`);
-    logger.log(`Documentation is running on http://${host}:${port}/${doc}`);
+  await app.listen(appConfig.port, appConfig.host).then(() => {
+    logger.log(`${appConfig.name} is running`);
+    logger.log(`Documentation is running on ${doc}`);
+    logger.log(`REST API is running on ${appConfig.host}:${appConfig.port}`);
   });
 
   return app;

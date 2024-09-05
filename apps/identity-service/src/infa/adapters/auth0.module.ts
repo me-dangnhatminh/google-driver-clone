@@ -17,8 +17,8 @@ export class Auth0Module {
           provide: ManagementClient,
           useValue: new ManagementClient({
             domain: options.domain,
-            clientId: options.clientId,
-            clientSecret: options.clientSecret,
+            clientId: options.clientId ?? '',
+            clientSecret: options.clientSecret ?? '',
           }),
         },
       ],

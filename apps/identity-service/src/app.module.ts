@@ -10,11 +10,13 @@ import * as path from 'path';
 import * as grpc from '@grpc/grpc-js';
 
 import { controllers, HTTPLogger, Auth0Module } from 'src/infa';
+import config, { Config, RedisConfig } from 'src/config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: ['config/envs/.env'],
+      envFilePath: ['.env', '.env.local'],
+      load: config,
       expandVariables: true,
       isGlobal: true,
       cache: true,
@@ -22,20 +24,21 @@ import { controllers, HTTPLogger, Auth0Module } from 'src/infa';
     TerminusModule,
     HttpModule,
     Auth0Module.forRoot({
-      domain: process.env.AUTH0_DOMAIN,
+      domain: process.env.AUTH0_DOMAIN ?? '',
       clientId: process.env.AUTH0_CLIENT_ID,
       clientSecret: process.env.AUTH0_SECRET,
     }),
     CacheModule.register({
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => {
-        const db = configService.get('REDIS_DB') || 0;
-        const host = configService.get('REDIS_HOST') || 'localhost';
-        const port = configService.get('REDIS_PORT') || 6379;
-        const username = configService.get('REDIS_USERNAME');
-        const password = configService.get('REDIS_PASSWORD');
-        const url = `redis://${host}:${port}/${db}`;
-        const store = await redisStore({ url, username, password });
+      useFactory: async (configService: ConfigService<Config, true>) => {
+        const redis = configService.get<RedisConfig>('redis');
+        const url = `redis://${redis.host}:${redis.port}/${redis.db}`;
+        const store = await redisStore({
+          url,
+          username: redis.username,
+          password: redis.password,
+        });
+        Logger.log(`Redis connected: ${url}`, CacheModule.name);
         return { store };
       },
     }),
@@ -45,13 +48,12 @@ import { controllers, HTTPLogger, Auth0Module } from 'src/infa';
         inject: [ConfigService],
         name: 'IDENTITY_SERVICE',
         useFactory: (configService: ConfigService) => {
-          const url = `${configService.get('IDENTITY_SERVICE_URL') || 'localhost:50051'}`;
+          const url = configService.get('svcUrl.identity.url');
           const protoDir =
             configService.get('PROTO_DIR') ||
             path.resolve(__dirname, '../../../protos');
 
-          Logger.log(`Identity Service URL used: ${url}`, 'ClientsModule');
-
+          Logger.log(`Identity Service URL used: ${url}`, ClientsModule.name);
           return {
             transport: Transport.GRPC,
             options: {
@@ -74,7 +76,6 @@ import { controllers, HTTPLogger, Auth0Module } from 'src/infa';
     ]),
   ],
   controllers,
-  providers: [],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
