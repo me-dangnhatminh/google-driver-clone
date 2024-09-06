@@ -20,6 +20,12 @@ http:
           - /api
 
   routers:
+    wordpress:
+      rule: Host(`wordpress.{{env "BASE_DOMAIN"}}`)
+      service: wordpress
+      entrypoints: https
+      tls: {}
+
     dashboard:
       rule: Host(`traefik.{{env "BASE_DOMAIN"}}`)
       service: api@internal
@@ -49,3 +55,7 @@ http:
       loadBalancer:
         servers:
           - url: h2c://172.17.0.1:50051
+    wordpress:
+      loadBalancer:
+        servers:
+          - url: http://172.17.0.1:8000

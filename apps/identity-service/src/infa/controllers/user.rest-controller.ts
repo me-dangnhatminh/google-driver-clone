@@ -1,14 +1,26 @@
-import { Body, Controller, Get, Inject, Param, Post } from '@nestjs/common';
-import { ClientGrpc } from '@nestjs/microservices';
-import { ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+
+import { AuthorizedGuard, PermissionGuard, Permissions } from 'src/infa/guards';
 
 @Controller('users')
+@Permissions('manage:users')
+@UseGuards(AuthorizedGuard, PermissionGuard)
 @ApiTags('users')
+@ApiBearerAuth()
 export class UserRESTController {
   private readonly userService: any;
 
-  constructor(@Inject('IDENTITY_SERVICE') private readonly client: ClientGrpc) {
-    this.userService = this.client.getService<any>('UserService');
+  constructor(@Inject('GRPC_CLIENT_SERVICE') private readonly client: any) {
+    this.userService = this.client.getService('UserService');
   }
 
   @Get()

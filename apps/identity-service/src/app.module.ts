@@ -47,7 +47,7 @@ import config, { Config, RedisConfig } from 'src/config';
     ClientsModule.registerAsync([
       {
         inject: [ConfigService],
-        name: 'IDENTITY_SERVICE',
+        name: 'GRPC_CLIENT_SERVICE',
         useFactory: (configService: ConfigService) => {
           const url = configService.get('svcUrl.identity.url');
           const protoDir =
