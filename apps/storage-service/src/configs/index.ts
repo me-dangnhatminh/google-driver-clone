@@ -1,7 +1,10 @@
 export * from './app.config';
-export * from './rmq.config';
 
-import AppConfig from './app.config';
-import RMQConfig from './rmq.config';
+import appConfig, { AppConfig } from './app.config';
 
-export default [AppConfig, RMQConfig];
+export type Configs = {
+  app: AppConfig;
+};
+
+export const configs = [appConfig];
+export default configs;

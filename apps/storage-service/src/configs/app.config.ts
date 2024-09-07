@@ -1,15 +1,22 @@
+import { registerAs } from '@nestjs/config';
 import { z } from 'zod';
 
-const AppConfigValidator = z.object({
-  NODE_ENV: z
-    .enum(['development', 'production', 'test'])
-    .default('development'),
-  APP_NAME: z.string().default('storage-service'),
-  APP_HOST: z.string().default('0.0.0.0'),
-  APP_PORT: z.coerce.number().default(9004),
-  HTTP_URL: z.string().default('http://localhost:9004'),
+const appConfigSchema = z.object({
+  name: z.string().default('App'),
+  port: z.coerce.number().default(3000),
+  host: z.string().default('0.0.0.0'),
 });
 
-export type AppConfig = z.infer<typeof AppConfigValidator>;
+export type AppConfig = z.infer<typeof appConfigSchema>;
+export const appConfig = registerAs('app', () => {
+  const valid = appConfigSchema.safeParse({
+    name: process.env.APP_NAME,
+    port: process.env.APP_PORT,
+    host: process.env.APP_HOST,
+  });
+  if (valid.success) return valid.data;
+  const msg = valid.error.errors.map((err) => err.message).join(', ');
+  throw new Error('Invalid app config: ' + msg);
+});
 
-export default () => AppConfigValidator.parse(process.env);
+export default appConfig;
