@@ -5,13 +5,26 @@ package identity;
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 
+// =========== AUTH ===========
+service AuthService {
+  rpc verifyToken(VerifyTokenReq) returns (VerifyTokenRes);
+}
+
+message VerifyTokenReq {
+  string token = 1;
+}
+
+message VerifyTokenRes {}
+
+// =========== USER ===========
+
 service UserService {
   rpc getById(GetByIdReq) returns (UserDTO);
   rpc getByEmail(GetByEmailReq) returns (UserDTO);
   rpc create(CreateUserReq) returns (UserDTO);
   rpc update(UpdateUserReq) returns (UserDTO);
   rpc delete(DeleteUserReq) returns (google.protobuf.Empty);
-  rpc list(PaginationOptions) returns (UserListDTO);
+  rpc list(PaginationOptions) returns (stream UserListDTO);
 }
 
 message UserDTO {
@@ -54,6 +67,6 @@ message DeleteUserReq {
 }
 
 message PaginationOptions {
-  optional string cursor = 1;
-  optional int32 limit = 2;
+  optional int32 page = 2;
+  optional int32 limit = 3;
 }

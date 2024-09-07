@@ -8,25 +8,40 @@ export class UserGrpcController {
   constructor(private readonly userManagement: ManagementClient) {}
 
   @GrpcMethod('UserService', 'list')
-  list() {
-    const fetch = this.userManagement.users.getAll({});
-    return rx.from(fetch).pipe(
-      rx.map((res) => res.data),
-      rx.map((users) =>
-        users.map((u) => ({
+  list(request: any) {
+    const subject = new rx.Subject();
+
+    const limit = request.limit || 10;
+    let page = 0;
+    let loadedLength = 0;
+
+    const get = async () => {
+      const {
+        data: { users, total },
+      } = await this.userManagement.users.getAll({
+        include_totals: true,
+        page: page++,
+      });
+
+      subject.next({
+        users: users.map((u) => ({
           id: u.user_id,
           name: u.name,
           email: u.email,
           roles: ['user'],
         })),
-      ),
-      rx.map((users) => ({
-        users,
-        cursor: null,
-        limit: 10,
-        total: users.length,
-      })),
-    );
+        total,
+        limit,
+      });
+
+      loadedLength += users.length;
+      if (loadedLength === total) subject.complete();
+      else get();
+    };
+
+    get();
+
+    return rx.from(subject);
   }
 
   @GrpcMethod('UserService', 'getById')

@@ -8,6 +8,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import * as rx from 'rxjs';
 
 import { AuthorizedGuard, PermissionGuard, Permissions } from 'src/infa/guards';
 
@@ -25,7 +26,15 @@ export class UserRESTController {
 
   @Get()
   list() {
-    return this.userService.list({});
+    const users: any[] = [];
+    const fetch: rx.Observable<any> = this.userService.list({});
+    fetch.subscribe({
+      next: ({ users }) => users.push(users),
+      error: (err) => console.error(err),
+      complete: () => users,
+    });
+
+    return fetch;
   }
 
   @Get(':id')
