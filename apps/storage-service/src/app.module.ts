@@ -4,7 +4,6 @@ import { ConfigModule } from '@nestjs/config';
 import configs from 'src/configs';
 import providers from 'src/app';
 
-import { RabbitCQRSModule } from './infa/adapters';
 import { PersistencesModule } from './infa/persistence';
 import { controllers } from './infa/controllers';
 import { HTTPLogger } from './infa/middlewares';
