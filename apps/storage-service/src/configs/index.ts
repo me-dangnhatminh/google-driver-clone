@@ -1,12 +1,18 @@
-export * from './app.config';
+import { ConfigType } from '@nestjs/config';
 
-import appConfig, { AppConfig } from './app.config';
-import dbConfig, { DbConfig } from './db.config';
+export * from './app.config';
+export * from './db.config';
+
+import appConfig from './app.config';
+import dbConfig from './db.config';
+
+const configs = {
+  app: appConfig,
+  db: dbConfig,
+};
+const configArr = Object.values(configs);
 
 export type Configs = {
-  app: AppConfig;
-  db: DbConfig;
+  [K in keyof typeof configs]: ConfigType<(typeof configs)[K]>;
 };
-
-export const configs = [appConfig, dbConfig];
-export default configs;
+export default configArr;

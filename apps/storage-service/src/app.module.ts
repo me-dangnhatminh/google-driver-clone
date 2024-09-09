@@ -17,7 +17,7 @@ import { HTTPLogger } from './infa/middlewares';
       isGlobal: true,
       cache: true,
     }),
-    PersistencesModule,
+    PersistencesModule.forRoot(),
   ],
   controllers,
   providers,
