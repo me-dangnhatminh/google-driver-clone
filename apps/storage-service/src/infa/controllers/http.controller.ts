@@ -1,5 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
-import { StorageService } from 'src/app';
+
+import { StorageService } from 'src/app/services';
 
 @Controller()
 export class HTTPController {

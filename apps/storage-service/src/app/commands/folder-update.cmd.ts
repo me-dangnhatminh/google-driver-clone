@@ -9,7 +9,7 @@ import { TransactionHost } from '@nestjs-cls/transactional';
 
 import { Folder } from 'src/domain';
 
-import { UpdateItemDTO } from './cmd.file-update.cmd';
+import { UpdateItemDTO } from './file-update.cmd';
 
 export class FolderUpdate implements ICommand {
   constructor(
