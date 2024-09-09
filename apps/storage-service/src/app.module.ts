@@ -23,25 +23,9 @@ import { HTTPLogger } from './infa/middlewares';
   providers,
 })
 export class AppModule implements NestModule {
+  constructor() {}
+
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(HTTPLogger).forRoutes('*');
   }
 }
-
-// import { Global, Module, Provider } from '@nestjs/common';
-// import { commands, queries, services } from './application';
-// import { adapters, controllers } from './infra';
-// import { CacheModule } from '@nestjs/cache-manager';
-
-// const imports = [CacheModule.register(), ...adapters];
-
-// // =====================
-// const providers: Provider[] = [];
-// providers.push(...queries);
-// providers.push(...commands);
-// providers.push(...services);
-// // =====================
-
-// @Global()
-// @Module({ imports, providers, controllers })
-// export class StorageModule {}

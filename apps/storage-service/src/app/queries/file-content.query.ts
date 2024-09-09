@@ -9,7 +9,7 @@ import { TransactionHost } from '@nestjs-cls/transactional';
 import { PrismaClient, FileRef } from '@prisma/client';
 
 import { fileUtil } from 'src/common';
-import { diskStorage } from 'src/app/services';
+import { StorageDiskService } from '../services';
 
 export class FileContent implements IQuery {
   constructor(
@@ -21,7 +21,10 @@ export class FileContent implements IQuery {
 @QueryHandler(FileContent)
 export class FileContentHandler implements IQueryHandler<FileContent> {
   private readonly tx: PrismaClient;
-  constructor(private readonly txHost: TransactionHost) {
+  constructor(
+    private readonly txHost: TransactionHost,
+    private readonly diskStorage: StorageDiskService,
+  ) {
     this.tx = this.txHost.tx as PrismaClient; // TODO: not shure this run
   }
 
@@ -31,13 +34,13 @@ export class FileContentHandler implements IQueryHandler<FileContent> {
     if (file.ownerId !== asscessorId)
       throw new ForbiddenException('Permission denied');
 
-    const fullpath = diskStorage.getFullPath(fileId);
-    if (!fullpath) {
+    const filePath = this.diskStorage.filePath(fileId);
+    if (!filePath.isExists) {
       this.hardRemoveFile(file);
       throw new NotFoundException('File not found');
     }
 
-    const stream = fs.createReadStream(fullpath);
+    const stream = fs.createReadStream(filePath.fullPath);
     let filename = fileUtil.formatName(file.name);
     filename = encodeURIComponent(filename);
     return new StreamableFile(stream, {

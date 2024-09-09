@@ -5,6 +5,7 @@ export type DbConfig = z.infer<typeof configSchema>;
 export const configName = 'db';
 
 const configSchema = z.object({
+  dbType: z.string().default('postgresql'),
   port: z.coerce.number().default(5432),
   host: z.string().default('localhost'),
   username: z.string().default('postgres'),
@@ -14,6 +15,7 @@ const configSchema = z.object({
 
 export default registerAs(configName, () => {
   const valid = configSchema.safeParse({
+    dbType: process.env.DB_TYPE,
     port: process.env.DB_PORT,
     host: process.env.DB_HOST,
     username: process.env.DB_USERNAME,

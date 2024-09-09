@@ -7,7 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import * as z from 'zod';
-import { apiUtil, fileUtil } from 'src/common';
+import { fileUtil } from 'src/common';
 import { FileRef, FolderInfo, UUID } from 'src/domain';
 
 // import { UserService } from '@app/auth0'; // TODO: ???
@@ -68,7 +68,7 @@ export class FolderContentHandler
   private readonly tx: PrismaClient;
   constructor(
     private readonly txHost: TransactionHost,
-    private readonly userSerivce: any, // TODO: ???
+    // private readonly userSerivce: any, // TODO: ???
   ) {
     this.tx = this.txHost.tx as PrismaClient; // TODO: not shure this run
   }
@@ -115,18 +115,29 @@ export class FolderContentHandler
         });
 
         const userIds = Object.keys(userInfos);
-        const users = await this.userSerivce
-          .listUsers(userIds)
-          .then((users) => {
-            return {
-              lists: users.map((u) => ({
-                id: u.user_id,
-                fullName: u.name,
-                email: u.email,
-                avatarURI: u.picture,
-              })),
-            };
-          });
+        // TODO: implement user service
+        // const users = await this.userSerivce
+        //   .listUsers(userIds)
+        //   .then((users) => {
+        //     return {
+        //       lists: users.map((u) => ({
+        //         id: u.user_id,
+        //         fullName: u.name,
+        //         email: u.email,
+        //         avatarURI: u.picture,
+        //       })),
+        //     };
+        //   });
+
+        const fakedata = [
+          {
+            id: 'fake',
+            fullName: 'fake',
+            email: 'fake',
+            avatarURI: 'fake',
+          },
+        ];
+        const users = { lists: fakedata };
 
         users.lists.forEach((u) => {
           userInfos[u.id] = u;
@@ -135,7 +146,7 @@ export class FolderContentHandler
         files.forEach((v, idx, arr) => {
           arr[idx]['owner'] = userInfos[v.ownerId];
           const isImg = fileUtil.isImg(v.contentType);
-          if (isImg) arr[idx]['thumbnail'] = apiUtil.createThumbnailURL(v.id);
+          if (isImg) arr[idx]['thumbnail'] = 'TODO: createThumbnailURL';
         });
 
         folders.forEach((v, idx, arr) => {

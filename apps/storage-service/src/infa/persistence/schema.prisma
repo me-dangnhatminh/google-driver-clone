@@ -1,7 +1,7 @@
-datasource db {
-  provider = "postgresql"
-  url      = env("CONNECTION_STRING")
-}
+// datasource db {
+//   provider = "postgresql"
+//   url      = env("CONNECTION_STRING")
+// }
 
 generator client {
   provider = "prisma-client-js"
