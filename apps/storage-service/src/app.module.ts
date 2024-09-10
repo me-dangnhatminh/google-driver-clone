@@ -1,12 +1,14 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
-import configs from 'src/configs';
+import configs, { Configs } from 'src/configs';
 import providers from 'src/app';
 
 import { PersistencesModule } from './infa/persistence';
 import { controllers } from './infa/controllers';
 import { HTTPLogger } from './infa/middlewares';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { CqrsModule } from '@nestjs/cqrs';
 
 @Module({
   imports: [
@@ -17,7 +19,44 @@ import { HTTPLogger } from './infa/middlewares';
       isGlobal: true,
       cache: true,
     }),
+    CqrsModule,
     PersistencesModule.forRoot(),
+    ClientsModule.registerAsync({
+      clients: [
+        {
+          inject: [ConfigService],
+          name: 'STORAGE_SERVICE',
+          useFactory: (configService: ConfigService<Configs, true>) => {
+            const grpcConfig = configService.get('grpc', { infer: true });
+            return {
+              transport: Transport.GRPC,
+              options: {
+                package: grpcConfig.storage.package,
+                protoPath: grpcConfig.storage.protoPath,
+                url: grpcConfig.storage.url,
+                loader: grpcConfig.loader,
+              },
+            };
+          },
+        },
+        {
+          inject: [ConfigService],
+          name: 'IDENTITY_SERVICE',
+          useFactory: (configService: ConfigService<Configs, true>) => {
+            const grpcConfig = configService.get('grpc', { infer: true });
+            return {
+              transport: Transport.GRPC,
+              options: {
+                package: grpcConfig.identity.package,
+                protoPath: grpcConfig.identity.protoPath,
+                loader: grpcConfig.loader,
+                url: grpcConfig.identity.url,
+              },
+            };
+          },
+        },
+      ],
+    }),
   ],
   controllers,
   providers,

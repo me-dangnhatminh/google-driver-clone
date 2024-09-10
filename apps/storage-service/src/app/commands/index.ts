@@ -7,6 +7,11 @@ export * from './file-update.cmd';
 export * from './file-add.cmd';
 export * from './file-upload.cmd';
 export * from './file-update.cmd';
+
+export * from './folder-update.cmd';
+export * from './folder-add.cmd';
+export * from './folder-create.cmd';
+
 export * from './item-hard-delete.cmd';
 
 export const commands = [

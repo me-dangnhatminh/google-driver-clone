@@ -7,4 +7,13 @@ export class StorageService {
   getHello(): string {
     return 'Hello World!';
   }
+
+  getMyStorage(ownerId: string) {
+    return {
+      ownerId,
+      rootId: 'root',
+      folders: [],
+      files: [],
+    };
+  }
 }

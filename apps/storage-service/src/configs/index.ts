@@ -5,10 +5,12 @@ export * from './db.config';
 
 import appConfig from './app.config';
 import dbConfig from './db.config';
+import grpcConfig from './grpc.config';
 
 const configs = {
   app: appConfig,
   db: dbConfig,
+  grpc: grpcConfig,
 };
 const configArr = Object.values(configs);
 

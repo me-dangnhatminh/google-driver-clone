@@ -1,4 +1,4 @@
-import { HTTPController } from './http.controller';
-import { TCPController } from './tcp.controller';
+import { ContentRestController } from './content.rest-controller';
+import { StorageRestController } from './storage.rest-controller';
 
-export const controllers = [HTTPController, TCPController];
+export const controllers = [ContentRestController, StorageRestController];

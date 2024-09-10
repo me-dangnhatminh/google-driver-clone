@@ -1,0 +1,225 @@
+import { FileRef, FolderInfo, UUID } from 'src/domain';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseFilePipe,
+  Patch,
+  Post,
+  Query,
+  Res,
+  UploadedFile,
+  UploadedFiles,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { Transactional } from '@nestjs-cls/transactional';
+import {
+  FileFieldsInterceptor as FileFields,
+  FileInterceptor as FileField,
+} from '@nestjs/platform-express';
+import { randomUUID as uuid } from 'crypto';
+import * as z from 'zod';
+import { Response } from 'express';
+
+import {
+  DowloadFolder,
+  FileContent,
+  FileUpdate,
+  FolderContent,
+  ItemLabel,
+  UpdateItemDTO,
+  FolderUpdate,
+  FileUpload,
+  HardDeleteItem,
+  ItemHardDelete,
+  FolderCreate,
+  AddFolder,
+  FolderCreateDTO,
+  Zipped,
+  Pagination,
+} from 'src/app';
+
+import { StorageRoutes } from 'src/common';
+
+import { Authenticated, HttpStorage, StorageLoaded } from 'src/infa/guards';
+import { useZodPipe } from 'src/infa/pipes';
+import { HttpUser } from 'src/infa/decorators';
+
+const RootOrKey = z.union([z.literal('root'), UUID]);
+type RootOrKey = Omit<string, 'root'> | 'root';
+
+@Controller()
+@UseGuards(Authenticated, StorageLoaded)
+export class StorageRestController {
+  constructor(
+    private readonly commandBus: CommandBus,
+    private readonly queryBus: QueryBus,
+  ) {}
+
+  @Get(StorageRoutes.STORAGE_DETAIL)
+  @Transactional()
+  storageDetail(@HttpStorage() storage) {
+    return {
+      name: 'My Storage',
+      used: storage.used,
+      total: storage.total,
+    };
+  }
+
+  @Delete(StorageRoutes.DELETE_ITEM)
+  @Transactional()
+  async deleteItem(
+    @HttpStorage('refId') rootId: string,
+    @Param('key', useZodPipe(UUID)) key: string,
+    @Query('type', useZodPipe(ItemHardDelete.shape.type))
+    type: ItemHardDelete['type'],
+  ) {
+    const cmd = new HardDeleteItem(rootId, { type, id: key });
+    await this.commandBus.execute(cmd);
+  }
+
+  // ================================================== //
+  // File controller                                    //
+  // ================================================== //
+  @Post(StorageRoutes.FILE_UPLOAD)
+  @UseInterceptors(FileField('file'))
+  @Transactional()
+  async fileUpload(
+    @HttpUser('sub') userId: string,
+    @HttpStorage('refId') rootId: string,
+    @Param('key', useZodPipe(RootOrKey)) key: RootOrKey,
+    @UploadedFile(new ParseFilePipe({ fileIsRequired: true }))
+    file: Express.Multer.File,
+  ) {
+    const folderId = UUID.parse(key === 'root' ? rootId : key);
+    const item = FileRef.parse({
+      id: file.filename,
+      name: file.originalname,
+      size: file.size,
+      contentType: file.mimetype,
+      ownerId: userId,
+    });
+    const cmd = new FileUpload(rootId, folderId, userId, item);
+    await this.commandBus.execute(cmd);
+  }
+
+  @Get(StorageRoutes.FILE_DOWNLOAD)
+  @Transactional()
+  async fileDownload(
+    @HttpUser('sub') userId: string,
+    @Param('key', useZodPipe(UUID)) fileKey: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const query = new FileContent(fileKey, userId);
+    const result = await this.queryBus.execute(query);
+    res.setHeader('Access-Control-Expose-Headers', [
+      'Content-Disposition',
+      'Content-Type',
+    ]);
+    return result;
+  }
+
+  @Patch(StorageRoutes.FILE_UPDATE)
+  @Transactional()
+  async fileUpdate(
+    @HttpUser('sub') userId: string,
+    @Param('key', useZodPipe(UUID)) key: string,
+    @Body(useZodPipe(UpdateItemDTO)) dto: UpdateItemDTO,
+  ) {
+    const fileId: string = key;
+    const cmd = new FileUpdate(dto, userId, fileId);
+    await this.commandBus.execute(cmd);
+  }
+
+  // ================================================== //
+  // Folder controller                                  //
+  // ================================================== //
+  @Get(StorageRoutes.FOLDER_DETAIL)
+  @Transactional()
+  async getFolder(
+    @HttpUser('sub') userId: string,
+    @HttpStorage('refId') rootId: string,
+    @Query('label', useZodPipe(ItemLabel)) label: ItemLabel,
+    @Param('key', useZodPipe(RootOrKey)) key: RootOrKey,
+    @Query(useZodPipe(Pagination)) pagination: Pagination,
+  ) {
+    const folderId = UUID.parse(key === 'root' ? rootId : key);
+    const query = new FolderContent(
+      rootId,
+      label,
+      folderId,
+      userId,
+      pagination,
+    );
+    return await this.queryBus.execute(query);
+  }
+
+  @Post(StorageRoutes.FOLDER_CREATE)
+  @Transactional()
+  async folderCreate(
+    @HttpUser('sub') userId: string,
+    @HttpStorage('refId') rootId: string,
+    @Body(useZodPipe(FolderCreateDTO)) dto: FolderCreateDTO,
+    @Param('key', useZodPipe(RootOrKey)) key: RootOrKey,
+  ) {
+    const accssorId = userId;
+    const folderId = UUID.parse(key === 'root' ? rootId : key);
+    dto['ownerId'] = userId;
+    const item = FolderInfo.parse({ ...dto, id: uuid(), size: 0 });
+    const cmd = new FolderCreate(folderId, item, accssorId);
+    await this.commandBus.execute(cmd);
+  }
+
+  @Get(StorageRoutes.FOLDER_DOWNLOAD)
+  @Transactional()
+  async downloadFolder(
+    @Param('key', useZodPipe(UUID)) folderId: string,
+    @Res() res: Response,
+  ) {
+    const query = new DowloadFolder(folderId);
+    const zipped: Zipped = await this.queryBus.execute(query);
+    const zip = zipped.zip;
+    const filename = zipped.foldername;
+    res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Length', zipped.totalSize);
+    res.setHeader('Access-Control-Expose-Headers', [
+      'Content-Disposition',
+      'Content-Type',
+    ]);
+    return zip
+      .generateNodeStream({ type: 'nodebuffer', streamFiles: true })
+      .pipe(res);
+  }
+
+  @Patch(StorageRoutes.FOLDER_UPDATE)
+  @Transactional()
+  async folderUpdate(
+    @HttpUser('sub') userId: string,
+    @Param('key', useZodPipe(UUID)) folderId: string,
+    @Body(useZodPipe(UpdateItemDTO)) dto: UpdateItemDTO,
+  ) {
+    const cmd = new FolderUpdate(dto, folderId, userId);
+    await this.commandBus.execute(cmd);
+  }
+
+  @Post(StorageRoutes.FOLDER_UPLOAD)
+  @UseInterceptors(FileFields([{ name: 'files' }], { preservePath: true }))
+  @Transactional()
+  async folderUpload(
+    @HttpUser('sub') userId: string,
+    @HttpStorage('refId') rootId: string,
+    @Param('key', useZodPipe(RootOrKey)) key: RootOrKey,
+    @UploadedFiles(new ParseFilePipe({ fileIsRequired: true }))
+    upload: { files: Express.Multer.File[] },
+  ) {
+    const folderId = UUID.parse(key === 'root' ? rootId : key);
+    const accssorId = userId;
+    const cmd = new AddFolder(folderId, accssorId, upload.files);
+    await this.commandBus.execute(cmd);
+  }
+}

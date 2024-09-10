@@ -1,1 +1,1 @@
-export * from './rabbitmq-cqrs.module';
+export * from './rabbitmq-cqrs.adapter';
