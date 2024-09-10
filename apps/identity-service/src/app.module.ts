@@ -6,17 +6,16 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { HttpModule } from '@nestjs/axios';
 import { redisStore } from 'cache-manager-redis-yet';
-import * as path from 'path';
 import * as grpc from '@grpc/grpc-js';
 
 import { controllers, HTTPLogger, Auth0Module } from 'src/infa';
-import config, { Config, RedisConfig } from 'src/config';
+import configs, { Configs } from 'src/config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       envFilePath: ['.env', '.env.local'],
-      load: config,
+      load: configs,
       expandVariables: true,
       isGlobal: true,
       cache: true,
@@ -25,8 +24,8 @@ import config, { Config, RedisConfig } from 'src/config';
     HttpModule,
     CacheModule.register({
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService<Config, true>) => {
-        const redis = configService.get<RedisConfig>('redis');
+      useFactory: async (configService: ConfigService<Configs, true>) => {
+        const redis = configService.get('redis', { infer: true });
         const url = `redis://${redis.host}:${redis.port}/${redis.db}`;
         const store = await redisStore({
           url,
@@ -44,37 +43,27 @@ import config, { Config, RedisConfig } from 'src/config';
       clientSecret: process.env.AUTH0_SECRET ?? '',
     }),
 
-    ClientsModule.registerAsync([
-      {
-        inject: [ConfigService],
-        name: 'GRPC_CLIENT_SERVICE',
-        useFactory: (configService: ConfigService) => {
-          const url = configService.get('svcUrl.identity.url');
-          const protoDir =
-            configService.get('PROTO_DIR') ||
-            path.resolve(__dirname, '../../../protos');
-
-          Logger.log(`Identity Service URL used: ${url}`, ClientsModule.name);
-          return {
-            transport: Transport.GRPC,
-            options: {
-              url,
-              credentials: grpc.credentials.createSsl(),
-              package: 'identity',
-              protoPath: ['identity.proto'],
-              loader: {
-                includeDirs: [protoDir],
-                keepCase: true,
-                longs: String,
-                enums: String,
-                defaults: true,
-                oneofs: true,
+    ClientsModule.registerAsync({
+      clients: [
+        {
+          inject: [ConfigService],
+          name: 'IDENTITY_SERVICE',
+          useFactory: (configService: ConfigService<Configs, true>) => {
+            const grpcConfig = configService.get('grpc', { infer: true });
+            return {
+              transport: Transport.GRPC,
+              options: {
+                package: grpcConfig.identity.package,
+                credentials: grpc.credentials.createSsl(),
+                protoPath: grpcConfig.identity.protoPath,
+                loader: grpcConfig.loader,
+                url: grpcConfig.identity.url,
               },
-            },
-          };
+            };
+          },
         },
-      },
-    ]),
+      ],
+    }),
   ],
   controllers,
 })

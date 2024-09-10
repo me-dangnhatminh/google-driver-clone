@@ -1,6 +1,9 @@
-import { AddFileHandler } from './file-add.cmd';
+import { FileAddHandler } from './file-add.cmd';
 import { FileUpdateHandler } from './file-update.cmd';
 import { FileUploadHandler } from './file-upload.cmd';
+import { FolderAddHandler } from './folder-add.cmd';
+import { FolderCreateHandler } from './folder-create.cmd';
+import { FolderUpdateHandler } from './folder-update.cmd';
 import { HardDeleteItemHandler } from './item-hard-delete.cmd';
 
 export * from './file-update.cmd';
@@ -15,11 +18,17 @@ export * from './folder-create.cmd';
 export * from './item-hard-delete.cmd';
 
 export const commands = [
-  AddFileHandler,
+  FileAddHandler,
   FileUpdateHandler,
   FileUploadHandler,
   FileUpdateHandler,
+
   HardDeleteItemHandler,
+
+  FolderAddHandler,
+  FolderCreateHandler,
+  FolderUpdateHandler,
+  FolderUpdateHandler,
 ];
 
 export default commands;

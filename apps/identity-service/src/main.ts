@@ -1,27 +1,41 @@
 import { NestFactory } from '@nestjs/core';
-import { Logger } from '@nestjs/common';
+import { INestApplication, Logger } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { ReflectionService } from '@grpc/reflection';
 import { ConfigService } from '@nestjs/config';
 import * as grpc from '@grpc/grpc-js';
-import * as path from 'path';
 
-import { AppConfig, Config, CorsConfig, GrpcConfig } from './config';
-
+import { Configs } from './config';
 import { AppModule } from './app.module';
 import setupSwagger from './infa/docs';
 import winston from './logger';
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { logger: winston });
-  const configService = app.get(ConfigService<Config, true>);
+const connectGRPC = (app: INestApplication) => {
   const logger = new Logger('bootstrap');
+  const configService = app.get(ConfigService<Configs, true>);
 
-  const appConfig = configService.get<AppConfig>('app');
-  const corsConfig = configService.get<CorsConfig>('cors');
-  const grpcConfig = configService.get<GrpcConfig>('grpc');
+  const grpcConfig = configService.get('grpc', { infer: true });
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.GRPC,
+    options: {
+      url: grpcConfig.identity.url,
+      package: grpcConfig.identity.package,
+      protoPath: grpcConfig.identity.protoPath,
 
-  app.setGlobalPrefix('api');
+      loader: grpcConfig.loader,
+      credentials: grpc.ServerCredentials.createInsecure(),
+      onLoadPackageDefinition: (pkg, server: grpc.Server) => {
+        const reflection = new ReflectionService(pkg);
+        return reflection.addToServer(server);
+      },
+    },
+  });
+  logger.log(`gRPC connected: ${grpcConfig.identity.url}`);
+};
+
+const buildCors = (app: INestApplication) => {
+  const configService = app.get(ConfigService<Configs, true>);
+  const corsConfig = configService.get('cors', { infer: true });
 
   if (corsConfig.enabled) {
     const originMap: Set<string> = new Set<string>();
@@ -39,35 +53,19 @@ async function bootstrap() {
       credentials: true,
     });
   }
+};
 
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.GRPC,
-    options: {
-      package: 'identity',
-      protoPath: ['identity.proto'],
-      loader: {
-        keepCase: true,
-        longs: String,
-        enums: String,
-        defaults: true,
-        oneofs: true,
-        includeDirs: [path.resolve(__dirname, '../../../protos')], // TODO: add config
-      },
-      onLoadPackageDefinition: (pkg, server: grpc.Server) => {
-        server.bindAsync(
-          `${grpcConfig.host}:${grpcConfig.port}`,
-          grpc.ServerCredentials.createInsecure(),
-          (err, port) => {
-            if (err) return logger.error(err);
-            logger.log(`gRPC listening on ${port}`);
-          },
-        );
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule, { logger: winston });
+  const configService = app.get(ConfigService<Configs, true>);
+  const logger = new Logger('bootstrap');
 
-        const reflection = new ReflectionService(pkg);
-        return reflection.addToServer(server);
-      },
-    },
-  });
+  const appConfig = configService.get('app', { infer: true });
+
+  app.setGlobalPrefix('api');
+
+  buildCors(app);
+  connectGRPC(app);
 
   const doc = setupSwagger(app).docPrefix;
   await app.startAllMicroservices();

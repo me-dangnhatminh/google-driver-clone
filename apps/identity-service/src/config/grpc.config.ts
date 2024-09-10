@@ -11,12 +11,11 @@ const config = registerAs('grpc', () => {
 
   const protoFiles = glob.sync('**/*.proto', { cwd: includeDir });
   const packageName = 'nest.microservices';
-
   return {
     identity: {
       package: packageName,
       protoPath: protoFiles,
-      url: 'identity-grpc.me-dangnhatminh.id.vn:443',
+      url: '0.0.0.0:50051',
     },
     storage: {
       package: packageName,

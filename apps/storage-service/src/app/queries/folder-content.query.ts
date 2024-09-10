@@ -144,13 +144,24 @@ export class FolderContentHandler
         });
 
         files.forEach((v, idx, arr) => {
-          arr[idx]['owner'] = userInfos[v.ownerId];
+          // arr[idx]['owner'] = userInfos[v.ownerId];
+          arr[idx]['owner'] = {
+            id: 'fake',
+            fullName: 'fake',
+            email: 'fake',
+            avatarURI: 'fake',
+          };
           const isImg = fileUtil.isImg(v.contentType);
           if (isImg) arr[idx]['thumbnail'] = 'TODO: createThumbnailURL';
         });
 
         folders.forEach((v, idx, arr) => {
-          arr[idx]['owner'] = userInfos[v.ownerId];
+          arr[idx]['owner'] = {
+            id: 'fake',
+            fullName: 'fake',
+            email: 'fake',
+            avatarURI: 'fake',
+          };
         });
 
         let nextCursor: any = {};
@@ -167,8 +178,9 @@ export class FolderContentHandler
 
         parent['nextCursor'] = nextCursor;
         parent['content'] = { files, folders };
+        console.log('parent', parent.content.folders);
         return FolderContentResult.parseAsync(parent).catch((err) => {
-          Logger.error(err, 'FolderContentResult parsing error');
+          Logger.error(err, 'FolderContentResult');
           throw err;
         });
       });

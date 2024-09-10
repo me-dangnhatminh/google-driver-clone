@@ -17,10 +17,10 @@ import { AuthorizedGuard, PermissionGuard, Permissions } from 'src/infa/guards';
 @UseGuards(AuthorizedGuard, PermissionGuard)
 @ApiTags('users')
 @ApiBearerAuth()
-export class UserRESTController {
+export class UserRestController {
   private readonly userService: any;
 
-  constructor(@Inject('GRPC_CLIENT_SERVICE') private readonly client: any) {
+  constructor(@Inject('IDENTITY_SERVICE') private readonly client: any) {
     this.userService = this.client.getService('UserService');
   }
 

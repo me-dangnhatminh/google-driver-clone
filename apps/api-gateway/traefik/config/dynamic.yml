@@ -34,28 +34,24 @@ http:
         - auth
       tls: {}
 
-    identity-api:
-      rule: Host(`identity.{{env "BASE_DOMAIN"}}`) && PathPrefix(`/api`)
-      service: identity-api
-      entrypoints: https
-      tls: {}
-
     identity-grpc:
       rule: Host(`identity-grpc.{{env "BASE_DOMAIN"}}`)
       service: identity-grpc
       entrypoints: https
       tls: {}
 
+    storage-grpc:
+      rule: Host(`storage-grpc.{{env "BASE_DOMAIN"}}`)
+      service: storage-grpc
+      entrypoints: https
+      tls: {}
+
   services:
-    identity-api:
-      loadBalancer:
-        servers:
-          - url: http://172.17.0.1:3000
     identity-grpc:
       loadBalancer:
         servers:
           - url: h2c://172.17.0.1:50051
-    wordpress:
+    storage-grpc:
       loadBalancer:
         servers:
-          - url: http://172.17.0.1:8000
+          - url: h2c://172.17.0.1:40051

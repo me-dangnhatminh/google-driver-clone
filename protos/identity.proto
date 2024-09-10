@@ -1,22 +1,15 @@
 syntax = "proto3";
 
-package identity;
+package nest.microservices;
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 
 // =========== AUTH ===========
 service AuthService {
-  rpc verifyToken(VerifyTokenReq) returns (VerifyTokenRes);
+  rpc verifyToken(google.protobuf.Empty) returns (UserDTO);
 }
 
-message VerifyTokenReq {
-  string token = 1;
-}
-
-message VerifyTokenRes {}
-
-// =========== USER ===========
 
 service UserService {
   rpc getById(GetByIdReq) returns (UserDTO);

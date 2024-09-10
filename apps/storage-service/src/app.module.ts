@@ -9,6 +9,8 @@ import { controllers } from './infa/controllers';
 import { HTTPLogger } from './infa/middlewares';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { CqrsModule } from '@nestjs/cqrs';
+import * as grpc from '@grpc/grpc-js';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
@@ -19,6 +21,7 @@ import { CqrsModule } from '@nestjs/cqrs';
       isGlobal: true,
       cache: true,
     }),
+    CacheModule.register({ isGlobal: true }),
     CqrsModule,
     PersistencesModule.forRoot(),
     ClientsModule.registerAsync({
@@ -47,6 +50,7 @@ import { CqrsModule } from '@nestjs/cqrs';
             return {
               transport: Transport.GRPC,
               options: {
+                credentials: grpc.credentials.createSsl(),
                 package: grpcConfig.identity.package,
                 protoPath: grpcConfig.identity.protoPath,
                 loader: grpcConfig.loader,

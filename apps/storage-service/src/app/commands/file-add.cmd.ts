@@ -4,20 +4,20 @@ import { PrismaClient } from '@prisma/client';
 
 import { FileRef } from 'src/domain';
 
-export class AddFile implements ICommand {
+export class FileAdd implements ICommand {
   constructor(
     public readonly folderId: string,
     public readonly item: FileRef,
   ) {}
 }
-@CommandHandler(AddFile)
-export class AddFileHandler implements ICommandHandler<AddFile> {
+@CommandHandler(FileAdd)
+export class FileAddHandler implements ICommandHandler<FileAdd> {
   private readonly tx: PrismaClient;
   constructor(private readonly txHost: TransactionHost) {
     this.tx = this.txHost.tx as PrismaClient; // TODO: not shure this run
   }
 
-  async execute(command: AddFile) {
+  async execute(command: FileAdd) {
     const { folderId, item } = command;
     const folder = await this.tx.folder.findUnique({ where: { id: folderId } });
     if (!folder) throw new Error('Folder not found');
