@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package storage;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// =========== FILE ===========
+service FileService {
+  rpc getFiles(GetFilesRequest) returns (GetFilesResponse);
+}
+
+message GetFilesRequest {
+  optional string folderId = 1;
+}
+
+message GetFilesResponse {
+  repeated FileRef files = 1;
+}
+
+message FileRef {
+  optional string id = 1;
+  string name = 2;
+  optional int64 size = 3;
+  optional google.protobuf.Timestamp createdAt = 4;
+  optional google.protobuf.Timestamp pinnedAt = 5;
+  optional google.protobuf.Timestamp modifiedAt = 6;
+  optional google.protobuf.Timestamp archivedAt = 7;
+
+  optional string ownerId = 8;
+  string contentType = 9;
+  string thumbnail = 10;
+  string description = 11;
+}
+
+message FolderInfo {
+  optional string id = 1;
+  string name = 2;
+  optional google.protobuf.Timestamp createdAt = 3;
+  optional google.protobuf.Timestamp pinnedAt = 4;
+  optional google.protobuf.Timestamp modifiedAt = 5;
+  optional google.protobuf.Timestamp archivedAt = 6;
+
+  optional string ownerId = 7;
+  string description = 8;
+}
+
+message MyStorage {
+  optional string id = 1;
+  optional string ownerId = 2;
+  optional string refId = 3;
+}
