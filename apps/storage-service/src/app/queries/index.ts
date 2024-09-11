@@ -11,4 +11,5 @@ export const queries = [
   FolderContentHandler,
   FolderDownloadHandler,
 ];
+export type Queries = (typeof queries)[number];
 export default queries;

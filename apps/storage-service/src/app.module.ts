@@ -1,5 +1,9 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { CqrsModule } from '@nestjs/cqrs';
+import * as grpc from '@grpc/grpc-js';
+import { CacheModule } from '@nestjs/cache-manager';
 
 import configs, { Configs } from 'src/configs';
 import providers from 'src/app';
@@ -7,10 +11,7 @@ import providers from 'src/app';
 import { PersistencesModule } from './infa/persistence';
 import { controllers } from './infa/controllers';
 import { HTTPLogger } from './infa/middlewares';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { CqrsModule } from '@nestjs/cqrs';
-import * as grpc from '@grpc/grpc-js';
-import { CacheModule } from '@nestjs/cache-manager';
+import { MulterModule } from './infa/adapters';
 
 @Module({
   imports: [
@@ -23,7 +24,8 @@ import { CacheModule } from '@nestjs/cache-manager';
     }),
     CacheModule.register({ isGlobal: true }),
     CqrsModule,
-    PersistencesModule.forRoot(),
+    PersistencesModule,
+    MulterModule,
     ClientsModule.registerAsync({
       clients: [
         {

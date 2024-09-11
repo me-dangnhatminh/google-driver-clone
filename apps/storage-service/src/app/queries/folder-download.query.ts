@@ -1,22 +1,31 @@
 import { TransactionHost } from '@nestjs-cls/transactional';
-import { IQuery, IQueryHandler, QueryHandler } from '@nestjs/cqrs';
+import {
+  IQuery,
+  IQueryHandler,
+  IQueryResult,
+  QueryHandler,
+} from '@nestjs/cqrs';
 import { PrismaClient } from '@prisma/client';
 
 import { BadRequestException } from '@nestjs/common';
-
-import { StorageDiskService } from 'src/app/services';
 
 export class DowloadFolder implements IQuery {
   constructor(public readonly id: string) {}
 }
 
-@QueryHandler(DowloadFolder)
-export class FolderDownloadHandler implements IQueryHandler<DowloadFolder> {
-  private readonly tx: PrismaClient;
+export class DowloadFolderResult implements IQueryResult {
   constructor(
-    private readonly txHost: TransactionHost,
-    private readonly diskStorage: StorageDiskService,
-  ) {
+    public readonly name: string,
+    public readonly flatContent: any,
+  ) {}
+}
+
+@QueryHandler(DowloadFolder)
+export class FolderDownloadHandler
+  implements IQueryHandler<DowloadFolder, DowloadFolderResult>
+{
+  private readonly tx: PrismaClient;
+  constructor(private readonly txHost: TransactionHost) {
     this.tx = this.txHost.tx as PrismaClient; // TODO: not shure this run
   }
 
@@ -51,8 +60,6 @@ export class FolderDownloadHandler implements IQueryHandler<DowloadFolder> {
       },
     });
 
-    // =========================== Build zip ===========================
-    const zipped = await this.diskStorage.buildZipAsync(folder.name, child);
-    return zipped;
+    return new DowloadFolderResult(folder.name, child);
   }
 }

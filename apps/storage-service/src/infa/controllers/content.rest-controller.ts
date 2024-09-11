@@ -15,10 +15,10 @@ import * as sharp from 'sharp';
 import { Response } from 'express';
 
 import { fileUtil } from 'src/common';
-import { StorageDiskService } from 'src/app';
 
 import { Authenticated } from 'src/infa/guards';
 import { useZodPipe } from 'src/infa/pipes';
+import { DiskStorageService } from '../adapters';
 
 const SizeFormat = z.string().regex(/^[1-9]\d{2,3}x[1-9]\d{2,3}$/, {
   message: 'Invalid size format',
@@ -40,7 +40,7 @@ type GetContentQuery = z.infer<typeof GetContentQuery>;
 export class ContentRestController {
   constructor(
     private readonly txHost: TransactionHost,
-    private readonly storageDisk: StorageDiskService,
+    private readonly storageDisk: DiskStorageService,
   ) {}
 
   @Get()

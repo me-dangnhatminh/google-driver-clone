@@ -10,6 +10,7 @@ import {
   Post,
   Query,
   Res,
+  StreamableFile,
   UploadedFile,
   UploadedFiles,
   UseGuards,
@@ -39,15 +40,16 @@ import {
   FolderCreate,
   AddFolder,
   FolderCreateDTO,
-  Zipped,
   Pagination,
 } from 'src/app';
+import fs from 'fs-extra';
 
-import { StorageRoutes } from 'src/common';
+import { fileUtil, StorageRoutes } from 'src/common';
 
 import { Authenticated, HttpStorage, StorageLoaded } from 'src/infa/guards';
 import { useZodPipe } from 'src/infa/pipes';
 import { HttpUser } from 'src/infa/decorators';
+import { DiskStorageService } from '../adapters';
 
 const RootOrKey = z.union([z.literal('root'), UUID]);
 type RootOrKey = Omit<string, 'root'> | 'root';
@@ -58,6 +60,7 @@ export class StorageRestController {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
+    private readonly storageService: DiskStorageService,
   ) {}
 
   @Get(StorageRoutes.STORAGE_DETAIL)
@@ -115,7 +118,23 @@ export class StorageRestController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const query = new FileContent(fileKey, userId);
-    const result = await this.queryBus.execute(query);
+    const result: FileRef = await this.queryBus.execute(query);
+
+    let filename: string = result.name;
+    const contentType: string = result.contentType;
+    const filePath = this.storageService.filePath(fileKey);
+    if (!filePath.isExists || !filename) {
+      throw new Error('File not found: please contact admin');
+    }
+
+    const stream = fs.createReadStream(filePath.fullPath);
+    filename = fileUtil.formatName(filename);
+    filename = encodeURIComponent(filename);
+    return new StreamableFile(stream, {
+      disposition: `attachment; filename="${filename}"`,
+      type: contentType,
+    });
+
     res.setHeader('Access-Control-Expose-Headers', [
       'Content-Disposition',
       'Content-Type',
@@ -181,7 +200,8 @@ export class StorageRestController {
     @Res() res: Response,
   ) {
     const query = new DowloadFolder(folderId);
-    const zipped: Zipped = await this.queryBus.execute(query);
+    const { name, flatContent } = await this.queryBus.execute(query);
+    const zipped = await this.storageService.buildZipAsync(name, flatContent);
     const zip = zipped.zip;
     const filename = zipped.foldername;
     res.setHeader('Content-Disposition', `attachment; filename=${filename}`);

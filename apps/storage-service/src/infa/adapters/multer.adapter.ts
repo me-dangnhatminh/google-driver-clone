@@ -1,16 +1,33 @@
-import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as path from 'path';
-import * as fs from 'fs-extra';
+import {
+  MulterModuleOptions,
+  MulterOptionsFactory,
+} from '@nestjs/platform-express';
+import {
+  CallHandler,
+  ExecutionContext,
+  Injectable,
+  Module,
+  NestInterceptor,
+  Logger,
+} from '@nestjs/common';
+import { MulterModule as NestMulter } from '@nestjs/platform-express';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { Request } from 'express';
 import Decimal from 'decimal.js';
 import * as JSZip from 'jszip';
+import { randomUUID as uuid } from 'crypto';
+import * as RxJs from 'rxjs';
+import * as multer from 'multer';
+import * as path from 'path';
+import * as fs from 'fs-extra';
+
 import { fileUtil } from 'src/common';
 
 @Injectable()
-export class StorageDiskService {
-  private readonly logger = new Logger(StorageDiskService.name);
-
-  // configs
+export class DiskStorageService implements MulterOptionsFactory {
+  private readonly logger = new Logger(DiskStorageService.name);
+  private readonly destination: string;
   private readonly rootDir: string;
   private readonly folderDefaultName = 'Untitled';
   private readonly fileDefaultName = 'Untitled';
@@ -38,8 +55,40 @@ export class StorageDiskService {
     }
 
     this.rootDir = rootDir;
+    this.destination = rootDir;
     const msg = `Root dir: ${rootDir}\nStatus (exites/created): ${isExists ? 'exists' : 'created'}`;
     this.logger.log(msg);
+  }
+
+  createMulterOptions(): MulterModuleOptions {
+    return {
+      storage: multer.diskStorage({
+        destination: (req, file, cb) => {
+          Object.assign(file, { destination: this.destination });
+          return cb(null, this.destination);
+        },
+        filename: (req: Request, file: Express.Multer.File, cb) => {
+          const { destination } = file;
+
+          const id = uuid();
+          const filename = `${id}`;
+          const fullpath = path.join(destination, filename);
+          file.path = fullpath;
+
+          /**
+           * req.setMaxListeners(Infinity)
+           * (node:8908) MaxListenersExceededWarning: Possible EventEmitter memory leak detected
+           */
+          req.setMaxListeners(Infinity);
+          const rollback = () =>
+            req.on(ROLLBACK_EVENT, () => fs.unlink(file.path));
+          file.stream.on('end', rollback);
+          // don't listen req.on "close" or "error"
+
+          cb(null, filename);
+        },
+      }),
+    };
   }
 
   filePath(name: string) {
@@ -132,5 +181,35 @@ export class StorageDiskService {
     };
   }
 }
+export type Zipped = Awaited<ReturnType<DiskStorageService['buildZipAsync']>>;
 
-export type Zipped = Awaited<ReturnType<StorageDiskService['buildZipAsync']>>;
+@Module({
+  providers: [DiskStorageService],
+  exports: [DiskStorageService],
+})
+class DiskStorageModule {}
+
+const ROLLBACK_EVENT = Symbol('file-rollback');
+@Injectable()
+export class FileRollback implements NestInterceptor {
+  intercept(
+    context: ExecutionContext,
+    next: CallHandler,
+  ): RxJs.Observable<unknown> {
+    const request: Request = context.switchToHttp().getRequest();
+    const emitRollback = (err: unknown) => request.emit(ROLLBACK_EVENT, err);
+    return next.handle().pipe(RxJs.tap({ error: emitRollback }));
+  }
+}
+@Module({
+  imports: [
+    DiskStorageModule,
+    NestMulter.registerAsync({
+      imports: [DiskStorageModule],
+      useExisting: DiskStorageService,
+    }),
+  ],
+  providers: [{ provide: APP_INTERCEPTOR, useClass: FileRollback }],
+  exports: [DiskStorageModule, NestMulter],
+})
+export class MulterModule {}

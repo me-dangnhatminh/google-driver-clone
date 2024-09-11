@@ -10,16 +10,9 @@ import * as z from 'zod';
 import { fileUtil } from 'src/common';
 import { FileRef, FolderInfo, UUID } from 'src/domain';
 
-// import { UserService } from '@app/auth0'; // TODO: ???
-
 // =========================== DTOs =========================== //
 export const ItemLabel = z.enum(['pinned', 'archived', 'my']).default('my');
-const Owner = z.object({
-  id: z.string(),
-  fullName: z.string(),
-  email: z.string(),
-  avatarURI: z.string().optional(),
-});
+
 export const Pagination = z.object({
   limit: z.number().int().min(10).max(50).default(10),
   fileCursor: UUID.optional(),
@@ -28,8 +21,8 @@ export const Pagination = z.object({
 
 export const FolderContentResult = FolderInfo.extend({
   content: z.object({
-    files: z.array(FileRef.extend({ owner: Owner.optional() }).optional()),
-    folders: z.array(FolderInfo.extend({ owner: Owner.optional() }).optional()),
+    files: z.array(FileRef.optional()),
+    folders: z.array(FolderInfo.optional()),
   }),
   nextCursor: z
     .object({
@@ -53,24 +46,14 @@ export class FolderContent implements IQuery {
   ) {}
 }
 
-// =========================== Query =========================== //
-type OwnerDTO = {
-  id: string;
-  fullName: string;
-  email: string | null;
-  avatarURI: string | null;
-};
-
 @QueryHandler(FolderContent)
 export class FolderContentHandler
   implements IQueryHandler<FolderContent, FolderContentResult>
 {
   private readonly tx: PrismaClient;
-  constructor(
-    private readonly txHost: TransactionHost,
-    // private readonly userSerivce: any, // TODO: ???
-  ) {
-    this.tx = this.txHost.tx as PrismaClient; // TODO: not shure this run
+
+  constructor(private readonly txHost: TransactionHost) {
+    this.tx = this.txHost.tx;
   }
 
   execute(strategyQuery: FolderContent) {
@@ -103,65 +86,11 @@ export class FolderContentHandler
           throw new ForbiddenException(`You don't have access to this folder`);
         const { folders, ...parent } = result;
 
-        const userInfos: Record<string, OwnerDTO | null> = {};
-
-        folders.forEach((f) => {
-          if (!userInfos[f.ownerId]) userInfos[f.ownerId] = null;
-        });
-
-        const files = result.files.map((f) => {
-          if (!userInfos[f.file.ownerId]) userInfos[f.file.ownerId] = null;
-          return f.file;
-        });
-
-        const userIds = Object.keys(userInfos);
-        // TODO: implement user service
-        // const users = await this.userSerivce
-        //   .listUsers(userIds)
-        //   .then((users) => {
-        //     return {
-        //       lists: users.map((u) => ({
-        //         id: u.user_id,
-        //         fullName: u.name,
-        //         email: u.email,
-        //         avatarURI: u.picture,
-        //       })),
-        //     };
-        //   });
-
-        const fakedata = [
-          {
-            id: 'fake',
-            fullName: 'fake',
-            email: 'fake',
-            avatarURI: 'fake',
-          },
-        ];
-        const users = { lists: fakedata };
-
-        users.lists.forEach((u) => {
-          userInfos[u.id] = u;
-        });
+        const files = result.files.map((f) => f.file);
 
         files.forEach((v, idx, arr) => {
-          // arr[idx]['owner'] = userInfos[v.ownerId];
-          arr[idx]['owner'] = {
-            id: 'fake',
-            fullName: 'fake',
-            email: 'fake',
-            avatarURI: 'fake',
-          };
           const isImg = fileUtil.isImg(v.contentType);
           if (isImg) arr[idx]['thumbnail'] = 'TODO: createThumbnailURL';
-        });
-
-        folders.forEach((v, idx, arr) => {
-          arr[idx]['owner'] = {
-            id: 'fake',
-            fullName: 'fake',
-            email: 'fake',
-            avatarURI: 'fake',
-          };
         });
 
         let nextCursor: any = {};
@@ -178,7 +107,6 @@ export class FolderContentHandler
 
         parent['nextCursor'] = nextCursor;
         parent['content'] = { files, folders };
-        console.log('parent', parent.content.folders);
         return FolderContentResult.parseAsync(parent).catch((err) => {
           Logger.error(err, 'FolderContentResult');
           throw err;

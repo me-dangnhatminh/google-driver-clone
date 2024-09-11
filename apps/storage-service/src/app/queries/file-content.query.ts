@@ -1,15 +1,7 @@
 import { IQuery, IQueryHandler, QueryHandler } from '@nestjs/cqrs';
-import {
-  ForbiddenException,
-  NotFoundException,
-  StreamableFile,
-} from '@nestjs/common';
-import * as fs from 'fs-extra';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { TransactionHost } from '@nestjs-cls/transactional';
 import { PrismaClient, FileRef } from '@prisma/client';
-
-import { fileUtil } from 'src/common';
-import { StorageDiskService } from '../services';
 
 export class FileContent implements IQuery {
   constructor(
@@ -19,12 +11,9 @@ export class FileContent implements IQuery {
 }
 
 @QueryHandler(FileContent)
-export class FileContentHandler implements IQueryHandler<FileContent> {
+export class FileContentHandler implements IQueryHandler<FileContent, FileRef> {
   private readonly tx: PrismaClient;
-  constructor(
-    private readonly txHost: TransactionHost,
-    private readonly diskStorage: StorageDiskService,
-  ) {
+  constructor(private readonly txHost: TransactionHost) {
     this.tx = this.txHost.tx as PrismaClient; // TODO: not shure this run
   }
 
@@ -33,20 +22,7 @@ export class FileContentHandler implements IQueryHandler<FileContent> {
     if (!file) throw new NotFoundException('File not found');
     if (file.ownerId !== asscessorId)
       throw new ForbiddenException('Permission denied');
-
-    const filePath = this.diskStorage.filePath(fileId);
-    if (!filePath.isExists) {
-      this.hardRemoveFile(file);
-      throw new NotFoundException('File not found');
-    }
-
-    const stream = fs.createReadStream(filePath.fullPath);
-    let filename = fileUtil.formatName(file.name);
-    filename = encodeURIComponent(filename);
-    return new StreamableFile(stream, {
-      disposition: `attachment; filename="${filename}"`,
-      type: file.contentType,
-    });
+    return file;
   }
 
   private hardRemoveFile(item: FileRef) {

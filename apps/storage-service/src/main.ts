@@ -34,7 +34,7 @@ const connectGRPC = (app: INestApplication) => {
 };
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<INestApplication>(AppModule);
   app.setGlobalPrefix('api');
   app.enableCors({
     origin: (origin, callback) => callback(null, true),
