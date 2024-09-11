@@ -2,22 +2,32 @@ import { TransactionHost } from '@nestjs-cls/transactional';
 import { CommandHandler, ICommand, ICommandHandler } from '@nestjs/cqrs';
 import { PrismaClient } from '@prisma/client';
 
-import { FileRef } from 'src/domain';
+import { FileRef, UUID } from 'src/domain';
 
-export class FileAdd implements ICommand {
-  constructor(
-    public readonly folderId: string,
-    public readonly item: FileRef,
-  ) {}
+export class FileAddCmd implements ICommand {
+  public readonly folderId: string;
+  public readonly item: FileRef;
+  constructor(folderId: string, item: Partial<FileRef>) {
+    try {
+      this.folderId = UUID.parse(folderId);
+      this.item = FileRef.parse(item);
+    } catch (err) {
+      if (err instanceof Error) {
+        const msg = `${FileAddCmd.name}: invalid input ${err.message}`;
+        throw new Error(msg);
+      }
+      throw err;
+    }
+  }
 }
-@CommandHandler(FileAdd)
-export class FileAddHandler implements ICommandHandler<FileAdd> {
+@CommandHandler(FileAddCmd)
+export class FileAddHandler implements ICommandHandler<FileAddCmd> {
   private readonly tx: PrismaClient;
   constructor(private readonly txHost: TransactionHost) {
     this.tx = this.txHost.tx as PrismaClient; // TODO: not shure this run
   }
 
-  async execute(command: FileAdd) {
+  async execute(command: FileAddCmd) {
     const { folderId, item } = command;
     const folder = await this.tx.folder.findUnique({ where: { id: folderId } });
     if (!folder) throw new Error('Folder not found');

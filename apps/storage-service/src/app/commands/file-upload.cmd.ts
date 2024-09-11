@@ -6,37 +6,43 @@ import {
 } from '@nestjs/common';
 import { TransactionHost } from '@nestjs-cls/transactional';
 import { PrismaClient } from '@prisma/client';
-import * as z from 'zod';
 
-import { FileRef, PastTime } from 'src/domain';
+import { FileRef, UUID } from 'src/domain';
 
-export const UploadFileDTO = z.object({
-  pinnedAt: PastTime.nullable().default(null),
-  createdAt: PastTime.default(new Date()),
-  modifiedAt: PastTime.nullable().default(null),
-  archivedAt: PastTime.nullable().default(null),
-  description: z.string().nullable().default(null),
-  thumbnail: z.string().nullable().default(null),
-});
-export type UploadFileDTO = z.infer<typeof UploadFileDTO>;
-
-export class FileUpload implements ICommand {
+export class FileUploadCmd implements ICommand {
+  public readonly rootId: string;
+  public readonly folderId: string;
+  public readonly accssorId: string;
+  public readonly item: FileRef;
   constructor(
-    public readonly rootId: string,
-    public readonly folderId: string,
-    public readonly accssorId: string,
-    public readonly item: FileRef,
-  ) {}
+    rootId: string,
+    folderId: string,
+    accssorId: string,
+    item: Partial<FileRef>,
+  ) {
+    try {
+      this.rootId = UUID.parse(rootId);
+      this.folderId = UUID.parse(folderId);
+      this.accssorId = accssorId;
+      this.item = FileRef.parse(item);
+    } catch (err) {
+      if (err instanceof Error) {
+        const msg = `${FileUploadCmd.name}: invalid input ${err.message}`;
+        throw new Error(msg);
+      }
+      throw err;
+    }
+  }
 }
 
-@CommandHandler(FileUpload)
+@CommandHandler(FileUploadCmd)
 export class FileUploadHandler implements ICommandHandler {
   private readonly tx: PrismaClient;
   constructor(private readonly txHost: TransactionHost) {
     this.tx = this.txHost.tx as PrismaClient; // TODO: not shure this run
   }
 
-  async execute(command: FileUpload) {
+  async execute(command: FileUploadCmd) {
     const { item, folderId, rootId } = command;
     const folder = await this.tx.folder.findUnique({ where: { id: folderId } });
     if (!folder) throw new NotFoundException(`Folder not found`);

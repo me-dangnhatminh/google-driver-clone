@@ -36,7 +36,7 @@ export type ItemLabel = z.infer<typeof ItemLabel>;
 export type Pagination = z.infer<typeof Pagination>;
 export type FolderContentResult = z.infer<typeof FolderContentResult>;
 
-export class FolderContent implements IQuery {
+export class FolderContentQuery implements IQuery {
   constructor(
     public readonly rootId: string,
     public readonly label: ItemLabel,
@@ -46,17 +46,19 @@ export class FolderContent implements IQuery {
   ) {}
 }
 
-@QueryHandler(FolderContent)
-export class FolderContentHandler
-  implements IQueryHandler<FolderContent, FolderContentResult>
-{
+export type IFolderContentHandler = IQueryHandler<
+  FolderContentQuery,
+  FolderContentResult
+>;
+@QueryHandler(FolderContentQuery)
+export class FolderContentHandler implements IFolderContentHandler {
   private readonly tx: PrismaClient;
 
   constructor(private readonly txHost: TransactionHost) {
     this.tx = this.txHost.tx;
   }
 
-  execute(strategyQuery: FolderContent) {
+  execute(strategyQuery: FolderContentQuery) {
     let strategy:
       | typeof this.getOfMy
       | typeof this.getPinned

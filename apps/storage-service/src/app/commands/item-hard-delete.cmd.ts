@@ -7,6 +7,7 @@ import {
 import { CommandHandler, ICommand, ICommandHandler } from '@nestjs/cqrs';
 import { PrismaClient } from '@prisma/client';
 import Decimal from 'decimal.js';
+import { UUID } from 'src/domain';
 import { z } from 'zod';
 
 export const ItemHardDelete = z.object({
@@ -15,22 +16,36 @@ export const ItemHardDelete = z.object({
 });
 export type ItemHardDelete = z.infer<typeof ItemHardDelete>;
 
-export class HardDeleteItem implements ICommand {
+export class HardDeleteItemCmd implements ICommand {
   constructor(
     public readonly rootId: string,
     public readonly item: ItemHardDelete,
-  ) {}
+  ) {
+    try {
+      this.rootId = UUID.parse(rootId);
+      this.item = ItemHardDelete.parse(item);
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(
+          `${HardDeleteItemCmd.name}: invalid input ${error.message}`,
+        );
+      }
+      throw error;
+    }
+  }
 }
 
-@CommandHandler(HardDeleteItem)
-export class HardDeleteItemHandler implements ICommandHandler<HardDeleteItem> {
+@CommandHandler(HardDeleteItemCmd)
+export class HardDeleteItemHandler
+  implements ICommandHandler<HardDeleteItemCmd>
+{
   private readonly tx: PrismaClient;
 
   constructor(private readonly txHost: TransactionHost) {
     this.tx = this.txHost.tx as PrismaClient; // TODO: not shure this run
   }
 
-  async execute(command: HardDeleteItem) {
+  async execute(command: HardDeleteItemCmd) {
     const item = command.item;
 
     switch (item.type) {

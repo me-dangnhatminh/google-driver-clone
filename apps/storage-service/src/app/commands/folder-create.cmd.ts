@@ -8,7 +8,7 @@ import {
 import { PrismaClient } from '@prisma/client';
 import * as z from 'zod';
 
-import { FolderInfo, PastTime } from 'src/domain';
+import { FolderInfo, PastTime, UUID } from 'src/domain';
 
 export const FolderCreateDTO = z.object({
   name: z.string(),
@@ -19,22 +19,33 @@ export const FolderCreateDTO = z.object({
 });
 export type FolderCreateDTO = z.infer<typeof FolderCreateDTO>;
 
-export class FolderCreate implements ICommand {
+export class FolderCreateCmd implements ICommand {
   constructor(
     public readonly folderId: string,
     public readonly item: FolderInfo,
     public readonly accssorId: string,
-  ) {}
+  ) {
+    try {
+      UUID.parse(folderId);
+      FolderInfo.parse(item);
+    } catch (error) {
+      if (error instanceof Error) {
+        const msg = `${FolderCreateCmd.name}: invalid input ${error.message}`;
+        throw new Error(msg);
+      }
+      throw error;
+    }
+  }
 }
 
-@CommandHandler(FolderCreate)
-export class FolderCreateHandler implements ICommandHandler<FolderCreate> {
+@CommandHandler(FolderCreateCmd)
+export class FolderCreateHandler implements ICommandHandler<FolderCreateCmd> {
   private readonly tx: PrismaClient;
   constructor(private readonly txHost: TransactionHost) {
     this.tx = this.txHost.tx as PrismaClient; // TODO: not shure this run
   }
 
-  async execute(command: FolderCreate) {
+  async execute(command: FolderCreateCmd) {
     const item = command.item;
     const folder = await this.tx.folder.findUnique({
       where: { id: command.folderId, archivedAt: null },

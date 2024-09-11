@@ -3,6 +3,7 @@ import { CommandHandler, ICommand } from '@nestjs/cqrs';
 import { z } from 'zod';
 import { PrismaClient } from '@prisma/client';
 import { TransactionHost } from '@nestjs-cls/transactional';
+import { UUID } from 'src/domain';
 
 export const Rename = z.object({
   label: z.literal('rename'),
@@ -22,21 +23,32 @@ type Unarchive = z.infer<typeof Unarchive>;
 export const UpdateItemDTO = z.union([Rename, Archive, Pin, Unpin, Unarchive]);
 export type UpdateItemDTO = z.infer<typeof UpdateItemDTO>;
 
-export class FileUpdate implements ICommand {
-  constructor(
-    public readonly method: UpdateItemDTO,
-    public readonly accessorId: string,
-    public readonly fileId: string,
-  ) {}
+export class FileUpdateCmd implements ICommand {
+  public readonly method: UpdateItemDTO;
+  public readonly accessorId: string;
+  public readonly fileId: string;
+  constructor(method: UpdateItemDTO, accessorId: string, fileId: string) {
+    try {
+      this.method = UpdateItemDTO.parse(method);
+      this.accessorId = accessorId;
+      this.fileId = UUID.parse(fileId);
+    } catch (err) {
+      if (err instanceof Error) {
+        const msg = `${FileUpdateCmd.name}: invalid input ${err.message}`;
+        throw new Error(msg);
+      }
+      throw err;
+    }
+  }
 }
-@CommandHandler(FileUpdate)
+@CommandHandler(FileUpdateCmd)
 export class FileUpdateHandler {
   private readonly tx: PrismaClient;
   constructor(private readonly txHost: TransactionHost) {
     this.tx = this.txHost.tx as PrismaClient; // TODO: not shure this run
   }
 
-  async execute({ method, accessorId, fileId }: FileUpdate) {
+  async execute({ method, accessorId, fileId }: FileUpdateCmd) {
     const file = await this.tx.fileRef.findUnique({ where: { id: fileId } });
     if (!file) throw new BadRequestException("File doesn't exist");
     if (file.ownerId !== accessorId)

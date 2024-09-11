@@ -7,25 +7,36 @@ import { CommandHandler, ICommand, ICommandHandler } from '@nestjs/cqrs';
 import { PrismaClient } from '@prisma/client';
 import { TransactionHost } from '@nestjs-cls/transactional';
 
-import { Folder } from 'src/domain';
+import { Folder, UUID } from 'src/domain';
 
 import { UpdateItemDTO } from './file-update.cmd';
 
-export class FolderUpdate implements ICommand {
+export class FolderUpdateCmd implements ICommand {
   constructor(
     public readonly method: UpdateItemDTO,
     public readonly folderId: string,
     public readonly accessorId: string,
-  ) {}
+  ) {
+    try {
+      UpdateItemDTO.parse(method);
+      UUID.parse(folderId);
+    } catch (error) {
+      if (error instanceof Error) {
+        const msg = `${FolderUpdateCmd.name}: invalid input ${error.message}`;
+        throw new Error(msg);
+      }
+      throw error;
+    }
+  }
 }
-@CommandHandler(FolderUpdate)
-export class FolderUpdateHandler implements ICommandHandler<FolderUpdate> {
+@CommandHandler(FolderUpdateCmd)
+export class FolderUpdateHandler implements ICommandHandler<FolderUpdateCmd> {
   private readonly tx: PrismaClient;
   constructor(private readonly txHost: TransactionHost) {
     this.tx = this.txHost.tx as PrismaClient; // TODO: not shure this run
   }
 
-  async execute({ method, folderId, accessorId }: FolderUpdate) {
+  async execute({ method, folderId, accessorId }: FolderUpdateCmd) {
     const folder = await this.tx.folder.findUnique({ where: { id: folderId } });
     if (!folder) throw new BadRequestException('Folder not found');
     if (folder.ownerId !== accessorId)

@@ -3,26 +3,41 @@ import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { TransactionHost } from '@nestjs-cls/transactional';
 import Decimal from 'decimal.js';
 import { randomUUID as uuid } from 'crypto';
-import { FileRef, Folder } from 'src/domain';
+import { FileRef, Folder, UUID } from 'src/domain';
 import { PrismaClient } from '@prisma/client';
 
-export class AddFolder implements ICommand {
+export class AddFolderCmd implements ICommand {
+  public readonly folderId: string;
+  public readonly accssorId: string;
+  public readonly flatFiles: Express.Multer.File[];
   constructor(
-    public readonly folderId: string,
-    public readonly accssorId: string,
-    public readonly flatFiles: Express.Multer.File[],
-  ) {}
+    folderId: string,
+    accssorId: string,
+    flatFiles: Express.Multer.File[],
+  ) {
+    try {
+      this.folderId = UUID.parse(folderId);
+      this.accssorId = UUID.parse(accssorId);
+      this.flatFiles = flatFiles;
+    } catch (error) {
+      if (error instanceof Error) {
+        const msg = `${AddFolderCmd.name}: invalid input ${error.message}`;
+        throw new Error(msg);
+      }
+      throw error;
+    }
+  }
 }
 
-@CommandHandler(AddFolder)
-export class FolderAddHandler implements ICommandHandler<AddFolder> {
+@CommandHandler(AddFolderCmd)
+export class FolderAddHandler implements ICommandHandler<AddFolderCmd> {
   private readonly tx: PrismaClient;
 
   constructor(private readonly txHost: TransactionHost) {
     this.tx = txHost.tx;
   }
 
-  async execute(cmd: AddFolder) {
+  async execute(cmd: AddFolderCmd) {
     const { folderId, accssorId, flatFiles } = cmd;
     // FIXME: fix 'any' type
     const folder: any = await this.tx.folder.findUnique({

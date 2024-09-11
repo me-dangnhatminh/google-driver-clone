@@ -27,18 +27,18 @@ import * as z from 'zod';
 import { Response } from 'express';
 
 import {
-  DowloadFolder,
-  FileContent,
-  FileUpdate,
-  FolderContent,
+  FileUpdateCmd,
+  FileUploadCmd,
+  AddFolderCmd,
+  FolderCreateCmd,
+  FolderUpdateCmd,
+  HardDeleteItemCmd,
+  FileContentQuery,
+  FolderContentQuery,
+  FolderDownloadQuery,
   ItemLabel,
   UpdateItemDTO,
-  FolderUpdate,
-  FileUpload,
-  HardDeleteItem,
   ItemHardDelete,
-  FolderCreate,
-  AddFolder,
   FolderCreateDTO,
   Pagination,
 } from 'src/app';
@@ -81,7 +81,7 @@ export class StorageRestController {
     @Query('type', useZodPipe(ItemHardDelete.shape.type))
     type: ItemHardDelete['type'],
   ) {
-    const cmd = new HardDeleteItem(rootId, { type, id: key });
+    const cmd = new HardDeleteItemCmd(rootId, { type, id: key });
     await this.commandBus.execute(cmd);
   }
 
@@ -99,14 +99,13 @@ export class StorageRestController {
     file: Express.Multer.File,
   ) {
     const folderId = UUID.parse(key === 'root' ? rootId : key);
-    const item = FileRef.parse({
+    const cmd = new FileUploadCmd(rootId, folderId, userId, {
       id: file.filename,
       name: file.originalname,
       size: file.size,
       contentType: file.mimetype,
       ownerId: userId,
     });
-    const cmd = new FileUpload(rootId, folderId, userId, item);
     await this.commandBus.execute(cmd);
   }
 
@@ -117,7 +116,7 @@ export class StorageRestController {
     @Param('key', useZodPipe(UUID)) fileKey: string,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const query = new FileContent(fileKey, userId);
+    const query = new FileContentQuery(fileKey, userId);
     const result: FileRef = await this.queryBus.execute(query);
 
     let filename: string = result.name;
@@ -130,16 +129,15 @@ export class StorageRestController {
     const stream = fs.createReadStream(filePath.fullPath);
     filename = fileUtil.formatName(filename);
     filename = encodeURIComponent(filename);
-    return new StreamableFile(stream, {
-      disposition: `attachment; filename="${filename}"`,
-      type: contentType,
-    });
-
     res.setHeader('Access-Control-Expose-Headers', [
       'Content-Disposition',
       'Content-Type',
     ]);
-    return result;
+
+    return new StreamableFile(stream, {
+      disposition: `attachment; filename="${filename}"`,
+      type: contentType,
+    });
   }
 
   @Patch(StorageRoutes.FILE_UPDATE)
@@ -150,7 +148,7 @@ export class StorageRestController {
     @Body(useZodPipe(UpdateItemDTO)) dto: UpdateItemDTO,
   ) {
     const fileId: string = key;
-    const cmd = new FileUpdate(dto, userId, fileId);
+    const cmd = new FileUpdateCmd(dto, userId, fileId);
     await this.commandBus.execute(cmd);
   }
 
@@ -167,7 +165,7 @@ export class StorageRestController {
     @Query(useZodPipe(Pagination)) pagination: Pagination,
   ) {
     const folderId = UUID.parse(key === 'root' ? rootId : key);
-    const query = new FolderContent(
+    const query = new FolderContentQuery(
       rootId,
       label,
       folderId,
@@ -189,7 +187,7 @@ export class StorageRestController {
     const folderId = UUID.parse(key === 'root' ? rootId : key);
     dto['ownerId'] = userId;
     const item = FolderInfo.parse({ ...dto, id: uuid(), size: 0 });
-    const cmd = new FolderCreate(folderId, item, accssorId);
+    const cmd = new FolderCreateCmd(folderId, item, accssorId);
     await this.commandBus.execute(cmd);
   }
 
@@ -199,7 +197,7 @@ export class StorageRestController {
     @Param('key', useZodPipe(UUID)) folderId: string,
     @Res() res: Response,
   ) {
-    const query = new DowloadFolder(folderId);
+    const query = new FolderDownloadQuery(folderId);
     const { name, flatContent } = await this.queryBus.execute(query);
     const zipped = await this.storageService.buildZipAsync(name, flatContent);
     const zip = zipped.zip;
@@ -223,7 +221,7 @@ export class StorageRestController {
     @Param('key', useZodPipe(UUID)) folderId: string,
     @Body(useZodPipe(UpdateItemDTO)) dto: UpdateItemDTO,
   ) {
-    const cmd = new FolderUpdate(dto, folderId, userId);
+    const cmd = new FolderUpdateCmd(dto, folderId, userId);
     await this.commandBus.execute(cmd);
   }
 
@@ -238,8 +236,7 @@ export class StorageRestController {
     upload: { files: Express.Multer.File[] },
   ) {
     const folderId = UUID.parse(key === 'root' ? rootId : key);
-    const accssorId = userId;
-    const cmd = new AddFolder(folderId, accssorId, upload.files);
+    const cmd = new AddFolderCmd(folderId, userId, upload.files);
     await this.commandBus.execute(cmd);
   }
 }
