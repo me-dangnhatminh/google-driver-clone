@@ -17,8 +17,10 @@ export const config = registerAs(configName, () => {
     host: process.env.APP_HOST,
   });
   if (valid.success) return valid.data;
-  const msg = valid.error.errors.map((err) => err.message).join(', ');
-  throw new Error(`Invalid ${configName} config: ${msg}`);
+  const msg = valid.error.errors
+    .map((err) => `- ${err.path.join('.')}: ${err.message}`)
+    .join('\n');
+  throw new Error(`Invalid ${configName} config:\n${msg}`);
 });
 
 export default config;

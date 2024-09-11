@@ -10,6 +10,28 @@ import { AppModule } from 'src/app.module';
 import { Configs } from './configs';
 import setupSwagger from './infa/docs';
 
+const buildCors = (app: INestApplication) => {
+  const configService = app.get(ConfigService<Configs, true>);
+  const corsConfig = configService.get('cors', { infer: true });
+
+  if (corsConfig.enabled) {
+    const originMap: Set<string> = new Set<string>();
+    corsConfig.origin
+      .split(',')
+      .map((origin) => origin.trim())
+      .forEach(originMap.add, originMap);
+    app.enableCors({
+      origin: (origin, callback) => {
+        const allowed = corsConfig.origin === '*' || originMap.has(origin);
+        if (allowed) return callback(null, true);
+        return callback(new Error('Not allowed by CORS'));
+      },
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+      credentials: true,
+    });
+  }
+};
+
 const connectGRPC = (app: INestApplication) => {
   const logger = new Logger('bootstrap');
   const configService = app.get(ConfigService<Configs, true>);
@@ -33,24 +55,39 @@ const connectGRPC = (app: INestApplication) => {
   logger.log(`gRPC connected: ${grpcConfig.storage.url}`);
 };
 
+const connectRMQ = (app: INestApplication) => {
+  const logger = new Logger('bootstrap');
+  const configService = app.get(ConfigService<Configs, true>);
+  const rmqConfig = configService.get('rmq', { infer: true });
+
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.RMQ,
+    options: {
+      urls: [rmqConfig.url],
+      queue: rmqConfig.queue,
+      queueOptions: {
+        durable: false,
+      },
+    },
+  });
+  logger.log(`RMQ connected: ${rmqConfig.url}`);
+};
+
 async function bootstrap() {
   const app = await NestFactory.create<INestApplication>(AppModule);
-  app.setGlobalPrefix('api');
-  app.enableCors({
-    origin: (origin, callback) => callback(null, true),
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    preflightContinue: false,
-    credentials: true,
-  });
 
-  const logger = new Logger('bootstrap');
+  app.setGlobalPrefix('api');
+  buildCors(app);
+
   const configService = app.get(ConfigService<Configs, true>);
   const appConfig = configService.get('app', { infer: true });
 
   const doc = setupSwagger(app).docPrefix;
 
   connectGRPC(app);
+  connectRMQ(app);
 
+  const logger = new Logger('bootstrap');
   await app.startAllMicroservices();
   await app.listen(appConfig.port, appConfig.host).then(() => {
     logger.log(`${appConfig.name} is running`);
