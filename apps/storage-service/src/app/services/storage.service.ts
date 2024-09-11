@@ -1,19 +1,19 @@
 import { TransactionHost } from '@nestjs-cls/transactional';
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
 import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 import { Inject, Injectable } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
 import { randomUUID as uuid } from 'crypto';
 import { MyStorage, RootFolder } from 'src/domain';
 
 @Injectable()
 export class StorageService {
+  private readonly tx = this.txHost.tx;
   constructor(
-    private readonly txHost: TransactionHost,
+    private readonly txHost: TransactionHost<TransactionalAdapterPrisma>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   async getMyStorage(ownerId: string) {
-    const tx = this.txHost.tx as PrismaClient;
     const key = `storage:${ownerId}`;
     let storage = await this.cacheManager.get<MyStorage>(key);
     if (!storage) {
@@ -21,7 +21,7 @@ export class StorageService {
       const my = MyStorage.parse({ id, ownerId, refId: id });
       const root = RootFolder.parse({ id, ownerId, name: 'My Storage' });
       const freespace = 1 * 1024 * 1024 * 1024; // 1GB , TODO: get from config
-      storage = await tx.myStorage
+      storage = await this.tx.myStorage
         .upsert({
           where: { ownerId },
           include: { ref: true },

@@ -22,8 +22,8 @@ import { MulterModule } from './infa/adapters';
       isGlobal: true,
       cache: true,
     }),
-    CacheModule.register({ isGlobal: true }),
     CqrsModule,
+    CacheModule.register({ isGlobal: true }),
     PersistencesModule,
     MulterModule,
     ClientsModule.registerAsync({
