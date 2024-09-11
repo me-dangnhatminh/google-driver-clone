@@ -16,7 +16,6 @@ export class AuthGrpcController {
     const token = String(metadata.get('authorization')).replace('Bearer ', '');
 
     const cachedUser = await this.cacheManager.get(token);
-    console.log('cachedUser', cachedUser);
     if (cachedUser) return cachedUser;
     const user = await this.userInfo
       .getUserInfo(token)

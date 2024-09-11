@@ -11,17 +11,6 @@ import * as grpc from '@grpc/grpc-js';
 import { controllers, HTTPLogger, Auth0Module } from 'src/infa';
 import configs, { Configs } from 'src/config';
 
-// useFactory: async (configService: ConfigService<Configs, true>) => {
-//   const redis = configService.get('redis', { infer: true });
-//   const url = `redis://${redis.host}:${redis.port}/${redis.db}`;
-//   const store = await redisStore({
-//     url: 'redis://localhost:637',
-//     username: redis.username,
-//     password: redis.password,
-//   });
-//   Logger.log(`Redis connected: ${url}`, CacheModule.name);
-//   return {};
-// },
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -33,13 +22,25 @@ import configs, { Configs } from 'src/config';
     }),
     TerminusModule,
     HttpModule,
-    CacheModule.register(),
+    CacheModule.registerAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService<Configs, true>) => {
+        const redis = configService.get('redis', { infer: true });
+        const url = `redis://${redis.host}:${redis.port}/${redis.db}`;
+        Logger.log(`Redis connected: ${url}`, CacheModule.name);
+        return {
+          store: redisStore,
+          url: url,
+          username: redis.username,
+          password: redis.password,
+        };
+      },
+    }),
     Auth0Module.forRoot({
       domain: process.env.AUTH0_DOMAIN ?? '',
       clientId: process.env.AUTH0_CLIENT_ID ?? '',
       clientSecret: process.env.AUTH0_SECRET ?? '',
     }),
-
     ClientsModule.registerAsync({
       clients: [
         {

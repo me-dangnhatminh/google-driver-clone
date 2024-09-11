@@ -14,4 +14,4 @@
 // });
 // export default apiUtil;
 
-export default {}
+export default {};

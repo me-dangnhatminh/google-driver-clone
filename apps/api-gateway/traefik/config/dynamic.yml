@@ -17,15 +17,10 @@ http:
     api-stripPrefix:
       stripPrefix:
         prefixes:
-          - /api
+          - /storage
+          - /identity
 
   routers:
-    wordpress:
-      rule: Host(`wordpress.{{env "BASE_DOMAIN"}}`)
-      service: wordpress
-      entrypoints: https
-      tls: {}
-
     dashboard:
       rule: Host(`traefik.{{env "BASE_DOMAIN"}}`)
       service: api@internal
@@ -34,6 +29,7 @@ http:
         - auth
       tls: {}
 
+    # for grpc services
     identity-grpc:
       rule: Host(`identity-grpc.{{env "BASE_DOMAIN"}}`)
       service: identity-grpc
@@ -46,6 +42,19 @@ http:
       entrypoints: https
       tls: {}
 
+    # for http services
+    storage:
+      rule: Host(`api.{{env "BASE_DOMAIN"}}`) && PathPrefix(`/api/storage`)
+      service: storage-http
+      entrypoints: https
+      tls: {}
+
+    identity:
+      rule: Host(`api.{{env "BASE_DOMAIN"}}`) && PathPrefix(`/api/identity`)
+      service: identity-http
+      entrypoints: https
+      tls: {}
+
   services:
     identity-grpc:
       loadBalancer:
@@ -55,3 +64,13 @@ http:
       loadBalancer:
         servers:
           - url: h2c://172.17.0.1:40051
+
+    storage-http:
+      loadBalancer:
+        servers:
+          - url: http://172.17.0.1:4000
+
+    identity-http:
+      loadBalancer:
+        servers:
+          - url: http://172.17.0.1:3000
