@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { INestApplication, Logger } from '@nestjs/common';
+import { ForbiddenException, INestApplication, Logger } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { ReflectionService } from '@grpc/reflection';
 import { ConfigService } from '@nestjs/config';
@@ -47,7 +47,7 @@ const buildCors = (app: INestApplication) => {
       origin: (origin, callback) => {
         const allowed = corsConfig.origin === '*' || originMap.has(origin);
         if (allowed) return callback(null, true);
-        return callback(new Error('Not allowed by CORS'));
+        return callback(new ForbiddenException('Not allowed by CORS'));
       },
       methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
       credentials: true,

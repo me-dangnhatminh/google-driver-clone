@@ -1,4 +1,4 @@
-export const arrayToEnum = <T extends string, U extends [T, ...T[]]>(
+const arrayToEnum = <T extends string, U extends [T, ...T[]]>(
   items: U,
 ): { [k in U[number]]: k } => {
   return items.reduce(
@@ -10,41 +10,32 @@ export const arrayToEnum = <T extends string, U extends [T, ...T[]]>(
   );
 };
 
-export class AppError<T extends string = string> extends Error {
+export class AppError<T extends string | number = string> extends Error {
   constructor(
     public readonly code: T,
-    message?: string,
+    public readonly detail: string = 'unknown error',
   ) {
-    super(message);
-    const actualProto = new.target.prototype;
-    if (Object.setPrototypeOf) Object.setPrototypeOf(this, actualProto);
-    else (this as any).__proto__ = actualProto;
-    this.name = AppError.name;
-    Error.captureStackTrace(this, this.constructor);
+    super(`[${code}] ${detail}`);
+    Object.setPrototypeOf(this, AppError.prototype);
+    this.name = this.constructor.name;
+    Error.captureStackTrace(this);
   }
 }
 
-export const isAppError = (err: unknown): err is AppError => {
-  return err instanceof AppError;
-};
+// ====== Error Codes ======
 
-export const ErrorCode = arrayToEnum([
-  'unknown',
-  'invalid_input',
-  'storage_notfound',
-  'file_notfound',
-]);
-export type ErrorCode = typeof ErrorCode;
+export const ErrorCode = arrayToEnum(['unknown', 'invalid_input', 'not_found']);
+
 export type ErrorCodes = keyof typeof ErrorCode;
 
 export class UnknownError extends AppError<ErrorCodes> {
-  constructor(message: string = 'Unknown error') {
-    super(ErrorCode.unknown, message);
+  constructor(detail: string = 'unknown error') {
+    super(ErrorCode.unknown, detail);
   }
 }
 
 export class InvalidInputError extends AppError<ErrorCodes> {
-  constructor(message: string = 'Invalid input') {
-    super(ErrorCode.invalid_input, message);
+  constructor(detail: string = 'invalid input') {
+    super(ErrorCode.invalid_input, detail);
   }
 }
