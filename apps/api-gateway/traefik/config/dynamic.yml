@@ -21,6 +21,12 @@ http:
           - /identity
 
   routers:
+    client-ui:
+      rule: Host(`{{env "BASE_DOMAIN"}}`)
+      service: client-ui
+      entrypoints: https
+      tls: {}
+
     dashboard:
       rule: Host(`traefik.{{env "BASE_DOMAIN"}}`)
       service: api@internal
@@ -56,6 +62,11 @@ http:
       tls: {}
 
   services:
+    client-ui:
+      loadBalancer:
+        servers:
+          - url: http://172.17.0.1:5173
+
     identity-grpc:
       loadBalancer:
         servers:
