@@ -61,7 +61,18 @@ http:
       entrypoints: https
       tls: {}
 
+    wordpress:
+      rule: Host(`wordpress.{{env "BASE_DOMAIN"}}`)
+      service: wordpress
+      entrypoints: https
+      tls: {}
+
   services:
+    wordpress:
+      loadBalancer:
+        servers:
+          - url: http://172.17.0.1:8000
+
     client-ui:
       loadBalancer:
         servers:
