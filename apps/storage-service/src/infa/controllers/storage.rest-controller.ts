@@ -46,10 +46,11 @@ import fs from 'fs-extra';
 
 import { fileUtil, StorageRoutes } from 'src/common';
 
-import { Authenticated, HttpStorage, StorageLoaded } from 'src/infa/guards';
+import { HttpStorage, StorageLoaded } from 'src/infa/guards';
 import { useZodPipe } from 'src/infa/pipes';
 import { HttpUser } from 'src/infa/decorators';
 import { DiskStorageService } from '../adapters';
+import { Authenticated } from 'lib/auth-client';
 
 const RootOrKey = z.union([z.literal('root'), UUID]);
 type RootOrKey = Omit<string, 'root'> | 'root';

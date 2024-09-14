@@ -7,12 +7,13 @@ import {
 import { ClientGrpcProxy } from '@nestjs/microservices';
 import * as grpc from '@grpc/grpc-js';
 import * as rx from 'rxjs';
+import { IDENTITY_SERVICE_NAME } from './constant';
 
 @Injectable()
 export class Authenticated implements CanActivate {
   private readonly authService: any;
   constructor(
-    @Inject('IDENTITY_SERVICE') private readonly client: ClientGrpcProxy,
+    @Inject(IDENTITY_SERVICE_NAME) private readonly client: ClientGrpcProxy,
   ) {
     this.authService = this.client.getService('AuthService');
   }
@@ -26,13 +27,11 @@ export class Authenticated implements CanActivate {
     const verify = this.authService.verifyToken({}, metadata);
     return rx.from(verify).pipe(
       rx.catchError((err) => {
-        console.log(err);
-        // throw new UnauthorizedException(err);
-        throw new Error(err);
+        console.error(err);
+        return rx.of(false);
       }),
       rx.map((user: any) => {
-        console.log(user);
-        user['sub'] = user.id; // TODO: fix
+        user['sub'] = user.id;
         request.user = user;
         return true;
       }),

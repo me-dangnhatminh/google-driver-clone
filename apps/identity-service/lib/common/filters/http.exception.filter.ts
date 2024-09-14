@@ -8,8 +8,8 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 
-@Catch()
-export class HttpExceptionFilter implements ExceptionFilter {
+@Catch(HttpException)
+export class HttpExceptionFilter implements ExceptionFilter<HttpException> {
   private readonly logger = new Logger(HttpExceptionFilter.name);
 
   constructor() {}

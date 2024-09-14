@@ -3,6 +3,7 @@ import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
 import { Controller, Inject } from '@nestjs/common';
 import { GrpcMethod, RpcException } from '@nestjs/microservices';
 import { UserInfoClient } from 'auth0';
+import { GrpcUnauthenticatedException } from 'lib/common';
 
 @Controller()
 export class AuthGrpcController {
@@ -14,11 +15,9 @@ export class AuthGrpcController {
   @GrpcMethod('AuthService', 'verifyToken')
   async verifyToken(_request, metadata: Metadata) {
     const token = String(metadata.get('authorization')).replace('Bearer ', '');
-
     const cachedUser = await this.cacheManager.get(token);
-
     if (cachedUser === 'invalid_token') {
-      throw new RpcException({
+      throw new GrpcUnauthenticatedException({
         code: 'invalid_token',
         message: 'invalid token',
       });

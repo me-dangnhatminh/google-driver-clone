@@ -14,14 +14,13 @@ const connectGRPC = (app: INestApplication) => {
   const logger = new Logger('bootstrap');
   const configService = app.get(ConfigService<Configs, true>);
 
-  const grpcConfig = configService.get('grpc', { infer: true });
+  const grpcConfig = configService.get('grpc.identity', { infer: true });
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.GRPC,
     options: {
-      url: grpcConfig.identity.url,
-      package: grpcConfig.identity.package,
-      protoPath: grpcConfig.identity.protoPath,
-
+      url: grpcConfig.url,
+      package: grpcConfig.package,
+      protoPath: grpcConfig.protoPath,
       loader: grpcConfig.loader,
       credentials: grpc.ServerCredentials.createInsecure(),
       onLoadPackageDefinition: (pkg, server: grpc.Server) => {
@@ -30,7 +29,7 @@ const connectGRPC = (app: INestApplication) => {
       },
     },
   });
-  logger.log(`gRPC connected: ${grpcConfig.identity.url}`);
+  logger.log(`gRPC connected: ${grpcConfig.url}`);
 };
 
 const buildCors = (app: INestApplication) => {

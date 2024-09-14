@@ -10,17 +10,21 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import * as rx from 'rxjs';
 
-import { AuthorizedGuard, PermissionGuard, Permissions } from 'src/infa/guards';
+import {
+  IDENTITY_SERVICE_NAME,
+  PermissionGuard,
+  Permissions,
+} from 'lib/auth-client';
 
 @Controller('users')
 @Permissions('manage:users')
-@UseGuards(AuthorizedGuard, PermissionGuard)
+@UseGuards(PermissionGuard)
 @ApiTags('users')
 @ApiBearerAuth()
 export class UserRestController {
   private readonly userService: any;
 
-  constructor(@Inject('IDENTITY_SERVICE') private readonly client: any) {
+  constructor(@Inject(IDENTITY_SERVICE_NAME) private readonly client: any) {
     this.userService = this.client.getService('UserService');
   }
 

@@ -7,7 +7,7 @@ import { ReflectionService } from '@grpc/reflection';
 import * as grpc from '@grpc/grpc-js';
 
 import { AppModule } from 'src/app.module';
-import { Configs } from './configs';
+import { Configs } from './config';
 import setupSwagger from './infa/docs';
 
 const buildCors = (app: INestApplication) => {
@@ -36,14 +36,14 @@ const connectGRPC = (app: INestApplication) => {
   const logger = new Logger('bootstrap');
   const configService = app.get(ConfigService<Configs, true>);
 
-  const grpcConfig = configService.get('grpc', { infer: true });
+  const grpcConfig = configService.get('grpc.storage', { infer: true });
 
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.GRPC,
     options: {
-      url: grpcConfig.storage.url,
-      package: grpcConfig.storage.package,
-      protoPath: grpcConfig.storage.protoPath,
+      url: grpcConfig.url,
+      package: grpcConfig.package,
+      protoPath: grpcConfig.protoPath,
       loader: grpcConfig.loader,
       credentials: grpc.ServerCredentials.createInsecure(),
       onLoadPackageDefinition: (pkg, server: grpc.Server) => {
@@ -52,7 +52,7 @@ const connectGRPC = (app: INestApplication) => {
       },
     },
   });
-  logger.log(`gRPC connected: ${grpcConfig.storage.url}`);
+  logger.log(`gRPC connected: ${grpcConfig.url}`);
 };
 
 const connectRMQ = (app: INestApplication) => {

@@ -1,15 +1,14 @@
-import { Logger, MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 
 import { TerminusModule } from '@nestjs/terminus';
-import { CacheModule } from '@nestjs/cache-manager';
-import { ClientsModule, Transport } from '@nestjs/microservices';
 import { HttpModule } from '@nestjs/axios';
-import { redisStore } from 'cache-manager-redis-yet';
-import * as grpc from '@grpc/grpc-js';
 
-import { controllers, HTTPLogger, Auth0Module } from 'src/infa';
-import configs, { Configs } from 'src/config';
+import { HTTPLogger } from 'lib/common';
+
+import { controllers, Auth0Module, CacheModule } from 'src/infa';
+import configs from 'src/config';
+import { AuthClientModule } from 'lib/auth-client';
 
 @Module({
   imports: [
@@ -22,46 +21,9 @@ import configs, { Configs } from 'src/config';
     }),
     TerminusModule,
     HttpModule,
-    CacheModule.registerAsync({
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService<Configs, true>) => {
-        const redis = configService.get('redis', { infer: true });
-        const url = `redis://${redis.host}:${redis.port}/${redis.db}`;
-        Logger.log(`Redis connected: ${url}`, CacheModule.name);
-        return {
-          store: redisStore,
-          url: url,
-          username: redis.username,
-          password: redis.password,
-        };
-      },
-    }),
-    Auth0Module.forRoot({
-      domain: process.env.AUTH0_DOMAIN ?? '',
-      clientId: process.env.AUTH0_CLIENT_ID ?? '',
-      clientSecret: process.env.AUTH0_SECRET ?? '',
-    }),
-    ClientsModule.registerAsync({
-      clients: [
-        {
-          inject: [ConfigService],
-          name: 'IDENTITY_SERVICE',
-          useFactory: (configService: ConfigService<Configs, true>) => {
-            const grpcConfig = configService.get('grpc', { infer: true });
-            return {
-              transport: Transport.GRPC,
-              options: {
-                package: grpcConfig.identity.package,
-                credentials: grpc.credentials.createSsl(),
-                protoPath: grpcConfig.identity.protoPath,
-                loader: grpcConfig.loader,
-                url: grpcConfig.identity.url,
-              },
-            };
-          },
-        },
-      ],
-    }),
+    CacheModule,
+    Auth0Module,
+    AuthClientModule,
   ],
   controllers,
 })

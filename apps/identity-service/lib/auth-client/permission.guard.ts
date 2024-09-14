@@ -25,10 +25,8 @@ export class PermissionGuard implements CanActivate {
         context.getHandler(),
       ]) || [];
     const userPermissions: string[] = req?.auth?.permissions || [];
-
     const has = requiredPermissions.every((p) => userPermissions.includes(p));
     if (!requiredPermissions.length || has) return true;
-
     throw new ForbiddenException('Insufficient permissions');
   }
 }

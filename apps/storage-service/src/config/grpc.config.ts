@@ -4,32 +4,34 @@ import * as fs from 'fs-extra';
 import * as glob from 'glob';
 
 const config = registerAs('grpc', () => {
-  const includeDir = path.resolve(__dirname, '../../../../protos');
+  const includeDir = path.resolve(__dirname, '../../../../../protos');
   if (!fs.existsSync(includeDir)) {
     throw new Error(`Protos directory not found: ${includeDir}`);
   }
 
   const protoFiles = glob.sync('**/*.proto', { cwd: includeDir });
   const packageName = 'nest.microservices';
+  const loader = {
+    keepCase: true,
+    longs: String,
+    enums: String,
+    defaults: true,
+    oneofs: true,
+    includeDirs: [includeDir],
+  };
 
   return {
     identity: {
       package: packageName,
       protoPath: protoFiles,
-      url: 'identity-grpc.me-dangnhatminh.id.vn:443',
+      url: '0.0.0.0:50051',
+      loader,
     },
     storage: {
       package: packageName,
       protoPath: protoFiles,
       url: '0.0.0.0:40051',
-    },
-    loader: {
-      keepCase: true,
-      longs: String,
-      enums: String,
-      defaults: true,
-      oneofs: true,
-      includeDirs: [includeDir],
+      loader,
     },
   };
 });
