@@ -13,19 +13,6 @@ api:
 serversTransport:
   insecureSkipVerify: true
 
-# Enable Auto TLS with Cloudflare DNS challenge.
-# Requires CF_DNS_API_TOKEN and CF_API_EMAIL environment variables.
-# certificatesResolvers:
-#   cloudflare:
-#     acme:
-#       email: "${CF_API_EMAIL}"
-#       storage: /etc/letsencrypt/acme.json
-#       dnsChallenge:
-#         provider: cloudflare
-#         resolvers:
-#           - 1.1.1.1:53
-#           - 1.0.0.1:53
-
 entryPoints:
   http:
     address: :80

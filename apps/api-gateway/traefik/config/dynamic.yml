@@ -14,25 +14,11 @@ http:
       basicAuth:
         usersFile: /etc/config/pass/users.htpasswd
 
-    api-stripPrefix:
-      stripPrefix:
-        prefixes:
-          - /storage
-          - /identity
-
   routers:
     client-ui:
       rule: Host(`{{env "BASE_DOMAIN"}}`)
       service: client-ui
       entrypoints: https
-      tls: {}
-
-    dashboard:
-      rule: Host(`traefik.{{env "BASE_DOMAIN"}}`)
-      service: api@internal
-      entrypoints: https
-      middlewares:
-        - auth
       tls: {}
 
     # for grpc services
