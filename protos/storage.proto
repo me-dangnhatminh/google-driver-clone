@@ -5,73 +5,108 @@ package nest.microservices;
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 
-// =========== FILE ===========
-service FileService {
-  rpc uploadFile(stream FileContentChunk) returns (google.protobuf.Empty);
-  rpc getFile(GetFileRequest) returns (FileRef);
-  rpc getFiles(GetFilesRequest) returns (GetFilesResponse);
-  rpc deleteFile(DeleteFileRequest) returns (google.protobuf.Empty); 
-  rpc updateFile(UpdateFileRequest) returns (FileRef); // update name, description, thumbnail and pin, unpin, archive, unarchive
-
-  rpc getFileContent(GetFileContentRequest) returns (stream FileContentChunk);
-  rpc downloadFile(DownloadFileRequest) returns (stream FileContentChunk);
-  rpc downloadFiles(DownloadFileRequest) returns (stream FileContentChunk);
+service StorageService {
+  rpc myStorage(google.protobuf.Empty) returns (StorageInfo);
+  rpc createFolder(CreateFolderRequest) returns (FolderInfo);
+  rpc getFolder(GetFolderRequest) returns (GetFolderResponse);
+  rpc updateFolder(UpdateFolderRequest) returns (google.protobuf.Empty);
+  rpc hardDeleteItem(DeleteItemRequest) returns (google.protobuf.Empty);
 }
 
-message FileContentChunk {
-  optional string fileId = 1;
-  optional bytes content = 2;
-  optional int64 offset = 3;
-}
-
-message GetFileRequest {
-  optional string fileId = 1;
-}
-
-message GetFilesRequest {
-  optional string folderId = 1;
-  optional string userId = 2;
-  optional string query = 3;
-  optional int32 pageSize = 4;
-  optional int32 pageNumber = 5;
-}
-
-message GetFilesResponse {
-  repeated FileRef files = 1;
-  optional int32 total = 2;
-}
-
-message DeleteFileRequest {
-  optional string fileId = 1;
-}
-
-message UpdateFileRequest {
-  string fileId = 1;
-  optional string action = 5; // pin, unpin, archive, unarchive
+message Owner {
+  optional string id = 1;
   optional string name = 2;
-  optional string description = 3;
-  optional string thumbnail = 4;
-}
-
-message GetFileContentRequest {
-  optional string fileId = 1;
-}
-
-message DownloadFileRequest {
-  optional string fileId = 1;
+  optional string email = 3;
+  optional string avatarURI = 4;
 }
 
 message FileRef {
-  optional string fileId = 1;
+  optional string id = 1;
   optional string name = 2;
-  optional string description = 3;
-  optional string thumbnail = 4;
-  optional bool pin = 5;
-  optional bool archive = 6;
-  optional google.protobuf.Timestamp created = 7;
-  optional google.protobuf.Timestamp updated = 8;
-  optional string userId = 9;
-  optional string folderId = 10;
-  optional string mimeType = 11;
-  optional int64 size = 12;
+  optional int64 size = 3;
+  optional string createdAt = 4;
+  optional string pinnedAt = 5;
+  optional string modifiedAt = 6;
+  optional string archivedAt = 7;
+  optional string ownerId = 8;
+  optional string contentType = 9;
+  optional string thumbnail = 10;
+  optional string description = 11;
+}
+
+message FolderInfo {
+  optional string id = 1;
+  optional string name = 2;
+  optional int64 size = 3;
+  optional string ownerId = 4;
+  optional string createdAt = 5;
+  optional string pinnedAt = 6;
+  optional string modifiedAt = 7;
+  optional string archivedAt = 8;
+}
+
+message StorageInfo {
+  optional string id = 1;
+  optional string name = 2;
+  optional int64 used = 3;
+  optional int64 total = 4;
+  optional string refId = 5;
+}
+
+message Pagination {
+  optional int32 limit = 1;
+  optional string fileCursor = 2;
+  optional string folderCursor = 3;
+}
+
+message GetFolderRequest {
+  string rootId = 2;
+  string folderId = 1;
+  string label = 3;
+  optional Pagination pagination = 4;
+}
+
+message ContentResult {
+  repeated FileRef files = 1;
+  repeated FolderInfo folders = 2;
+}
+
+message NextCursor {
+  optional string fileCursor = 1;
+  optional string folderCursor = 2;
+}
+
+message GetFolderResponse {
+  optional string id = 1;
+  optional string name = 2;
+  optional int64 size = 3;
+  optional string ownerId = 4;
+  optional string createdAt = 5;
+  optional string pinnedAt = 6;
+  optional string modifiedAt = 7;
+  optional string archivedAt = 8;
+
+  optional ContentResult content = 9;
+  optional NextCursor nextCursor = 10;
+}
+
+message CreateFolderRequest {
+  string folderId = 1;
+  FolderInfo item = 2;
+}
+
+message UpdateFolderMethod {
+  string label = 1;
+  optional string name = 2;
+}
+
+message UpdateFolderRequest {
+  UpdateFolderMethod method = 1;
+  string folderId = 2;
+}
+
+message DeleteItemRequest {
+  string rootId = 1;
+  string type = 2;
+  string id = 3;
 }

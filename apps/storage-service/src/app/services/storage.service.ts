@@ -15,7 +15,9 @@ export class StorageService {
 
   async getMyStorage(ownerId: string) {
     const key = `storage:${ownerId}`;
-    let storage = await this.cacheManager.get<MyStorage>(key);
+    let storage = await this.cacheManager.get<
+      MyStorage & { used: number; total: number }
+    >(key);
     if (!storage) {
       const id = uuid();
       const my = MyStorage.parse({ id, ownerId, refId: id });

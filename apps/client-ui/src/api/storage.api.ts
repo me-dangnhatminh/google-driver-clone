@@ -5,7 +5,7 @@ import FileUtils from "@/lib/file.utils";
 
 // ============================ DTOs ============================ //
 const UUID = z.string();
-const Bytes = z.number().int().min(0);
+const Bytes = z.coerce.number().int().min(0);
 const PastTime = z.string();
 
 export const MyStorage = z.object({

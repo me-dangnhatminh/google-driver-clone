@@ -19,7 +19,7 @@ export type Accessor = z.infer<typeof Accessor>;
 export const UUID = z.string().uuid();
 export const OnwerId = z.string();
 export const Bytes = z.coerce.number().min(0);
-export const PastTime = z.date().refine((d) => d <= new Date());
+export const PastTime = z.coerce.date().refine((d) => d <= new Date());
 
 export const FileRef = z.object({
   id: UUID,

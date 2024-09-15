@@ -9,6 +9,7 @@ import { PrismaClient } from '@prisma/client';
 import * as z from 'zod';
 
 import { FolderInfo, PastTime, UUID } from 'src/domain';
+import { AppError } from 'src/common';
 
 export const FolderCreateDTO = z.object({
   name: z.string(),
@@ -29,9 +30,16 @@ export class FolderCreateCmd implements ICommand {
       UUID.parse(folderId);
       FolderInfo.parse(item);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        const msg = error.errors
+          .map((e) => `${e.path.join('.')}: ${e.message}`)
+          .join(', ');
+        throw new AppError(msg);
+      }
+
       if (error instanceof Error) {
         const msg = `${FolderCreateCmd.name}: invalid input ${error.message}`;
-        throw new Error(msg);
+        throw new AppError(msg);
       }
       throw error;
     }

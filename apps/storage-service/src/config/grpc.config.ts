@@ -12,7 +12,7 @@ const config = registerAs('grpc', () => {
   const protoFiles = glob.sync('**/*.proto', { cwd: includeDir });
   const packageName = 'nest.microservices';
   const loader = {
-    keepCase: true,
+    keepCase: false,
     longs: String,
     enums: String,
     defaults: true,
