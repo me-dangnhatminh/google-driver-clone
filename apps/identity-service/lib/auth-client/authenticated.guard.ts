@@ -3,6 +3,7 @@ import {
   ExecutionContext,
   Inject,
   Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ClientGrpcProxy } from '@nestjs/microservices';
 import * as grpc from '@grpc/grpc-js';
@@ -27,8 +28,7 @@ export class Authenticated implements CanActivate {
     const verify = this.authService.verifyToken({}, metadata);
     return rx.from(verify).pipe(
       rx.catchError((err) => {
-        console.error(err);
-        return rx.of(false);
+        throw new UnauthorizedException(err.message);
       }),
       rx.map((user: any) => {
         user['sub'] = user.id;

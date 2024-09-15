@@ -13,7 +13,7 @@ import * as grpc from '@grpc/grpc-js';
         useFactory: (configService: ConfigService) => {
           const grpcConfig = configService.get('grpc.storage');
           // TODO: Implement the logic to return the gRPC client options
-          const urlIsLocal = ['localhost', '127.0.0.1'].includes(
+          const urlIsLocal = ['localhost', '127.0.0.1', '0.0.0.0'].includes(
             grpcConfig.url.split(':')[0],
           );
           return {

@@ -7,7 +7,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 
-import { StorageService } from 'src/app/services';
+import { StorageService } from 'src/app/services'; // TODO fix
 
 @Injectable()
 export class StorageLoaded implements CanActivate {

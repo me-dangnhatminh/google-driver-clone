@@ -34,7 +34,7 @@ export class DiskStorageService implements MulterOptionsFactory {
 
   constructor(private readonly configService: ConfigService<any, true>) {
     const rootDirConfigPath = 'storage.disk.rootDir';
-    let rootDir = this.configService.get<string>(rootDirConfigPath) ?? 'data';
+    let rootDir = this.configService.get<string>(rootDirConfigPath) ?? '.temp';
     if (!rootDir) throw new Error(`Config not found: ${rootDirConfigPath}`);
 
     if (!path.isAbsolute(rootDir)) rootDir = path.resolve(rootDir);

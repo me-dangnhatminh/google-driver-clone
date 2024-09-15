@@ -7,46 +7,71 @@ import "google/protobuf/empty.proto";
 
 // =========== FILE ===========
 service FileService {
+  rpc uploadFile(stream FileContentChunk) returns (google.protobuf.Empty);
+  rpc getFile(GetFileRequest) returns (FileRef);
   rpc getFiles(GetFilesRequest) returns (GetFilesResponse);
+  rpc deleteFile(DeleteFileRequest) returns (google.protobuf.Empty); 
+  rpc updateFile(UpdateFileRequest) returns (FileRef); // update name, description, thumbnail and pin, unpin, archive, unarchive
+
+  rpc getFileContent(GetFileContentRequest) returns (stream FileContentChunk);
+  rpc downloadFile(DownloadFileRequest) returns (stream FileContentChunk);
+  rpc downloadFiles(DownloadFileRequest) returns (stream FileContentChunk);
+}
+
+message FileContentChunk {
+  optional string fileId = 1;
+  optional bytes content = 2;
+  optional int64 offset = 3;
+}
+
+message GetFileRequest {
+  optional string fileId = 1;
 }
 
 message GetFilesRequest {
   optional string folderId = 1;
+  optional string userId = 2;
+  optional string query = 3;
+  optional int32 pageSize = 4;
+  optional int32 pageNumber = 5;
 }
 
 message GetFilesResponse {
   repeated FileRef files = 1;
+  optional int32 total = 2;
+}
+
+message DeleteFileRequest {
+  optional string fileId = 1;
+}
+
+message UpdateFileRequest {
+  string fileId = 1;
+  optional string action = 5; // pin, unpin, archive, unarchive
+  optional string name = 2;
+  optional string description = 3;
+  optional string thumbnail = 4;
+}
+
+message GetFileContentRequest {
+  optional string fileId = 1;
+}
+
+message DownloadFileRequest {
+  optional string fileId = 1;
 }
 
 message FileRef {
-  optional string id = 1;
-  string name = 2;
-  optional int64 size = 3;
-  optional google.protobuf.Timestamp createdAt = 4;
-  optional google.protobuf.Timestamp pinnedAt = 5;
-  optional google.protobuf.Timestamp modifiedAt = 6;
-  optional google.protobuf.Timestamp archivedAt = 7;
-
-  optional string ownerId = 8;
-  string contentType = 9;
-  string thumbnail = 10;
-  string description = 11;
-}
-
-message FolderInfo {
-  optional string id = 1;
-  string name = 2;
-  optional google.protobuf.Timestamp createdAt = 3;
-  optional google.protobuf.Timestamp pinnedAt = 4;
-  optional google.protobuf.Timestamp modifiedAt = 5;
-  optional google.protobuf.Timestamp archivedAt = 6;
-
-  optional string ownerId = 7;
-  string description = 8;
-}
-
-message MyStorage {
-  optional string id = 1;
-  optional string ownerId = 2;
-  optional string refId = 3;
+  optional string fileId = 1;
+  optional string name = 2;
+  optional string description = 3;
+  optional string thumbnail = 4;
+  optional bool pin = 5;
+  optional bool archive = 6;
+  optional google.protobuf.Timestamp created = 7;
+  optional google.protobuf.Timestamp updated = 8;
+  optional string userId = 9;
+  optional string folderId = 10;
+  optional string mimeType = 11;
+  optional int64 size = 12;
 }

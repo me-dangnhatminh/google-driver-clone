@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  Inject,
   Param,
   ParseFilePipe,
   Patch,
@@ -42,15 +43,23 @@ import {
   FolderCreateDTO,
   Pagination,
 } from 'src/app';
-import fs from 'fs-extra';
+import * as path from 'path';
+import * as fs from 'fs-extra';
+import * as rx from 'rxjs';
 
 import { fileUtil, StorageRoutes } from 'src/common';
 
-import { HttpStorage, StorageLoaded } from 'src/infa/guards';
-import { useZodPipe } from 'src/infa/pipes';
-import { HttpUser } from 'src/infa/decorators';
+import { Authenticated, HttpUser } from 'lib/auth-client';
+import {
+  STORAGE_SERVICE_NAME,
+  HttpStorage,
+  StorageLoaded,
+} from 'lib/storage-client';
+
+import { useZodPipe } from '../pipes';
 import { DiskStorageService } from '../adapters';
-import { Authenticated } from 'lib/auth-client';
+import { ClientGrpcProxy } from '@nestjs/microservices';
+import { Readable } from 'stream';
 
 const RootOrKey = z.union([z.literal('root'), UUID]);
 type RootOrKey = Omit<string, 'root'> | 'root';
@@ -58,11 +67,17 @@ type RootOrKey = Omit<string, 'root'> | 'root';
 @Controller()
 @UseGuards(Authenticated, StorageLoaded)
 export class StorageRestController {
+  private readonly fileService: any;
+
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
     private readonly storageService: DiskStorageService,
-  ) {}
+    @Inject(STORAGE_SERVICE_NAME)
+    private readonly client: ClientGrpcProxy,
+  ) {
+    this.fileService = client.getService('FileService');
+  }
 
   @Get(StorageRoutes.STORAGE_DETAIL)
   @Transactional()
@@ -99,15 +114,62 @@ export class StorageRestController {
     @UploadedFile(new ParseFilePipe({ fileIsRequired: true }))
     file: Express.Multer.File,
   ) {
-    const folderId = UUID.parse(key === 'root' ? rootId : key);
-    const cmd = new FileUploadCmd(rootId, folderId, userId, {
-      id: file.filename,
-      name: file.originalname,
-      size: file.size,
-      contentType: file.mimetype,
-      ownerId: userId,
+    const stream = fs.createReadStream(path.resolve(file.path));
+    console.log('File upload', file);
+
+    const content = new rx.Observable<string | Buffer>((subscriber) => {
+      stream.on('data', (chunk) => {
+        subscriber.next(chunk);
+      });
+      stream.on('end', () => {
+        subscriber.complete();
+      });
+      stream.on('error', (error) => {
+        subscriber.error(error);
+      });
     });
-    await this.commandBus.execute(cmd);
+
+    const uploadStream = this.fileService.uploadFile({
+      content,
+      fileId: file.filename,
+      offset: 0,
+    });
+
+    uploadStream.subscribe({
+      next: (chunk) => {
+        console.log('Received chunk', chunk);
+      },
+      complete: () => {
+        console.log('Upload completed');
+      },
+      error: (err) => {
+        console.error(err);
+      },
+    });
+
+    return uploadStream.toPromise();
+    // wait for the upload to complete
+
+    // uploadStream.subscribe({
+    //   next: (chunk) => {
+    //     console.log('Received chunk', chunk);
+    //   },
+    //   complete: () => {
+    //     console.log('Upload completed');
+    //   },
+    //   error: (err) => {
+    //     console.error(err);
+    //   },
+    // });
+    // const folderId = UUID.parse(key === 'root' ? rootId : key);
+    // const cmd = new FileUploadCmd(rootId, folderId, userId, {
+    //   id: file.filename,
+    //   name: file.originalname,
+    //   size: file.size,
+    //   contentType: file.mimetype,
+    //   ownerId: userId,
+    // });
+    // await this.commandBus.execute(cmd);
   }
 
   @Get(StorageRoutes.FILE_DOWNLOAD)

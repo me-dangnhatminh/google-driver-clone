@@ -1,21 +1,26 @@
 import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { UserInfoClient, ManagementClient } from 'auth0';
 
 @Module({
   providers: [
     {
       provide: UserInfoClient,
-      useValue: new UserInfoClient({
-        domain: process.env.AUTH0_DOMAIN ?? '',
-      }),
+      inject: [ConfigService],
+      useFactory: () => {
+        return new UserInfoClient({ domain: process.env.AUTH0_DOMAIN ?? '' });
+      },
     },
     {
       provide: ManagementClient,
-      useValue: new ManagementClient({
-        domain: process.env.AUTH0_DOMAIN ?? '',
-        clientId: process.env.AUTH0_CLIENT_ID ?? '',
-        clientSecret: process.env.AUTH0_SECRET ?? '',
-      }),
+      inject: [ConfigService],
+      useFactory: () => {
+        return new ManagementClient({
+          domain: process.env.AUTH0_DOMAIN ?? '',
+          clientId: process.env.AUTH0_CLIENT_ID ?? '',
+          clientSecret: process.env.AUTH0_CLIENT_SECRET ?? '',
+        });
+      },
     },
   ],
   exports: [UserInfoClient, ManagementClient],
