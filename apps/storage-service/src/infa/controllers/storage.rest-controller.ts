@@ -62,15 +62,15 @@ type RootOrKey = Omit<string, 'root'> | 'root';
 @Controller()
 @UseGuards(Authenticated, StorageLoaded)
 export class StorageRestController {
-  private readonly _storageService: any;
+  private readonly storageService: any;
 
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
-    private readonly storageService: DiskStorageService,
+    private readonly diskStorageService: DiskStorageService,
     @Inject(STORAGE_SERVICE_NAME) client: ClientGrpcProxy,
   ) {
-    this._storageService = client.getService('StorageService');
+    this.storageService = client.getService('StorageService');
   }
 
   @Get(StorageRoutes.STORAGE_DETAIL)
@@ -93,7 +93,7 @@ export class StorageRestController {
     const folderId = UUID.parse(key === 'root' ? rootId : key);
     const meta = new grpc.Metadata();
     meta.add('accessorId', userId);
-    const get = this._storageService.getFolder(
+    const get = this.storageService.getFolder(
       { rootId, label, folderId, pagination },
       meta,
     );
@@ -111,7 +111,7 @@ export class StorageRestController {
     const meta = new grpc.Metadata();
     meta.add('accessorId', userId);
     const item = { id: uuid(), ownerId: userId, ...dto };
-    const fetch = this._storageService.createFolder({ folderId, item }, meta);
+    const fetch = this.storageService.createFolder({ folderId, item }, meta);
     return rx.lastValueFrom(fetch);
   }
 
@@ -123,7 +123,7 @@ export class StorageRestController {
   ) {
     const meta = new grpc.Metadata();
     meta.add('accessorId', userId);
-    const fetch = this._storageService.updateFolder(
+    const fetch = this.storageService.updateFolder(
       { folderId, method: dto },
       meta,
     );
@@ -140,7 +140,7 @@ export class StorageRestController {
   ) {
     const meta = new grpc.Metadata();
     meta.add('accessorId', userId);
-    const fetch = this._storageService.hardDeleteItem(
+    const fetch = this.storageService.hardDeleteItem(
       { rootId, id: key, type },
       meta,
     );
@@ -170,7 +170,29 @@ export class StorageRestController {
       contentType: file.mimetype,
       ownerId: userId,
     });
+
     await this.commandBus.execute(cmd);
+    // const meta = new grpc.Metadata();
+    // meta.add('accessorId', userId);
+    // meta.add('file', JSON.stringify(cmd.item));
+
+    // const readStream = fs.createReadStream(file.path);
+    // const subject = new rx.Subject();
+    // readStream.on('data', (chunk) => {
+    //   const buffer = Buffer.from(chunk);
+    //   subject.next({ content: buffer, offset: buffer.length });
+    // });
+
+    // readStream.on('end', () => {
+    //   subject.complete();
+    // });
+
+    // readStream.on('error', (error) => {
+    //   subject.error(error);
+    // });
+
+    // const fetch = this._storageService.uploadFile(subject, meta);
+    // await rx.firstValueFrom(fetch);
   }
 
   @Get(StorageRoutes.FILE_DOWNLOAD)
@@ -185,7 +207,7 @@ export class StorageRestController {
 
     let filename: string = result.name;
     const contentType: string = result.contentType;
-    const filePath = this.storageService.filePath(fileKey);
+    const filePath = this.diskStorageService.filePath(fileKey);
     if (!filePath.isExists || !filename) {
       throw new Error('File not found: please contact admin');
     }
@@ -224,7 +246,10 @@ export class StorageRestController {
   ) {
     const query = new FolderDownloadQuery(folderId);
     const { name, flatContent } = await this.queryBus.execute(query);
-    const zipped = await this.storageService.buildZipAsync(name, flatContent);
+    const zipped = await this.diskStorageService.buildZipAsync(
+      name,
+      flatContent,
+    );
     const zip = zipped.zip;
     const filename = zipped.foldername;
     res.setHeader('Content-Disposition', `attachment; filename=${filename}`);

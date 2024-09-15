@@ -5,9 +5,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { TransactionHost } from '@nestjs-cls/transactional';
-import { PrismaClient } from '@prisma/client';
 
 import { FileRef, UUID } from 'src/domain';
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
 
 export class FileUploadCmd implements ICommand {
   public readonly rootId: string;
@@ -37,10 +37,10 @@ export class FileUploadCmd implements ICommand {
 
 @CommandHandler(FileUploadCmd)
 export class FileUploadHandler implements ICommandHandler {
-  private readonly tx: PrismaClient;
-  constructor(private readonly txHost: TransactionHost) {
-    this.tx = this.txHost.tx as PrismaClient; // TODO: not shure this run
-  }
+  private readonly tx = this.txHost.tx;
+  constructor(
+    private readonly txHost: TransactionHost<TransactionalAdapterPrisma>,
+  ) {}
 
   async execute(command: FileUploadCmd) {
     const { item, folderId, rootId } = command;

@@ -11,6 +11,8 @@ service StorageService {
   rpc getFolder(GetFolderRequest) returns (GetFolderResponse);
   rpc updateFolder(UpdateFolderRequest) returns (google.protobuf.Empty);
   rpc hardDeleteItem(DeleteItemRequest) returns (google.protobuf.Empty);
+
+  rpc uploadFile(stream UploadFileRequest) returns (FileRef);
 }
 
 message Owner {
@@ -109,4 +111,10 @@ message DeleteItemRequest {
   string rootId = 1;
   string type = 2;
   string id = 3;
+}
+
+// content and offset
+message UploadFileRequest {
+  bytes content = 1;
+  int64 offset = 2;
 }

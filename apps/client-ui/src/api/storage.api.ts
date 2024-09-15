@@ -6,7 +6,7 @@ import FileUtils from "@/lib/file.utils";
 // ============================ DTOs ============================ //
 const UUID = z.string();
 const Bytes = z.coerce.number().int().min(0);
-const PastTime = z.string();
+const PastTime = z.coerce.date();
 
 export const MyStorage = z.object({
   name: z.string(),
@@ -30,8 +30,8 @@ export const FileRef = z.object({
   description: z.string().nullish(),
   createdAt: PastTime,
   pinnedAt: PastTime.nullish(),
-  modifiedAt: PastTime.nullable(),
-  archivedAt: PastTime.nullable(),
+  modifiedAt: PastTime.nullish(),
+  archivedAt: PastTime.nullish(),
 });
 export const FolderInfo = z.object({
   id: z.string(),

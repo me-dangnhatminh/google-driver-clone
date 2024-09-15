@@ -2,10 +2,15 @@ import { Metadata } from '@grpc/grpc-js';
 import { Transactional } from '@nestjs-cls/transactional';
 import { Controller, Logger } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { GrpcMethod, RpcException } from '@nestjs/microservices';
+import {
+  GrpcMethod,
+  GrpcStreamMethod,
+  RpcException,
+} from '@nestjs/microservices';
 import { GrpcInvalidArgumentException, GrpcUnknownException } from 'lib/common';
 
 import {
+  FileUploadCmd,
   FolderContentQuery,
   FolderCreateCmd,
   FolderUpdateCmd,
@@ -13,6 +18,10 @@ import {
   StorageService,
 } from 'src/app';
 import { AppError } from 'src/common';
+import { FileRef } from 'src/domain';
+import * as rx from 'rxjs';
+import * as fs from 'fs-extra';
+import * as path from 'path';
 
 @Controller()
 export class StorageGrpcController {
@@ -114,5 +123,48 @@ export class StorageGrpcController {
       }
       throw new GrpcUnknownException(error.message);
     }
+  }
+
+  @GrpcStreamMethod('StorageService', 'uploadFile')
+  @Transactional()
+  uploadFile(request: rx.Observable<any>, metadata: Metadata) {
+    const data = {
+      rootId: String(metadata.get('rootId')[0]),
+      folderId: String(metadata.get('folderId')[0]),
+      fileRef: FileRef.parse(JSON.parse(String(metadata.get('file')[0]))),
+      accessorId: String(metadata.get('accessorId')[0]),
+    };
+    if (!data.accessorId)
+      throw new RpcException('Metadata missing: accessorId');
+    if (!data.rootId) throw new RpcException('Metadata missing: rootId');
+    if (!data.folderId) throw new RpcException('Metadata missing: folderId');
+    if (!data.fileRef) throw new RpcException('Metadata missing: fileRef');
+    const cmd = new FileUploadCmd(
+      data.rootId,
+      data.folderId,
+      data.accessorId,
+      data.fileRef,
+    );
+    const fileRef = data.fileRef;
+    const filePath = path.resolve('.temp', fileRef.id);
+    const newFile = fs.createWriteStream(filePath);
+
+    return request.subscribe({
+      next: ({ content, offset }) => {
+        this.logger.log(`next: ${offset}`);
+        newFile.write(content);
+      },
+      error: (error) => {
+        this.logger.error(`error: ${error}`);
+        newFile.close();
+        fs.unlinkSync(filePath);
+        throw new RpcException('Error uploading file');
+      },
+      complete: async () => {
+        newFile.close();
+        await this.commandBus.execute(cmd);
+        return cmd.item;
+      },
+    });
   }
 }
