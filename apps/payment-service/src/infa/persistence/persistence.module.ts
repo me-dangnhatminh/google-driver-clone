@@ -1,52 +1,26 @@
-import { Global, Logger, Module, OnModuleInit } from '@nestjs/common';
-
+import { Module } from '@nestjs/common';
 import { ClsModule } from 'nestjs-cls';
 import { ClsPluginTransactional } from '@nestjs-cls/transactional';
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
-import { PrismaClient } from '@prisma/client';
-
-// =================================
-// this is BigInt serialization for JSON (error)
-Object.assign(BigInt.prototype, {
-  toJSON() {
-    return this.toString();
-  },
-});
-// =================================
+import { Prisma, PrismaClient } from '@prisma/client';
+import { PrismaModule } from './prisma.module';
 
 @Module({
-  imports: [],
-  providers: [PrismaClient],
-  exports: [PrismaClient],
-})
-export class PrismaModule implements OnModuleInit {
-  private readonly logger = new Logger(PrismaModule.name);
-  constructor(private readonly prisma: PrismaClient) {}
-
-  async onModuleInit() {
-    await this.prisma
-      .$connect()
-      .then(() => this.logger.log('Prisma connected'))
-      .catch((error) => this.logger.error('Prisma connection error', error));
-  }
-}
-
-const clsModule = ClsModule.forRoot({
-  plugins: [
-    new ClsPluginTransactional({
-      imports: [PrismaClient],
-      adapter: new TransactionalAdapterPrisma({
-        prismaInjectionToken: PrismaClient,
-      }),
+  imports: [
+    ClsModule.forRoot({
+      plugins: [
+        new ClsPluginTransactional({
+          imports: [PrismaModule],
+          adapter: new TransactionalAdapterPrisma({
+            prismaInjectionToken: PrismaClient,
+            defaultTxOptions: {
+              isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+            },
+          }),
+        }),
+      ],
     }),
   ],
-});
-
-@Global()
-@Module({
-  imports: [PrismaModule, clsModule],
-  exports: [PrismaModule],
+  exports: [ClsModule],
 })
 export class PersistencesModule {}
-
-export default PersistencesModule;

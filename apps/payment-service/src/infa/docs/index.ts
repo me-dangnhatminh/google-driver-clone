@@ -1,5 +1,3 @@
-export * from './other';
-
 import {
   DocumentBuilder,
   SwaggerCustomOptions,

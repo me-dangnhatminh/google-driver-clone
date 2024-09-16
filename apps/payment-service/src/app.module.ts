@@ -4,20 +4,20 @@ import {
   NestModule,
   Provider,
 } from '@nestjs/common';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { CacheModule } from '@nestjs/cache-manager';
-import { redisStore } from 'cache-manager-redis-yet';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 
-import { services } from './app/services';
-
-import { controllers } from './infa/controllers';
+import { CacheModule, StripeModule } from './infa/apdaters';
 import { PersistencesModule } from './infa/persistence';
 import { ResponseInterceptor } from './infa/interceptors';
-import { HTTPLogger } from './infa/middlewares';
 import { HttpExceptionFilter } from './infa/filters';
-import { StripeModule } from '@golevelup/nestjs-stripe';
+
+import { controllers } from './infa/controllers';
+import { services } from './app/services';
+
+import { HTTPLogger } from 'lib/common';
+import { AuthClientModule } from 'lib/auth-client';
+import config from './config';
 
 const providers: Provider[] = [];
 providers.push(
@@ -34,37 +34,13 @@ providers.push(...services);
       envFilePath: '.env',
       cache: true,
       expandVariables: true,
+      load: config,
     }),
-    CacheModule.register({
-      isGlobal: true,
-      store() {
-        return redisStore({
-          url: 'redis://localhost:6379',
-        }).catch((err) => {
-          console.error(err);
-          throw err;
-        });
-      },
-    }),
+    CacheModule,
     PersistencesModule,
-    StripeModule.forRootAsync(StripeModule, {
-      useFactory: () => {
-        return {
-          apiKey: String(process.env.STRIPE_SECRET_KEY),
-        };
-      },
-    }),
-    ClientsModule.register([
-      {
-        name: 'PAYMENT_SERVICE',
-        transport: Transport.RMQ,
-        options: {
-          urls: ['amqp://localhost:5672'],
-          queue: 'payment_queue',
-          queueOptions: { durable: false },
-        },
-      },
-    ]),
+    StripeModule,
+
+    AuthClientModule,
   ],
   controllers,
   providers,

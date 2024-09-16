@@ -1,36 +1,46 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 import { util } from 'zod';
 
-export const AppIssueCode = util.arrayToEnum([
+export const IssueCode = util.arrayToEnum([
   'unknown',
-  'auth_invalid',
-  'plan_notfound',
-  'plan_invalid',
-  'email_invalid',
+  'internal',
+  'invalid_input',
+  'not_found',
+  'conflict',
 ]);
 
-export type AppIssueCode = keyof typeof AppIssueCode;
+export type IssueCodes = keyof typeof IssueCode;
 
 export type IssueBase = { path: (string | number)[]; message?: string };
 
 export type UnknownIssue = IssueBase & {
-  code: typeof AppIssueCode.unknown;
+  code: typeof IssueCode.unknown;
 };
 
-export type PlanNotFoundIssue = IssueBase & {
-  code: typeof AppIssueCode.plan_notfound;
+export type InternalIssue = IssueBase & {
+  code: typeof IssueCode.internal;
 };
 
-export type PlanInvalidIssue = IssueBase & {
-  code: typeof AppIssueCode.plan_invalid;
+export type InvalidInputIssue = IssueBase & {
+  code: typeof IssueCode.invalid_input;
 };
 
-export type AppIssueOptionalMessage =
+export type NotFoundIssue = IssueBase & {
+  code: typeof IssueCode.not_found;
+};
+
+export type ConflictIssue = IssueBase & {
+  code: typeof IssueCode.conflict;
+};
+
+export type IssueOptionalMessage =
   | UnknownIssue
-  | PlanNotFoundIssue
-  | PlanInvalidIssue;
+  | InternalIssue
+  | InvalidInputIssue
+  | NotFoundIssue
+  | ConflictIssue;
 
-export type AppIssue = AppIssueOptionalMessage & {
+export type AppIssue = IssueOptionalMessage & {
   fatal?: boolean;
   message: string;
 };
@@ -51,16 +61,6 @@ export class AppError extends Error {
     this.name = AppError.name;
     this.issues = issues;
     Error.captureStackTrace(this, AppError);
-    /**
-     * This is necessary because of how TypeScript extends built-in Error class
-     * https://stackoverflow.com/questions/41102060/typescript-extending-error-class
-     */
-    // const actualProto = new.target.prototype;
-    // if (Object.setPrototypeOf) {
-    //   Object.setPrototypeOf(this, actualProto);
-    // } else {
-    //   (this as any).__proto__ = actualProto;
-    // }
   }
 
   static new(issues: AppIssue[]) {
@@ -100,7 +100,7 @@ export class AppError extends Error {
 export type stripPath<T extends object> = T extends any
   ? Omit<T, 'path'>
   : never;
-export type IssueData = stripPath<AppIssueOptionalMessage> & {
+export type IssueData = stripPath<IssueOptionalMessage> & {
   path?: (string | number)[];
   fatal?: boolean;
 };
@@ -109,7 +109,7 @@ export type ErrorMapCtx = {
   data: any;
 };
 export type AuthErrorMap = (
-  issue: AppIssueOptionalMessage,
+  issue: IssueOptionalMessage,
   _ctx: ErrorMapCtx,
 ) => { message: string };
 

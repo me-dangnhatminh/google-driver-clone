@@ -1,4 +1,4 @@
-import { PaymentController } from './payment.controller';
-import { SubscriptionController } from './subscriptions.controller';
+import { BillingRestController } from './billing.rest-controller';
+import { SubscriptionRestController } from './subscriptions.rest-controller';
 
-export const controllers = [PaymentController, SubscriptionController];
+export const controllers = [BillingRestController, SubscriptionRestController];

@@ -1,3 +1,2 @@
-export * from './events';
-
-export * from './tiered-pricing.model';
+export * from './biliing.model';
+export * from './payment.model';

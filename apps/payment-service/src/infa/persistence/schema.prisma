@@ -7,29 +7,63 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model Product {
-  id          String    @id @map("id")
-  name        String    @map("name")
-  description String?   @map("description")
-  createdAt   DateTime  @map("created_at")
-  updatedAt   DateTime? @map("updated_at")
-}
-
-model Price {
-  id        String @id @map("id")
-  productId String @map("product_id")
-  tierId    String @map("tier_id")
-
-  // monthly, yearly, one-time
-}
-
-model Tier {
-  id          String  @id @map("id")
-  name        String  @map("name")
+// ---------------- Billing service ---------------- //
+model PlanCategory {
+  id          String  @id
+  name        String  @unique @map("name")
   description String? @map("description")
+  plans       Plan[]
+}
 
-  metadata String? @map("metadata")
+model Plan {
+  id         String        @id
+  categoryId String        @map("category_id")
+  name       String        @map("name")
+  price      String        @map("price")
+  currency   String        @map("currency")
+  duration   String        @map("duration")
+  metadata   Json?         @map("metadata")
+  category   PlanCategory? @relation(fields: [categoryId], references: [id])
+}
 
-  createdAt DateTime  @map("created_at")
-  updatedAt DateTime? @map("updated_at")
+model Invoice {
+  id             String   @id
+  subscriptionId String   @map("subscription_id")
+  amount         String   @map("amount")
+  currency       String   @map("currency")
+  status         String   @map("status")
+  issueDate      DateTime @map("issue_date") @db.Timestamp()
+  dueDate        DateTime @map("due_date") @db.Timestamp()
+  metadata       Json?    @map("metadata")
+}
+
+model Subscription {
+  id        String   @id
+  accountId String   @map("account_id")
+  planId    String   @map("plan_id")
+  status    String   @map("status") // active, inactive 
+  startDate DateTime @map("start_date") @db.Timestamp()
+  endDate   DateTime @map("end_date") @db.Timestamp()
+  metadata  Json?    @map("metadata")
+}
+
+// ---------------- Payment service ---------------- //
+
+model PaymentEvent {
+  checkoutId     String  @id
+  buyerInfo      String
+  sellerInfo     String
+  creditCardInfo String
+  isPaid         Boolean
+}
+
+model PaymentOrder {
+  paymentOrderId String  @id
+  buyerAccountId String
+  amount         String
+  currency       String
+  checkoutId     String
+  status         String // not_started, executing, success, failed
+  ledgerUpdated  Boolean
+  walletUpdated  Boolean
 }
