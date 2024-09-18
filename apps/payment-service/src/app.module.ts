@@ -7,17 +7,19 @@ import {
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 
-import { CacheModule, StripeModule } from './infa/apdaters';
-import { PersistencesModule } from './infa/persistence';
-import { ResponseInterceptor } from './infa/interceptors';
-import { HttpExceptionFilter } from './infa/filters';
+import {
+  HTTPLogger,
+  ResponseInterceptor,
+  HttpExceptionFilter,
+} from 'lib/common';
 
-import { controllers } from './infa/controllers';
-import { services } from './app/services';
-
-import { HTTPLogger } from 'lib/common';
 import { AuthClientModule } from 'lib/auth-client';
-import config from './config';
+
+import config from 'src/config';
+import { CacheModule, StripeModule } from 'src/infa/apdaters';
+import { PersistencesModule } from 'src/infa/persistence';
+import { controllers } from 'src/infa/controllers';
+import { services } from 'src/app/services';
 
 const providers: Provider[] = [];
 providers.push(

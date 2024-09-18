@@ -3,22 +3,29 @@ import { z } from 'zod';
 
 @Injectable()
 export class ZodValidator implements PipeTransform {
-  constructor(private readonly schema: z.ZodType<any>) {}
+  constructor(
+    private readonly schema: z.ZodType,
+    private readonly code: string,
+  ) {}
 
-  transform(value: unknown) {
+  transform(value) {
     const result = this.schema.safeParse(value);
     if (result.success) return result.data;
-    const msg = result.error.errors
-      .map((e) => {
-        const path = e.path.join('.');
-        if (path === '') return e.message;
-        else return `${path}: ${e.message}`;
-      })
-      .join(', ');
-    throw new BadRequestException(msg);
+    throw new BadRequestException({
+      type: 'invalid_request_error',
+      code: this.code,
+      message: 'Invalid request data. Please check the errors.',
+      errors: result.error.errors.map((e) => ({
+        detail: e.message,
+        pointer: e.path.map((p) => p ?? '#').join('/'), // # is root, ex: #/data/0
+      })),
+    });
   }
 }
 
-export function useZod<T = unknown>(schema: z.ZodType<T>) {
-  return new ZodValidator(schema);
+export function useZod<T = unknown>(
+  schema: z.ZodType<T>,
+  code: string = 'invalid_argument',
+) {
+  return new ZodValidator(schema, code);
 }
