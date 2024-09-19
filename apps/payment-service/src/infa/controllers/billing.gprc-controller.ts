@@ -1,14 +1,13 @@
+import { Controller } from '@nestjs/common';
 import Stripe from 'stripe';
-import z from 'zod';
 
+@Controller()
 export class BillingGrpcController {
   constructor(private readonly stripe: Stripe) {}
 
-  createProduct() {
-    return this.stripe.products.create({
-      name: 'Storage',
-      type: 'service',
-      description: 'A special product',
-    });
-  }
+  createProduct() {}
+  listProducts() {}
+  deleteProduct() {}
+  createPlan() {}
+  listPlans() {}
 }

@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 
 import z from 'zod';
-import { ErrorCode, ErrorType } from '../error';
+import { AppError, ErrorType } from '../error';
 
 export const ZodBody = <Z extends z.ZodType<unknown>, TZ = z.infer<Z>>(
   schema: Z,
@@ -19,15 +19,16 @@ export const ZodBody = <Z extends z.ZodType<unknown>, TZ = z.infer<Z>>(
       if (!result.data) return result.data;
       return (result['data'] as any)[key];
     }
-    throw new BadRequestException({
+    const res = new AppError({
       type: ErrorType.invalid_request,
-      code: ErrorCode.invalid_body,
+      code: 'invalid_body',
       message: 'Invalid request data. Please check the errors.',
       errors: result.error.errors.map((e) => ({
         detail: e.message,
         pointer: e.path.map((p) => p ?? '#').join('/'),
       })),
     });
+    throw new BadRequestException(res.error);
   })();
 };
 

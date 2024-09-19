@@ -1,21 +1,7 @@
 import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { ZodBody } from 'lib/common';
+
 import Stripe from 'stripe';
-import z from 'zod';
-
-const LinhTinh = z.object({
-  name: z.string().default('LinhTinh'),
-});
-type LinhTinh = z.infer<typeof LinhTinh>;
-
-const CreateProductInput = z.object({
-  id: z.string().optional(),
-  name: z.string(),
-  type: z.enum(['service', 'good']).default('service'),
-  metadata: z.record(z.string()).optional(),
-});
-type CreateProductInput = z.infer<typeof CreateProductInput>;
 
 @ApiTags('billing')
 @Controller({ path: 'billings', version: '1' })
@@ -43,12 +29,14 @@ export class BillingRestController {
       },
     },
   })
-  createProduct(@Body() body: CreateProductInput) {
+  createProduct(@Body() body) {
     return this.stripe.products.create(body);
   }
 
   @Get('products')
-  listProducts(@ZodBody(LinhTinh) body: LinhTinh) {}
+  listProducts() {
+    return this.stripe.products.list().then((res) => res.data);
+  }
 
   @Delete('products')
   @ApiQuery({ name: 'ids', type: 'string', isArray: true })

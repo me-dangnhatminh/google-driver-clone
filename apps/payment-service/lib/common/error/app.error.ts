@@ -1,72 +1,46 @@
 import { arrayToEnum } from '../utils';
 
+export type TErrorType = keyof typeof ErrorType;
 export const ErrorType = arrayToEnum([
   'unknown',
   'invalid_request',
-  'api_error',
   'command_rejected',
 ]);
 
-export const ErrorCode = arrayToEnum([
-  'invalid_body',
-  'invalid_query',
-  'invalid_params',
-  'invalid_headers',
-  'invalid_token',
-]);
-
-export type ErrorType = keyof typeof ErrorType;
-
 export type ErrorBase = { message?: string };
 
-export interface UnknownError extends ErrorBase {
+export interface TUnknownError extends ErrorBase {
   type: typeof ErrorType.unknown;
 }
 
-export interface CommandRejectedError extends ErrorBase {
+export interface TCommandRejectedError extends ErrorBase {
   type: typeof ErrorType.command_rejected;
   command: string;
 }
 
-export interface CommandRejectedError extends ErrorBase {
-  type: typeof ErrorType.command_rejected;
-  command: string;
+export interface TInvalidRequestError extends ErrorBase {
+  type: typeof ErrorType.invalid_request;
+  errors: { detail: string; pointer: string }[];
 }
 
-export type AppErrorOptionalMessage = UnknownError | CommandRejectedError;
+export type TAppErrorOptionalMessage =
+  | TUnknownError
+  | TCommandRejectedError
+  | TInvalidRequestError;
 
-export type IAppError = AppErrorOptionalMessage & {
+export type TAppError = TAppErrorOptionalMessage & {
   message: string;
   code: string;
 };
 
-export class AppError extends Error {
-  constructor(
-    private errors: IAppError[],
-    message?: string,
-  ) {
-    super(message);
+export class AppError<T extends TAppError = TAppError> extends Error {
+  constructor(public readonly error: T) {
+    super(error.message);
     this.name = this.constructor.name;
     Error.captureStackTrace(this, this.constructor);
   }
 
-  get message() {
-    return 'AppError';
-  }
-
   static is(error: any): error is AppError {
     return error instanceof AppError;
-  }
-
-  static new(errors: IAppError | IAppError[], message?: string) {
-    return new AppError(Array.isArray(errors) ? errors : [errors], message);
-  }
-
-  addError(error: IAppError) {
-    this.errors.push(error);
-  }
-
-  addErrors(errors: IAppError[]) {
-    this.errors.push(...errors);
   }
 }

@@ -1,44 +1,54 @@
 import {
   CallHandler,
   ExecutionContext,
+  Logger,
   Module,
   NestInterceptor,
 } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
-import { catchError, Observable } from 'rxjs';
+import { catchError } from 'rxjs';
 
-import {
-  StripeModule as NestStripe,
-  STRIPE_CLIENT_TOKEN,
-} from '@golevelup/nestjs-stripe';
 import Stripe from 'stripe';
 
 export class StripeExceptionInterceptor implements NestInterceptor {
+  private readonly logger = new Logger(StripeExceptionInterceptor.name);
+
   constructor() {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler) {
     return next.handle().pipe(
-      catchError((error) => {
-        throw error;
+      catchError((error: unknown) => {
+        const isStripeError = error instanceof Stripe.errors.StripeError;
+        if (!isStripeError) throw new Error('Stripe library error');
+
+        const type = error.type;
+        switch (type) {
+          case 'StripeInvalidRequestError':
+            throw 'invalid_request_error';
+
+          case 'StripeAPIError':
+            throw 'api_error';
+
+          default:
+            throw error;
+        }
       }),
     );
   }
 }
 
 @Module({
-  imports: [
-    NestStripe.forRootAsync(NestStripe, {
+  providers: [
+    {
+      provide: Stripe,
       inject: [ConfigService],
       useFactory: () => {
-        return { apiKey: String(process.env.STRIPE_SECRET_KEY) };
+        return new Stripe(process.env.STRIPE_SECRET_KEY || '');
       },
-    }),
-  ],
-  providers: [
-    { provide: Stripe, useExisting: STRIPE_CLIENT_TOKEN },
+    },
     { provide: APP_INTERCEPTOR, useClass: StripeExceptionInterceptor },
   ],
-  exports: [NestStripe, Stripe],
+  exports: [Stripe],
 })
 export class StripeModule {}

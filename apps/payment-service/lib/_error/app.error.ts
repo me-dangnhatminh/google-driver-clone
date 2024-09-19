@@ -4,6 +4,7 @@ export const ErrorType = util.arrayToEnum([
   'unknown',
   'invalid_request',
   'command_rejected',
+  'unauthorized',
 ]);
 
 export type ErrorType = keyof typeof ErrorType;

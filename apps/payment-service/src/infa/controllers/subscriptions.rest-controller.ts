@@ -1,4 +1,3 @@
-import { InjectStripeClient } from '@golevelup/nestjs-stripe';
 import * as common from '@nestjs/common';
 import * as swagger from '@nestjs/swagger';
 import Stripe from 'stripe';
@@ -6,7 +5,7 @@ import Stripe from 'stripe';
 @common.Controller({ path: 'subscriptions', version: '1' })
 @swagger.ApiTags('subscription')
 export class SubscriptionRestController {
-  constructor(@InjectStripeClient() private readonly stripe: Stripe) {}
+  constructor(private readonly stripe: Stripe) {}
 
   @common.Get('products')
   async listProducts() {
