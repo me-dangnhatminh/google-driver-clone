@@ -1,10 +1,10 @@
 import { Provider } from '@nestjs/common';
 
-export * from './commands';
+export * from './commands/v1';
 export * from './queries';
 export * from './services';
 
-import commands from './commands';
+import commands from './commands/v1';
 import queries from './queries';
 import services from './services';
 
