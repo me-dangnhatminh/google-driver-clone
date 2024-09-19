@@ -11,7 +11,7 @@ import { GrpcInvalidArgumentException, GrpcUnknownException } from 'lib/common';
 
 import {
   FileUploadCmd,
-  FolderContentQuery,
+  MyFolderContentQuery,
   FolderCreateCmd,
   FolderUpdateCmd,
   HardDeleteItemCmd,
@@ -56,7 +56,7 @@ export class StorageGrpcController {
   getFolder(request, metadata: Metadata) {
     const accessorId: string = String(metadata.get('accessorId')[0]);
     if (!accessorId) throw new RpcException('Metadata missing: accessorId');
-    const query = new FolderContentQuery(
+    const query = new MyFolderContentQuery(
       request.rootId,
       request.label,
       request.folderId,

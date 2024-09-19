@@ -1,11 +1,7 @@
 import { IQuery, IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { TransactionHost } from '@nestjs-cls/transactional';
 import { PrismaClient } from '@prisma/client';
-import {
-  BadRequestException,
-  ForbiddenException,
-  Logger,
-} from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import * as z from 'zod';
 import { fileUtil } from 'src/common';
 import { FileRef, FolderInfo, UUID } from 'src/domain';
@@ -34,9 +30,9 @@ export const FolderContentResult = FolderInfo.extend({
 
 export type ItemLabel = z.infer<typeof ItemLabel>;
 export type Pagination = z.infer<typeof Pagination>;
-export type FolderContentResult = z.infer<typeof FolderContentResult>;
+export type MyFolderContentResult = z.infer<typeof FolderContentResult>;
 
-export class FolderContentQuery implements IQuery {
+export class MyFolderContentQuery implements IQuery {
   constructor(
     public readonly rootId: string,
     public readonly label: ItemLabel,
@@ -46,25 +42,37 @@ export class FolderContentQuery implements IQuery {
   ) {}
 }
 
-export type IFolderContentHandler = IQueryHandler<
-  FolderContentQuery,
-  FolderContentResult
+export type IMyFolderContentHandler = IQueryHandler<
+  MyFolderContentQuery,
+  MyFolderContentResult
 >;
-@QueryHandler(FolderContentQuery)
-export class FolderContentHandler implements IFolderContentHandler {
+@QueryHandler(MyFolderContentQuery)
+export class MyFolderContentHandler implements IMyFolderContentHandler {
   private readonly tx: PrismaClient;
 
   constructor(private readonly txHost: TransactionHost) {
     this.tx = this.txHost.tx;
   }
 
-  execute(strategyQuery: FolderContentQuery) {
+  async execute(query: MyFolderContentQuery) {
+    // assert rootId is root folder of the user
+    await this.tx.folder.findUniqueOrThrow({
+      where: {
+        id: query.rootId,
+        ownerId: query.accesserId,
+        lft: 0,
+        rootId: null,
+        parentId: null,
+      },
+    });
+
     let strategy:
       | typeof this.getOfMy
       | typeof this.getPinned
       | typeof this.getArchived;
 
-    const label = strategyQuery.label;
+    const label = query.label;
+
     if (label === 'pinned') {
       strategy = this.getPinned;
     } else if (label === 'archived') {
@@ -72,20 +80,12 @@ export class FolderContentHandler implements IFolderContentHandler {
     } else if (label === 'my') {
       strategy = this.getOfMy;
     } else {
-      throw new Error(`Unknown label: ${strategyQuery.label}`);
+      throw new Error(`Unknown label: ${label}`);
     }
 
     return strategy
-      .call(
-        this,
-        strategyQuery.rootId,
-        strategyQuery.folderId,
-        strategyQuery.pagination,
-      )
+      .call(this, query.rootId, query.folderId, query.pagination)
       .then(async (result) => {
-        if (!result) throw new BadRequestException('Folder not found');
-        if (result.ownerId !== strategyQuery.accesserId)
-          throw new ForbiddenException(`You don't have access to this folder`);
         const { folders, ...parent } = result;
 
         const files = result.files.map((f) => f.file);
@@ -96,7 +96,7 @@ export class FolderContentHandler implements IFolderContentHandler {
         });
 
         let nextCursor: any = {};
-        const limit = strategyQuery.pagination.limit;
+        const limit = query.pagination.limit;
         if (files.length > limit) {
           const last = files.pop();
           nextCursor.fileCursor = last.id;
@@ -187,11 +187,9 @@ export class FolderContentHandler implements IFolderContentHandler {
 
   private async getArchived(rootId: string) {
     let minDepth = Infinity;
-    const root = await this.tx.folder.findUnique({
+    const root = await this.tx.folder.findUniqueOrThrow({
       where: { id: rootId },
     });
-    // TODO: optimize this query
-    if (!root) throw new BadRequestException('Root folder not found');
 
     const archivedFolders = await this.tx.folder
       .findMany({

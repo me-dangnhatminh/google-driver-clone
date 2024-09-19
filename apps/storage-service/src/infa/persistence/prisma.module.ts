@@ -1,5 +1,36 @@
-import { Logger, Module, OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import * as rx from 'rxjs';
+import {
+  CallHandler,
+  ExecutionContext,
+  Injectable,
+  Logger,
+  Module,
+  NestInterceptor,
+  OnModuleInit,
+} from '@nestjs/common';
+
+const PrismaCode = {
+  P2025: 'prisma.not_found',
+  P2002: 'prisma.already_exists',
+} as const;
+
+@Injectable()
+export class PrismaInterceptor implements NestInterceptor {
+  private readonly logger = new Logger(PrismaInterceptor.name);
+
+  intercept(context: ExecutionContext, next: CallHandler) {
+    return next.handle().pipe(
+      rx.catchError((error) => {
+        this.logger.error(error);
+        const code = error.code;
+        const message = PrismaCode[code];
+        if (message) throw new Error(message);
+        throw error;
+      }),
+    );
+  }
+}
 
 @Module({
   providers: [PrismaClient],
@@ -22,21 +53,3 @@ Object.assign(BigInt.prototype, {
     return this.toString();
   },
 });
-// =================================
-// {
-//   provide: PrismaClient,
-//   inject: [ConfigService],
-//   useFactory: (configService: ConfigService<Configs, true>) => {
-//     const logger = new Logger(PrismaModule.name);
-//     const dbConfig = configService.get('db', { infer: true });
-//     const url = `${dbConfig.type}://${dbConfig.username}:${dbConfig.password}@${dbConfig.host}:${dbConfig.port}/${dbConfig.database}`;
-//     const prisma = new PrismaClient({ datasourceUrl: url });
-//     return prisma
-//       .$connect()
-//       .then(() => {
-//         const msg = `Connected to database (${dbConfig.type}): ${dbConfig.database}, host: ${dbConfig.host}, port: ${dbConfig.port}, username: ${dbConfig.username}`;
-//         logger.log(msg);
-//       })
-//       .catch((err) => logger.error(err.message, err));
-//   },
-// },

@@ -65,7 +65,9 @@ export class ContentRestController {
 
   public async fileHandler(fileRef: ORM.FileRef, res: Response, size?: string) {
     const filePath = this.storageDisk.filePath(fileRef.id);
-    if (!filePath.isExists) throw new NotFoundException('File not found');
+    if (!filePath.isExists) {
+      throw new NotFoundException({ code: 'file.not_found', id: fileRef.id });
+    }
     const isImage = fileUtil.isImg(fileRef.contentType);
     if (!isImage) {
       const stream = fs.createReadStream(filePath.fullPath);
