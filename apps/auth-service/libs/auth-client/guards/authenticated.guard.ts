@@ -13,8 +13,9 @@ export class Authenticated implements CanActivate {
 
   canActivate(context: ExecutionContext) {
     const [request] = context.getArgs();
-    const token = request.headers.authorization;
+    let token = request.headers.authorization;
     if (!token) return false;
+    token = token.replace('Bearer ', '');
     return rx.from(this.authService.verifyToken({ token })).pipe(
       rx.map((user: any) => {
         user['sub'] = user.id;

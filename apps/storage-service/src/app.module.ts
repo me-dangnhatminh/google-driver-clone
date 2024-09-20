@@ -9,9 +9,9 @@ import { PersistencesModule } from './infa/persistence';
 import { controllers } from './infa/controllers';
 import { CacheModule, MulterModule } from './infa/adapters';
 
-import { HTTPLogger } from 'lib/common';
-import { AuthClientModule } from 'lib/auth-client';
-import { StorageClientModule } from 'lib/storage-client';
+import { HTTPLogger } from 'libs/common';
+import { AuthClientModule } from 'libs/auth-client';
+import { StorageClientModule } from 'libs/storage-client';
 
 @Module({
   imports: [

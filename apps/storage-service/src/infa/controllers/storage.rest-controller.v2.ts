@@ -27,12 +27,12 @@ import {
   Pagination,
 } from 'src/app';
 
-import { Authenticated, HttpUser } from 'lib/auth-client';
+import { Authenticated, HttpUser } from 'libs/auth-client';
 import {
   STORAGE_SERVICE_NAME,
   HttpStorage,
   StorageLoaded,
-} from 'lib/storage-client';
+} from 'libs/storage-client';
 
 import { useZodPipe } from '../pipes';
 

@@ -7,7 +7,6 @@ import {
   GrpcStreamMethod,
   RpcException,
 } from '@nestjs/microservices';
-import { GrpcInvalidArgumentException, GrpcUnknownException } from 'lib/common';
 
 import {
   FileUploadCmd,
@@ -22,6 +21,7 @@ import { FileRef } from 'src/domain';
 import * as rx from 'rxjs';
 import * as fs from 'fs-extra';
 import * as path from 'path';
+import { InvalidArgumentRpcException, UnknownRpcException } from 'libs/common';
 
 @Controller()
 export class StorageGrpcController {
@@ -80,9 +80,9 @@ export class StorageGrpcController {
       return this.commandBus.execute(cmd).then(() => cmd.item);
     } catch (error: any) {
       if (error instanceof AppError) {
-        throw new GrpcInvalidArgumentException(error.message);
+        throw new InvalidArgumentRpcException(error.message);
       }
-      throw new GrpcUnknownException(error.message);
+      throw new UnknownRpcException(error.message);
     }
   }
 
@@ -100,9 +100,9 @@ export class StorageGrpcController {
       return this.commandBus.execute(cmd);
     } catch (error: any) {
       if (error instanceof AppError) {
-        throw new GrpcInvalidArgumentException(error.message);
+        throw new InvalidArgumentRpcException(error.message);
       }
-      throw new GrpcUnknownException(error.message);
+      throw new UnknownRpcException(error.message);
     }
   }
 
@@ -119,9 +119,9 @@ export class StorageGrpcController {
       await this.commandBus.execute(cmd);
     } catch (error: any) {
       if (error instanceof AppError) {
-        throw new GrpcInvalidArgumentException(error.message);
+        throw new InvalidArgumentRpcException(error.message);
       }
-      throw new GrpcUnknownException(error.message);
+      throw new UnknownRpcException(error.message);
     }
   }
 

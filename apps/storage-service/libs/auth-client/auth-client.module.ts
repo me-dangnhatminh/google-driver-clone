@@ -14,7 +14,6 @@ import { AUTH_SERVICE } from './constants';
         useFactory: (configService: ConfigService) => {
           const grpcConfig = configService.get('grpc.auth');
 
-          // TODO: Implement the logic to return the gRPC client options
           const urlIsLocal = ['localhost', '127.0.0.1', '0.0.0.0'].includes(
             grpcConfig.url.split(':')[0],
           );
@@ -34,6 +33,18 @@ import { AUTH_SERVICE } from './constants';
       },
     ]),
   ],
-  exports: [ClientsModule],
+  providers: [
+    {
+      provide: 'AuthService',
+      inject: [AUTH_SERVICE],
+      useFactory: (client) => client.getService('AuthService'),
+    },
+    {
+      provide: 'UserService',
+      inject: [AUTH_SERVICE],
+      useFactory: (client) => client.getService('UserService'),
+    },
+  ],
+  exports: ['AuthService', 'UserService'],
 })
 export class AuthClientModule {}

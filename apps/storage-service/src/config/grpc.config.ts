@@ -2,6 +2,7 @@ import { registerAs } from '@nestjs/config';
 import * as path from 'path';
 import * as fs from 'fs-extra';
 import * as glob from 'glob';
+import { GrpcOptions } from '@nestjs/microservices';
 
 const config = registerAs('grpc', () => {
   const includeDir = path.resolve(__dirname, '../../../../../protos');
@@ -12,11 +13,12 @@ const config = registerAs('grpc', () => {
   const protoFiles = glob.sync('**/*.proto', { cwd: includeDir });
 
   const packageName = 'nest.microservices';
-  const loader = {
+  const loader: GrpcOptions['options']['loader'] = {
     keepCase: false,
     longs: String,
     enums: String,
-    defaults: true,
+    defaults: false,
+    oneofs: false,
     includeDirs: [includeDir],
   };
 
@@ -33,7 +35,7 @@ const config = registerAs('grpc', () => {
       url: '0.0.0.0:40051',
       loader,
     },
-  };
+  } as const satisfies Record<string, GrpcOptions['options']>;
 });
 
 export default config;

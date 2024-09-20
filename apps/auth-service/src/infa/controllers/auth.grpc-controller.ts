@@ -2,13 +2,14 @@ import {
   Controller,
   Injectable,
   Logger,
+  NestInterceptor,
   UseInterceptors,
 } from '@nestjs/common';
 import { GrpcMethod, RpcException } from '@nestjs/microservices';
 
 import { ResponseError, UserInfoClient } from '../adapters/auth0.module';
-import { UnauthenticatedRpcException, UnknownRpcException } from 'lib/common';
-import { AppError, AuthErrorCode, ErrorType } from 'src/common';
+import { UnauthenticatedRpcException, UnknownRpcException } from 'libs/common';
+import { ErrorType } from 'src/common';
 import { Cache } from '../adapters';
 import * as rx from 'rxjs';
 
@@ -33,24 +34,56 @@ export class LoggingInterceptor {
     const start = Date.now();
     return next.handle().pipe(
       rx.tap(() => {
-        const now = Date.now();
-        this.logger.log(`Time: ${now - start}ms`);
+        const duration = Date.now() - start;
+        this.logger.log(`Time: ${duration}ms`);
       }),
       rx.catchError((err) => {
-        this.logger.error(err, err.stack);
+        const duration = Date.now() - start;
+        this.logger.error(
+          `Time: ${duration}ms, Error: ${err.message}`,
+          err.stack,
+        );
         throw err;
       }),
     );
   }
 }
 
-const mapTo = {
-  [AuthErrorCode.unknown]: UnknownRpcException,
-  [AuthErrorCode.invalid_token]: UnauthenticatedRpcException,
-};
+@Injectable()
+export class VerifyTokenCached implements NestInterceptor {
+  constructor(private readonly cache: Cache) {}
+
+  intercept(context, next) {
+    const methodName = context.getHandler().name;
+    if (methodName !== 'verifyToken') return next.handle();
+
+    const [req] = context.getArgs();
+    const token = req.token;
+    return rx.from(this.cache.get(token)).pipe(
+      rx.mergeMap((cached: any) => {
+        if (cached && cached.value) return rx.of(cached);
+        if (cached && cached.error) {
+          const error = cached.error;
+          return rx.throwError(new RpcException(error));
+        }
+
+        return next.handle().pipe(
+          rx.map(async (data) => {
+            await this.cache.set(token, { value: data }, 60 * 60 * 1000); // 1 hour
+            return data;
+          }),
+          rx.catchError(async (err) => {
+            await this.cache.set(token, { error: err }, 60 * 1000); // 1 minute
+            throw err;
+          }),
+        );
+      }),
+    );
+  }
+}
 
 @Controller()
-@UseInterceptors(LoggingInterceptor)
+@UseInterceptors(LoggingInterceptor, VerifyTokenCached)
 export class AuthGrpcController {
   constructor(
     private readonly userInfo: UserInfoClient,
@@ -58,17 +91,9 @@ export class AuthGrpcController {
   ) {}
 
   @GrpcMethod('AuthService', 'verifyToken')
-  async verifyToken(request) {
-    const token = request.token;
-    const cached: any = await this.cache.get(token);
-    if (cached && cached.value) return cached;
-    if (cached && cached.error) {
-      const ErrorClass = mapTo[cached.error.code] || UnknownRpcException;
-      throw new ErrorClass(cached.error);
-    }
-
-    return this.userInfo
-      .getUserInfo(token)
+  verifyToken(request) {
+    const fetch = this.userInfo
+      .getUserInfo(request.token)
       .then((res) => res.data)
       .then((data) => ({
         id: data.sub,
@@ -77,10 +102,6 @@ export class AuthGrpcController {
         roles: ['user'],
         permissions: data.permissions || [],
       }))
-      .then(async (user) => {
-        await this.cache.set(token, { value: user }, 24 * 60 * 60 * 1000);
-        return user;
-      })
       .catch((err: ResponseError) => {
         const status = err.statusCode;
         if (status === 401) {
@@ -101,10 +122,8 @@ export class AuthGrpcController {
           code: 'unknown',
           message: err.message,
         });
-      })
-      .catch(async (err) => {
-        await this.cache.set(token, { error: err }, 60 * 60 * 1000); // 1 hour
-        throw err;
       });
+
+    return rx.from(fetch);
   }
 }

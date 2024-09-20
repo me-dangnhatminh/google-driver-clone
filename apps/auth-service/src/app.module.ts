@@ -4,11 +4,11 @@ import { ConfigModule } from '@nestjs/config';
 import { TerminusModule } from '@nestjs/terminus';
 import { HttpModule } from '@nestjs/axios';
 
-import { HTTPLogger } from 'lib/common';
+import { HTTPLogger } from 'libs/common';
 
 import { controllers, Auth0Module, CacheModule } from 'src/infa';
 import configs from 'src/config';
-import { AuthClientModule } from 'lib/auth-client';
+import { AuthClientModule } from 'libs/auth-client';
 
 @Module({
   imports: [
