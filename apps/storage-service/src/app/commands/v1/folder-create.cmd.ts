@@ -34,12 +34,20 @@ export class FolderCreateCmd implements ICommand {
         const msg = error.errors
           .map((e) => `${e.path.join('.')}: ${e.message}`)
           .join(', ');
-        throw new AppError(msg);
+        throw new AppError({
+          type: 'invalid_request',
+          code: 'invalid_input',
+          message: msg,
+        });
       }
 
       if (error instanceof Error) {
         const msg = `${FolderCreateCmd.name}: invalid input ${error.message}`;
-        throw new AppError(msg);
+        throw new AppError({
+          type: 'invalid_request',
+          code: 'invalid_input',
+          message: msg,
+        });
       }
       throw error;
     }

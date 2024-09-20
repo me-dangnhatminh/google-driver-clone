@@ -1,5 +1,10 @@
+export * from '@nestjs/cache-manager';
 import { Logger, Module } from '@nestjs/common';
-import { CacheModule as NestCacheModule } from '@nestjs/cache-manager';
+import {
+  CACHE_MANAGER,
+  CacheModule as NestCacheModule,
+  Cache,
+} from '@nestjs/cache-manager';
 import { ConfigService } from '@nestjs/config';
 
 import { Configs } from 'src/config';
@@ -22,6 +27,7 @@ import { redisStore } from 'cache-manager-redis-yet';
       },
     }),
   ],
-  exports: [NestCacheModule],
+  providers: [{ provide: Cache, useExisting: CACHE_MANAGER }],
+  exports: [Cache],
 })
 export class CacheModule {}

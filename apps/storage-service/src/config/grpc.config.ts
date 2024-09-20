@@ -10,18 +10,18 @@ const config = registerAs('grpc', () => {
   }
 
   const protoFiles = glob.sync('**/*.proto', { cwd: includeDir });
+
   const packageName = 'nest.microservices';
   const loader = {
     keepCase: false,
     longs: String,
     enums: String,
     defaults: true,
-    oneofs: true,
     includeDirs: [includeDir],
   };
 
   return {
-    identity: {
+    auth: {
       package: packageName,
       protoPath: protoFiles,
       url: '0.0.0.0:50051',

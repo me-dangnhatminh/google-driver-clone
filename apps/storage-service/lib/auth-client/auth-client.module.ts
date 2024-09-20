@@ -1,17 +1,18 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { IDENTITY_SERVICE_NAME } from './constant';
 import * as grpc from '@grpc/grpc-js';
+
+import { AUTH_SERVICE } from './constants';
 
 @Module({
   imports: [
     ClientsModule.registerAsync([
       {
-        name: IDENTITY_SERVICE_NAME,
+        name: AUTH_SERVICE,
         inject: [ConfigService],
         useFactory: (configService: ConfigService) => {
-          const grpcConfig = configService.get('grpc.identity');
+          const grpcConfig = configService.get('grpc.auth');
 
           // TODO: Implement the logic to return the gRPC client options
           const urlIsLocal = ['localhost', '127.0.0.1', '0.0.0.0'].includes(
@@ -33,6 +34,13 @@ import * as grpc from '@grpc/grpc-js';
       },
     ]),
   ],
-  exports: [ClientsModule],
+  providers: [
+    {
+      provide: 'AuthService',
+      inject: [AUTH_SERVICE],
+      useFactory: (client: any) => client.getService('AuthService'),
+    },
+  ],
+  exports: ['AuthService'],
 })
 export class AuthClientModule {}

@@ -20,10 +20,15 @@ export const zodValidate =
   (data: any): z.infer<TSchema> => {
     const result = schema.safeParse(data);
     if (result.success) return result.data;
-    const msg = result.error.errors
-      .map((e) => `${e.path.join('.')}: ${e.message}`)
-      .join(', ');
-    throw new BadRequestException(msg);
+    throw new BadRequestException({
+      type: 'invalid_request',
+      code: 'invalid_request', // TODO: use a better code
+      message: 'Invalid request',
+      errors: result.error.errors.map((e) => ({
+        detail: e.message,
+        pointer: e.path.join('.'),
+      })),
+    });
   };
 
 export function useZodPipe<T = unknown>(schema: z.ZodType<T>) {

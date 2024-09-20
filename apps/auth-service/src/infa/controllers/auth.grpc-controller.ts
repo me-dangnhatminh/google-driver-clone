@@ -1,28 +1,73 @@
-import { Metadata } from '@grpc/grpc-js';
-import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
-import { Controller, Inject, Logger } from '@nestjs/common';
+import {
+  Controller,
+  Injectable,
+  Logger,
+  UseInterceptors,
+} from '@nestjs/common';
 import { GrpcMethod, RpcException } from '@nestjs/microservices';
-import { UserInfoClient } from 'auth0';
-import { GrpcUnauthenticatedException } from 'lib/common';
+
+import { ResponseError, UserInfoClient } from '../adapters/auth0.module';
+import { UnauthenticatedRpcException, UnknownRpcException } from 'lib/common';
+import { AppError, AuthErrorCode, ErrorType } from 'src/common';
+import { Cache } from '../adapters';
+import * as rx from 'rxjs';
+
+const wwwAuthToJson = (wwwAuth: string): Record<string, string> => {
+  wwwAuth = wwwAuth.replace('Bearer ', '');
+  return wwwAuth
+    .split(',')
+    .map((w) => w.trim())
+    .reduce((acc, curr) => {
+      const [key, value] = curr.split('=');
+      acc[key] = value.replace(/"/g, '');
+      return acc;
+    }, {});
+};
+
+@Injectable()
+export class LoggingInterceptor {
+  private readonly logger = new Logger(LoggingInterceptor.name);
+  constructor() {}
+
+  intercept(context, next) {
+    const start = Date.now();
+    return next.handle().pipe(
+      rx.tap(() => {
+        const now = Date.now();
+        this.logger.log(`Time: ${now - start}ms`);
+      }),
+      rx.catchError((err) => {
+        this.logger.error(err, err.stack);
+        throw err;
+      }),
+    );
+  }
+}
+
+const mapTo = {
+  [AuthErrorCode.unknown]: UnknownRpcException,
+  [AuthErrorCode.invalid_token]: UnauthenticatedRpcException,
+};
 
 @Controller()
+@UseInterceptors(LoggingInterceptor)
 export class AuthGrpcController {
-  private readonly logger = new Logger(AuthGrpcController.name);
   constructor(
     private readonly userInfo: UserInfoClient,
-    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+    private readonly cache: Cache,
   ) {}
 
   @GrpcMethod('AuthService', 'verifyToken')
-  async verifyToken(_request, metadata: Metadata) {
-    const token = String(metadata.get('authorization')).replace('Bearer ', '');
-    const cachedUser = await this.cacheManager.get(token);
-    if (cachedUser === 'invalid_token') {
-      throw new GrpcUnauthenticatedException('invalid_token');
+  async verifyToken(request) {
+    const token = request.token;
+    const cached: any = await this.cache.get(token);
+    if (cached && cached.value) return cached;
+    if (cached && cached.error) {
+      const ErrorClass = mapTo[cached.error.code] || UnknownRpcException;
+      throw new ErrorClass(cached.error);
     }
 
-    if (cachedUser) return cachedUser;
-    const user = await this.userInfo
+    return this.userInfo
       .getUserInfo(token)
       .then((res) => res.data)
       .then((data) => ({
@@ -32,19 +77,34 @@ export class AuthGrpcController {
         roles: ['user'],
         permissions: data.permissions || [],
       }))
-      .catch(async (err) => {
-        console.error(err);
-        await this.cacheManager
-          .set(token, 'invalid_token', 1 * 60 * 1000)
-          .catch(() => this.logger.warn('Failed to cache invalid token'));
+      .then(async (user) => {
+        await this.cache.set(token, { value: user }, 24 * 60 * 60 * 1000);
+        return user;
+      })
+      .catch((err: ResponseError) => {
+        const status = err.statusCode;
+        if (status === 401) {
+          const headers = err.headers;
+          const wwwAuth = headers.get('www-authenticate');
+          if (!wwwAuth) throw new Error('www-authenticate header not found');
 
-        throw new RpcException({
-          code: 'invalid_token',
-          message: 'invalid token',
+          const detail = wwwAuthToJson(wwwAuth);
+          throw new UnauthenticatedRpcException({
+            type: 'unauthorized',
+            code: 'invalid_token',
+            message: detail.error_description,
+          });
+        }
+
+        throw new UnknownRpcException({
+          type: ErrorType.unknown,
+          code: 'unknown',
+          message: err.message,
         });
+      })
+      .catch(async (err) => {
+        await this.cache.set(token, { error: err }, 60 * 60 * 1000); // 1 hour
+        throw err;
       });
-
-    await this.cacheManager.set(token, user, 24 * 60 * 60 * 1000); // 24 hours
-    return user;
   }
 }

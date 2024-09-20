@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { INestApplication, Logger } from '@nestjs/common';
+import { INestApplication, Logger, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { ReflectionService } from '@grpc/reflection';
@@ -38,20 +38,23 @@ const connectGRPC = (app: INestApplication) => {
 
   const grpcConfig = configService.get('grpc.storage', { infer: true });
 
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.GRPC,
-    options: {
-      url: grpcConfig.url,
-      package: grpcConfig.package,
-      protoPath: grpcConfig.protoPath,
-      loader: grpcConfig.loader,
-      credentials: grpc.ServerCredentials.createInsecure(),
-      onLoadPackageDefinition: (pkg, server: grpc.Server) => {
-        const reflection = new ReflectionService(pkg);
-        return reflection.addToServer(server);
+  app.connectMicroservice<MicroserviceOptions>(
+    {
+      transport: Transport.GRPC,
+      options: {
+        url: grpcConfig.url,
+        package: grpcConfig.package,
+        protoPath: grpcConfig.protoPath,
+        loader: grpcConfig.loader,
+        credentials: grpc.ServerCredentials.createInsecure(),
+        onLoadPackageDefinition: (pkg, server: grpc.Server) => {
+          const reflection = new ReflectionService(pkg);
+          return reflection.addToServer(server);
+        },
       },
     },
-  });
+    { inheritAppConfig: true },
+  );
   logger.log(`gRPC connected: ${grpcConfig.url}`);
 };
 
@@ -60,16 +63,19 @@ const connectRMQ = (app: INestApplication) => {
   const configService = app.get(ConfigService<Configs, true>);
   const rmqConfig = configService.get('rmq', { infer: true });
 
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.RMQ,
-    options: {
-      urls: [rmqConfig.url],
-      queue: rmqConfig.queue,
-      queueOptions: {
-        durable: false,
+  app.connectMicroservice<MicroserviceOptions>(
+    {
+      transport: Transport.RMQ,
+      options: {
+        urls: [rmqConfig.url],
+        queue: rmqConfig.queue,
+        queueOptions: {
+          durable: false,
+        },
       },
     },
-  });
+    { inheritAppConfig: true },
+  );
   logger.log(`RMQ connected: ${rmqConfig.url}`);
 };
 
@@ -78,6 +84,7 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
   buildCors(app);
+  app.enableVersioning({ type: VersioningType.URI, prefix: 'v' });
 
   const configService = app.get(ConfigService<Configs, true>);
   const appConfig = configService.get('app', { infer: true });

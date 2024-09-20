@@ -8,27 +8,29 @@ import * as grpc from '@grpc/grpc-js';
 import { Configs } from './config';
 import { AppModule } from './app.module';
 import setupSwagger from './infa/docs';
-import winston from './logger';
 
 const connectGRPC = (app: INestApplication) => {
   const logger = new Logger('bootstrap');
   const configService = app.get(ConfigService<Configs, true>);
 
   const grpcConfig = configService.get('grpc.auth', { infer: true });
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.GRPC,
-    options: {
-      url: grpcConfig.url,
-      package: grpcConfig.package,
-      protoPath: grpcConfig.protoPath,
-      loader: grpcConfig.loader,
-      credentials: grpc.ServerCredentials.createInsecure(),
-      onLoadPackageDefinition: (pkg, server: grpc.Server) => {
-        const reflection = new ReflectionService(pkg);
-        return reflection.addToServer(server);
+  app.connectMicroservice<MicroserviceOptions>(
+    {
+      transport: Transport.GRPC,
+      options: {
+        url: grpcConfig.url,
+        package: grpcConfig.package,
+        protoPath: grpcConfig.protoPath,
+        loader: grpcConfig.loader,
+        credentials: grpc.ServerCredentials.createInsecure(),
+        onLoadPackageDefinition: (pkg, server: grpc.Server) => {
+          const reflection = new ReflectionService(pkg);
+          return reflection.addToServer(server);
+        },
       },
     },
-  });
+    { inheritAppConfig: true },
+  );
   logger.log(`gRPC connected: ${grpcConfig.url}`);
 };
 
@@ -55,7 +57,7 @@ const buildCors = (app: INestApplication) => {
 };
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { logger: winston });
+  const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService<Configs, true>);
   const logger = new Logger('bootstrap');
 

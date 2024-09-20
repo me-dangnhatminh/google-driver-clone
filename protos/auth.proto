@@ -7,10 +7,14 @@ import "google/protobuf/empty.proto";
 
 // =========== AUTH ===========
 service AuthService {
-  rpc verifyToken(google.protobuf.Empty) returns (UserDTO);
+  rpc verifyToken(VerifyTokenReq) returns (UserDTO);
 }
 
+message VerifyTokenReq {
+  string token = 1;
+}
 
+// =========== USER ===========
 service UserService {
   rpc getById(GetByIdReq) returns (UserDTO);
   rpc getByEmail(GetByEmailReq) returns (UserDTO);

@@ -10,32 +10,38 @@ const arrayToEnum = <T extends string, U extends [T, ...T[]]>(
   );
 };
 
-export class AppError<T extends string | number = string> extends Error {
-  constructor(
-    public readonly code: T,
-    public readonly detail: string = 'unknown error',
-  ) {
-    super(`[${code}] ${detail}`);
+export const ErrorType = arrayToEnum(['invalid_request', 'unauthorized']);
+export type ErrorTypes = keyof typeof ErrorType;
+
+export type ErrorBase = {
+  type: ErrorTypes;
+  code: string;
+  message: string;
+};
+
+export class AppError<T extends ErrorBase = ErrorBase> extends Error {
+  constructor(error: T) {
+    super(error.message);
     Object.setPrototypeOf(this, AppError.prototype);
     this.name = this.constructor.name;
     Error.captureStackTrace(this);
   }
 }
 
-// ====== Error Codes ======
+// // ====== Error Codes ======
 
-export const ErrorCode = arrayToEnum(['unknown', 'invalid_input', 'not_found']);
+// export const ErrorCode = arrayToEnum(['unknown', 'invalid_input', 'not_found']);
 
-export type ErrorCodes = keyof typeof ErrorCode;
+// export type ErrorCodes = keyof typeof ErrorCode;
 
-export class UnknownError extends AppError<ErrorCodes> {
-  constructor(detail: string = 'unknown error') {
-    super(ErrorCode.unknown, detail);
-  }
-}
+// export class UnknownError extends AppError<ErrorCodes> {
+//   constructor(detail: string = 'unknown error') {
+//     super(ErrorCode.unknown, detail);
+//   }
+// }
 
-export class InvalidInputError extends AppError<ErrorCodes> {
-  constructor(detail: string = 'invalid input') {
-    super(ErrorCode.invalid_input, detail);
-  }
-}
+// export class InvalidInputError extends AppError<ErrorCodes> {
+//   constructor(detail: string = 'invalid input') {
+//     super(ErrorCode.invalid_input, detail);
+//   }
+// }
