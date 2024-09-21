@@ -12,7 +12,7 @@ model FileRef {
   name       String    @map("name")
   size       BigInt    @map("size")
   createdAt  DateTime  @map("created_at")
-  modifiedAt DateTime? @map("modified_at")
+  modifiedAt DateTime  @map("modified_at")
   archivedAt DateTime? @map("archived_at")
 
   // -- cutom metadata
@@ -32,7 +32,7 @@ model Folder {
   name       String    @map("name")
   size       BigInt    @map("size")
   createdAt  DateTime  @map("created_at")
-  modifiedAt DateTime? @map("modified_at")
+  modifiedAt DateTime  @map("modified_at")
   archivedAt DateTime? @map("archived_at")
 
   // -- cutom metadata
@@ -76,7 +76,7 @@ model MyStorage {
   refId   String @unique @map("ref_id")
 
   createdAt  DateTime  @map("created_at")
-  modifiedAt DateTime? @map("modified_at")
+  modifiedAt DateTime  @map("modified_at")
   archivedAt DateTime? @map("archived_at")
 
   ref Folder @relation("MyStorage", fields: [refId], references: [id], onDelete: Cascade)

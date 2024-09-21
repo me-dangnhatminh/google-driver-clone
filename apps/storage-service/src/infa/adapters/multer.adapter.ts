@@ -81,7 +81,10 @@ export class DiskStorageService implements MulterOptionsFactory {
            */
           req.setMaxListeners(Infinity);
           const rollback = () =>
-            req.on(ROLLBACK_EVENT, () => fs.unlink(file.path));
+            req.on(ROLLBACK_EVENT, async () => {
+              console.log('Rollback: unlink', file.path);
+              await fs.unlink(file.path);
+            });
           file.stream.on('end', rollback);
           // don't listen req.on "close" or "error"
 
@@ -179,6 +182,13 @@ export class DiskStorageService implements MulterOptionsFactory {
       foldername: `${rootName}-${Date.now()}.zip`,
       totalSize: totalSize.toNumber(),
     };
+  }
+
+  deleteFiles(files: string[]) {
+    files.forEach((file) => {
+      const filePath = this.filePath(file);
+      if (filePath.isExists) fs.unlinkSync(filePath.fullPath);
+    });
   }
 }
 export type Zipped = Awaited<ReturnType<DiskStorageService['buildZipAsync']>>;

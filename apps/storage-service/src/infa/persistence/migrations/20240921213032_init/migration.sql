@@ -4,7 +4,7 @@ CREATE TABLE "files" (
     "name" TEXT NOT NULL,
     "size" BIGINT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL,
-    "modified_at" TIMESTAMP(3),
+    "modified_at" TIMESTAMP(3) NOT NULL,
     "archived_at" TIMESTAMP(3),
     "owner_id" TEXT NOT NULL,
     "pinned_at" TIMESTAMP(3),
@@ -21,7 +21,7 @@ CREATE TABLE "folder_hierarchy" (
     "name" TEXT NOT NULL,
     "size" BIGINT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL,
-    "modified_at" TIMESTAMP(3),
+    "modified_at" TIMESTAMP(3) NOT NULL,
     "archived_at" TIMESTAMP(3),
     "owner_id" TEXT NOT NULL,
     "pinned_at" TIMESTAMP(3),
@@ -48,7 +48,7 @@ CREATE TABLE "my_storage" (
     "owner_id" TEXT NOT NULL,
     "ref_id" TEXT NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL,
-    "modified_at" TIMESTAMP(3),
+    "modified_at" TIMESTAMP(3) NOT NULL,
     "archived_at" TIMESTAMP(3),
 
     CONSTRAINT "my_storage_pkey" PRIMARY KEY ("id")

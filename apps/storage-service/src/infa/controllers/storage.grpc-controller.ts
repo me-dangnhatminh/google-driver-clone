@@ -1,5 +1,5 @@
 import { Metadata } from '@grpc/grpc-js';
-import { Transactional } from '@nestjs-cls/transactional';
+import { Transactional, TransactionHost } from '@nestjs-cls/transactional';
 import { Controller, Logger } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import {
@@ -14,41 +14,54 @@ import {
   FolderCreateCmd,
   FolderUpdateCmd,
   HardDeleteItemCmd,
-  StorageService,
 } from 'src/app';
 import { AppError } from 'src/common';
-import { FileRef } from 'src/domain';
+import { FileRef, MyStorage, RootFolder } from 'src/domain';
 import * as rx from 'rxjs';
 import * as fs from 'fs-extra';
 import * as path from 'path';
+import { randomUUID as uuid } from 'crypto';
 import { InvalidArgumentRpcException, UnknownRpcException } from 'libs/common';
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
+import { Cache } from '@nestjs/cache-manager';
 
 @Controller()
 export class StorageGrpcController {
   private readonly logger = new Logger(StorageGrpcController.name);
+  private readonly tx = this.txHost.tx;
   constructor(
-    private readonly storageService: StorageService,
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
+    private readonly txHost: TransactionHost<TransactionalAdapterPrisma>,
+    private readonly cacheManager: Cache,
   ) {}
 
   @GrpcMethod('StorageService', 'myStorage')
-  @Transactional()
   myStorage(request, metadata: Metadata) {
     const accessorId: string = String(metadata.get('accessorId')[0]);
     if (!accessorId) throw new RpcException('Metadata missing: accessorId');
-    return this.storageService
-      .getMyStorage(accessorId)
-      .then((storage) => {
-        if (!storage) throw new Error('Storage not found');
-        else return storage;
+
+    const ownerId = accessorId;
+    const id = uuid();
+    const my = MyStorage.parse({ id, ownerId, refId: id });
+    const root = RootFolder.parse({ id, ownerId, name: 'My Storage' });
+    return this.tx.myStorage
+      .upsert({
+        where: { ownerId },
+        include: { ref: true },
+        create: {
+          id: my.id,
+          ownerId: my.ownerId,
+          createdAt: my.createdAt,
+          modifiedAt: my.modifiedAt,
+          ref: { create: root },
+        },
+        update: {},
       })
-      .then((storage) => ({
-        name: 'My Storage',
-        used: storage.used,
-        total: storage.total,
-        refId: storage.refId,
-      }));
+      .then((my) => {
+        my['used'] = Number(my.ref.size);
+        return my;
+      });
   }
 
   @GrpcMethod('StorageService', 'getFolder')

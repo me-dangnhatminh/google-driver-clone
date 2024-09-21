@@ -26,8 +26,8 @@ export const FileRef = z.object({
   name: z.string(),
   size: Bytes,
   createdAt: PastTime.default(() => new Date()),
+  modifiedAt: PastTime.default(() => new Date()),
   pinnedAt: PastTime.nullable().default(null),
-  modifiedAt: PastTime.nullable().default(null),
   archivedAt: PastTime.nullable().default(null),
   ownerId: OnwerId,
   contentType: z.string(),
@@ -41,8 +41,9 @@ export const FolderInfo = z.object({
   size: Bytes.default(0),
   ownerId: OnwerId,
   createdAt: PastTime.default(() => new Date()),
+  modifiedAt: PastTime.default(() => new Date()),
+
   pinnedAt: PastTime.nullable().default(null),
-  modifiedAt: PastTime.nullable().default(null),
   archivedAt: PastTime.nullable().default(null),
 });
 
@@ -69,7 +70,7 @@ export const MyStorage = z.object({
   ownerId: OnwerId,
   refId: UUID,
   createdAt: PastTime.default(() => new Date()),
-  modifiedAt: PastTime.nullable().default(null),
+  modifiedAt: PastTime.default(() => new Date()),
   archivedAt: PastTime.nullable().default(null),
 });
 

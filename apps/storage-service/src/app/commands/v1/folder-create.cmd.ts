@@ -95,17 +95,18 @@ export class FolderCreateHandler implements ICommandHandler<FolderCreateCmd> {
       );
     }
 
+    const createdAt = new Date();
     tasks.push(
       this.tx.folder.create({
         data: {
           id: item.id,
           name: item.name,
           size: 0,
-          createdAt: new Date(),
+          createdAt: createdAt,
+          modifiedAt: createdAt,
           ownerId: item.ownerId,
           archivedAt: null,
           pinnedAt: null,
-          modifiedAt: null,
           rootId: rootId,
           parentId: folder.id,
           lft: folder.rgt,

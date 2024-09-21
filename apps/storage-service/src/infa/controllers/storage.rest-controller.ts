@@ -1,5 +1,5 @@
-import { FileRef, UUID } from 'src/domain';
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -46,12 +46,14 @@ import * as rx from 'rxjs';
 import * as z from 'zod';
 
 import { Authenticated, HttpUser } from 'libs/auth-client';
-import { HttpStorage, StorageLoaded } from 'libs/storage-client';
+import { HttpStorage, StorageLoaded, toGB } from 'libs/storage-client';
+import { PlanLoadedGuard } from 'libs/payment-client';
 
+import { FileRef, UUID } from 'src/domain';
 import { fileUtil, StorageRoutes } from 'src/common';
+
 import { useZodPipe } from '../pipes';
 import { DiskStorageService } from '../adapters';
-import { PlanLoadedGuard, toGB } from 'libs/payment-client';
 
 const RootOrKey = z.union([z.literal('root'), UUID]);
 type RootOrKey = Omit<string, 'root'> | 'root';
@@ -63,8 +65,7 @@ export class StorageRestController {
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
     private readonly diskStorageService: DiskStorageService,
-    @Inject('StorageService')
-    private readonly storageService,
+    @Inject('StorageService') private readonly storageService,
   ) {}
 
   @Get(StorageRoutes.STORAGE_DETAIL)
@@ -95,7 +96,6 @@ export class StorageRestController {
       meta,
     );
     return rx.lastValueFrom(get).then((res) => {
-      console.log(res);
       return res;
     });
   }
@@ -131,7 +131,7 @@ export class StorageRestController {
   }
 
   @Delete(StorageRoutes.DELETE_ITEM)
-  deleteItem(
+  async deleteItem(
     @HttpUser('id') userId: string,
     @HttpStorage('refId') rootId: string,
     @Param('key', useZodPipe(UUID)) key: string,
@@ -140,11 +140,10 @@ export class StorageRestController {
   ) {
     const meta = new grpc.Metadata();
     meta.add('accessorId', userId);
-    const fetch = this.storageService.hardDeleteItem(
-      { rootId, id: key, type },
-      meta,
+    await rx.lastValueFrom(
+      this.storageService.hardDeleteItem({ rootId, id: key, type }, meta),
     );
-    return rx.lastValueFrom(fetch);
+    await this.diskStorageService.deleteFiles([key]);
   }
 
   // ========================== OTHER ========================== //
@@ -156,12 +155,22 @@ export class StorageRestController {
   @UseInterceptors(FileField('file'))
   @Transactional()
   async fileUpload(
+    @Req() req,
     @HttpUser('sub') userId: string,
     @HttpStorage('refId') rootId: string,
     @Param('key', useZodPipe(RootOrKey)) key: RootOrKey,
     @UploadedFile(new ParseFilePipe({ fileIsRequired: true }))
     file: Express.Multer.File,
   ) {
+    const storage = req.storage;
+    const plan = req.plan;
+    const used = storage.used;
+    const total = toGB(plan.metadata.my_storage) * 1024 * 1024 * 1024; // TODO: Fix this
+    if (total - used < file.size) {
+      const msg = `Storage limit exceeded: free ${total - used}, but file size is ${file.size}`;
+      throw new BadRequestException(msg);
+    }
+
     const folderId = UUID.parse(key === 'root' ? rootId : key);
     const cmd = new FileUploadCmd(rootId, folderId, userId, {
       id: file.filename,
@@ -268,12 +277,24 @@ export class StorageRestController {
   @UseInterceptors(FileFields([{ name: 'files' }], { preservePath: true }))
   @Transactional()
   async folderUpload(
+    @Req() req,
     @HttpUser('sub') userId: string,
     @HttpStorage('refId') rootId: string,
     @Param('key', useZodPipe(RootOrKey)) key: RootOrKey,
     @UploadedFiles(new ParseFilePipe({ fileIsRequired: true }))
     upload: { files: Express.Multer.File[] },
   ) {
+    const storage = req.storage;
+    const plan = req.plan;
+    const used = storage.used;
+    const total = toGB(plan.metadata.my_storage) * 1024 * 1024 * 1024; // TODO: Fix this
+
+    const totalSize = upload.files.reduce((acc, f) => acc + f.size, 0);
+    if (total - used < totalSize) {
+      const msg = `Storage limit exceeded: free ${total - used}, but file size is ${totalSize}`;
+      throw new BadRequestException(msg);
+    }
+
     const folderId = UUID.parse(key === 'root' ? rootId : key);
     const cmd = new AddFolderCmd(folderId, userId, upload.files);
     await this.commandBus.execute(cmd);

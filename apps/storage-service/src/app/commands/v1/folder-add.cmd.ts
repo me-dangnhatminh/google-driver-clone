@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { CommandHandler, ICommand, ICommandHandler } from '@nestjs/cqrs';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { TransactionHost } from '@nestjs-cls/transactional';
@@ -17,7 +18,7 @@ export class AddFolderCmd implements ICommand {
   ) {
     try {
       this.folderId = UUID.parse(folderId);
-      this.accssorId = UUID.parse(accssorId);
+      this.accssorId = accssorId;
       this.flatFiles = flatFiles;
     } catch (error) {
       if (error instanceof Error) {
@@ -102,17 +103,18 @@ export class FolderAddHandler implements ICommandHandler<AddFolderCmd> {
     // -- persist news
     const flatedFolders = flatFolder(newFolders);
     const flatedFiles = flatFile(newFolders);
-    tasks.push(
-      this.tx.folder.createMany({
-        data: flatedFolders.map(({ folders, files, ...f }) => f),
-      }),
-      this.tx.fileRef.createMany({
-        data: flatedFiles.map(({ folderId, ...f }) => f),
-      }),
-      this.tx.fileInFolder.createMany({
-        data: flatedFiles.map((f) => ({ folderId: f.folderId, fileId: f.id })),
-      }),
-    );
+
+    await this.tx.folder.createMany({
+      data: flatedFolders.map(({ folders, files, ...f }) => f),
+    });
+
+    await this.tx.fileRef.createMany({
+      data: flatedFiles.map(({ folderId, ...f }) => f),
+    });
+
+    await this.tx.fileInFolder.createMany({
+      data: flatedFiles.map((f) => ({ folderId: f.folderId, fileId: f.id })),
+    });
 
     await Promise.all(tasks);
   }
@@ -159,9 +161,9 @@ const buildFolder = (
       contentType: file.mimetype,
       size: file.size,
       createdAt: createdAt,
+      modifiedAt: createdAt,
       ownerId: accssorId,
       archivedAt: null,
-      modifiedAt: null,
       description: null,
       pinnedAt: null,
       thumbnail: null,
@@ -173,8 +175,8 @@ const buildFolder = (
       name: folderName,
       ownerId: accssorId,
       createdAt: createdAt,
+      modifiedAt: createdAt,
       archivedAt: null,
-      modifiedAt: null,
       pinnedAt: null,
       size: 0,
       rootId: rootId,
