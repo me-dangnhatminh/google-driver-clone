@@ -143,7 +143,6 @@ export class StorageRestController {
     await rx.lastValueFrom(
       this.storageService.hardDeleteItem({ rootId, id: key, type }, meta),
     );
-    await this.diskStorageService.deleteFiles([key]);
   }
 
   // ========================== OTHER ========================== //

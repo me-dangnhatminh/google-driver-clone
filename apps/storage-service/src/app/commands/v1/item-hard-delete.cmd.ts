@@ -2,9 +2,11 @@ import { TransactionHost } from '@nestjs-cls/transactional';
 import {
   BadRequestException,
   ForbiddenException,
+  Inject,
   NotFoundException,
 } from '@nestjs/common';
 import { CommandHandler, ICommand, ICommandHandler } from '@nestjs/cqrs';
+import { ClientProxy } from '@nestjs/microservices';
 import { PrismaClient } from '@prisma/client';
 import Decimal from 'decimal.js';
 import { UUID } from 'src/domain';
@@ -41,7 +43,11 @@ export class HardDeleteItemHandler
 {
   private readonly tx: PrismaClient;
 
-  constructor(private readonly txHost: TransactionHost) {
+  constructor(
+    private readonly txHost: TransactionHost,
+    @Inject('StorageServiceRmq')
+    private readonly storageServiceRmq: ClientProxy,
+  ) {
     this.tx = this.txHost.tx as PrismaClient; // TODO: not shure this run
   }
 
@@ -150,6 +156,9 @@ export class HardDeleteItemHandler
       }),
     );
     await Promise.all(tasks);
+    await this.storageServiceRmq.emit('storage.files_removed', {
+      ids: fileIds,
+    });
   }
 
   private async deleteFile(rootId: string, fileId: string) {
@@ -160,5 +169,6 @@ export class HardDeleteItemHandler
       where: { id: rootId },
       data: { size: { decrement: file.size } },
     });
+    await this.storageServiceRmq.emit('storage.file_removed', { id: fileId });
   }
 }

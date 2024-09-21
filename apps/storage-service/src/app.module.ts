@@ -13,6 +13,7 @@ import { HTTPLogger } from 'libs/common';
 import { AuthClientModule } from 'libs/auth-client';
 import { StorageClientModule } from 'libs/storage-client';
 import { PaymentClientModule } from 'libs/payment-client';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
   imports: [
@@ -31,6 +32,20 @@ import { PaymentClientModule } from 'libs/payment-client';
     AuthClientModule,
     PaymentClientModule,
     StorageClientModule,
+
+    ClientsModule.register([
+      {
+        name: 'StorageServiceRmq',
+        transport: Transport.RMQ,
+        options: {
+          urls: ['amqp://localhost:5672'],
+          queue: 'storage-service',
+          queueOptions: {
+            durable: false,
+          },
+        },
+      },
+    ]),
   ],
   controllers,
   providers,

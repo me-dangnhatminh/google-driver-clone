@@ -68,9 +68,8 @@ const connectRMQ = (app: INestApplication) => {
     options: {
       urls: [rmqConfig.url],
       queue: rmqConfig.queue,
-      queueOptions: {
-        durable: false,
-      },
+      noAck: false,
+      queueOptions: { durable: false },
     },
   });
   logger.log(`RMQ connected: ${rmqConfig.url}`);
