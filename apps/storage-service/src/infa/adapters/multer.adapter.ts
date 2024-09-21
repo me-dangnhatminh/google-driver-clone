@@ -183,12 +183,6 @@ export class DiskStorageService implements MulterOptionsFactory {
 }
 export type Zipped = Awaited<ReturnType<DiskStorageService['buildZipAsync']>>;
 
-@Module({
-  providers: [DiskStorageService],
-  exports: [DiskStorageService],
-})
-class DiskStorageModule {}
-
 const ROLLBACK_EVENT = Symbol('file-rollback');
 @Injectable()
 export class FileRollback implements NestInterceptor {
@@ -196,11 +190,17 @@ export class FileRollback implements NestInterceptor {
     context: ExecutionContext,
     next: CallHandler,
   ): RxJs.Observable<unknown> {
-    const request: Request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest();
     const emitRollback = (err: unknown) => request.emit(ROLLBACK_EVENT, err);
     return next.handle().pipe(RxJs.tap({ error: emitRollback }));
   }
 }
+
+@Module({
+  providers: [DiskStorageService],
+  exports: [DiskStorageService],
+})
+class DiskStorageModule {}
 @Module({
   imports: [
     DiskStorageModule,

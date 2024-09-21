@@ -12,7 +12,7 @@ export class Authenticated implements CanActivate {
   constructor(@Inject('AuthService') private readonly authService: any) {}
 
   canActivate(context: ExecutionContext) {
-    const [request] = context.getArgs();
+    const request = context.switchToHttp().getRequest();
     let token = request.headers.authorization;
     if (!token) return false;
     token = token.replace('Bearer ', '');
@@ -24,7 +24,11 @@ export class Authenticated implements CanActivate {
       }),
       rx.catchError((err) => {
         const msg = err.details;
-        const msgJson = JSON.parse(msg);
+        let msgJson = { code: err.code, message: msg };
+        try {
+          msgJson = JSON.parse(msg);
+        } catch (e) {}
+
         if (msgJson.code === 'invalid_token')
           throw new UnauthorizedException(msgJson.message);
         throw err;

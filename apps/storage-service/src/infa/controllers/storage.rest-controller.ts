@@ -97,7 +97,10 @@ export class StorageRestController {
       { rootId, label, folderId, pagination },
       meta,
     );
-    return rx.lastValueFrom(get);
+    return rx.lastValueFrom(get).then((res) => {
+      console.log(res);
+      return res;
+    });
   }
 
   @Post(StorageRoutes.FOLDER_CREATE)

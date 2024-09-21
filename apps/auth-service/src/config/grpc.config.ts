@@ -11,6 +11,7 @@ const config = registerAs('grpc', () => {
   }
 
   const protoFiles = glob.sync('**/*.proto', { cwd: includeDir });
+
   const packageName = 'nest.microservices';
   const loader: GrpcOptions['options']['loader'] = {
     keepCase: false,
@@ -18,6 +19,7 @@ const config = registerAs('grpc', () => {
     enums: String,
     defaults: false,
     oneofs: false,
+    arrays: true,
     includeDirs: [includeDir],
   };
 

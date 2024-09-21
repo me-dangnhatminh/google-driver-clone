@@ -52,7 +52,6 @@ export class StorageGrpcController {
   }
 
   @GrpcMethod('StorageService', 'getFolder')
-  @Transactional()
   getFolder(request, metadata: Metadata) {
     const accessorId: string = String(metadata.get('accessorId')[0]);
     if (!accessorId) throw new RpcException('Metadata missing: accessorId');

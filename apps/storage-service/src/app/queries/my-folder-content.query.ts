@@ -17,8 +17,8 @@ export const Pagination = z.object({
 
 export const FolderContentResult = FolderInfo.extend({
   content: z.object({
-    files: z.array(FileRef.optional()),
-    folders: z.array(FolderInfo.optional()),
+    files: z.array(FileRef).default([]),
+    folders: z.array(FolderInfo).default([]),
   }),
   nextCursor: z
     .object({

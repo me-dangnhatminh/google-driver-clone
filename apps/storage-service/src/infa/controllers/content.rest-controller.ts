@@ -44,8 +44,7 @@ export class ContentRestController {
   ) {}
 
   @Get()
-  async getHello(
-    // @Req() req,
+  async getContent(
     @Query(useZodPipe(GetContentQuery)) query: GetContentQuery,
     @Res() res: Response,
   ) {

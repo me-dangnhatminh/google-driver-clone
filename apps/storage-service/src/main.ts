@@ -63,19 +63,16 @@ const connectRMQ = (app: INestApplication) => {
   const configService = app.get(ConfigService<Configs, true>);
   const rmqConfig = configService.get('rmq', { infer: true });
 
-  app.connectMicroservice<MicroserviceOptions>(
-    {
-      transport: Transport.RMQ,
-      options: {
-        urls: [rmqConfig.url],
-        queue: rmqConfig.queue,
-        queueOptions: {
-          durable: false,
-        },
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.RMQ,
+    options: {
+      urls: [rmqConfig.url],
+      queue: rmqConfig.queue,
+      queueOptions: {
+        durable: false,
       },
     },
-    { inheritAppConfig: true },
-  );
+  });
   logger.log(`RMQ connected: ${rmqConfig.url}`);
 };
 

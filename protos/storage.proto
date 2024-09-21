@@ -78,6 +78,7 @@ message NextCursor {
   optional string folderCursor = 2;
 }
 
+
 message GetFolderResponse {
   optional string id = 1;
   optional string name = 2;

@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Injectable,
-  Logger,
-  NestInterceptor,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { GrpcMethod, RpcException } from '@nestjs/microservices';
 
 import { ResponseError, UserInfoClient } from '../adapters/auth0.module';
@@ -13,77 +7,17 @@ import { ErrorType } from 'src/common';
 import { Cache } from '../adapters';
 import * as rx from 'rxjs';
 
-const wwwAuthToJson = (wwwAuth: string): Record<string, string> => {
-  wwwAuth = wwwAuth.replace('Bearer ', '');
-  return wwwAuth
-    .split(',')
-    .map((w) => w.trim())
-    .reduce((acc, curr) => {
-      const [key, value] = curr.split('=');
-      acc[key] = value.replace(/"/g, '');
-      return acc;
-    }, {});
+const wwwAuthToJson = (wwwAuth: string) => {
+  const parts = wwwAuth.split(',');
+  const detail: any = {};
+  parts.forEach((part) => {
+    const [key, value] = part.split('=');
+    detail[key.trim()] = value.replace(/"/g, '');
+  });
+  return detail;
 };
 
-@Injectable()
-export class LoggingInterceptor {
-  private readonly logger = new Logger(LoggingInterceptor.name);
-  constructor() {}
-
-  intercept(context, next) {
-    const start = Date.now();
-    return next.handle().pipe(
-      rx.tap(() => {
-        const duration = Date.now() - start;
-        this.logger.log(`Time: ${duration}ms`);
-      }),
-      rx.catchError((err) => {
-        const duration = Date.now() - start;
-        this.logger.error(
-          `Time: ${duration}ms, Error: ${err.message}`,
-          err.stack,
-        );
-        throw err;
-      }),
-    );
-  }
-}
-
-@Injectable()
-export class VerifyTokenCached implements NestInterceptor {
-  constructor(private readonly cache: Cache) {}
-
-  intercept(context, next) {
-    const methodName = context.getHandler().name;
-    if (methodName !== 'verifyToken') return next.handle();
-
-    const [req] = context.getArgs();
-    const token = req.token;
-    return rx.from(this.cache.get(token)).pipe(
-      rx.mergeMap((cached: any) => {
-        if (cached && cached.value) return rx.of(cached);
-        if (cached && cached.error) {
-          const error = cached.error;
-          return rx.throwError(new RpcException(error));
-        }
-
-        return next.handle().pipe(
-          rx.map(async (data) => {
-            await this.cache.set(token, { value: data }, 60 * 60 * 1000); // 1 hour
-            return data;
-          }),
-          rx.catchError(async (err) => {
-            await this.cache.set(token, { error: err }, 60 * 1000); // 1 minute
-            throw err;
-          }),
-        );
-      }),
-    );
-  }
-}
-
 @Controller()
-@UseInterceptors(LoggingInterceptor, VerifyTokenCached)
 export class AuthGrpcController {
   constructor(
     private readonly userInfo: UserInfoClient,
@@ -91,8 +25,12 @@ export class AuthGrpcController {
   ) {}
 
   @GrpcMethod('AuthService', 'verifyToken')
-  verifyToken(request) {
-    const fetch = this.userInfo
+  async verifyToken(request) {
+    const cached: any = await this.cache.get(request.token).catch(() => null);
+    if (cached && cached.value) return rx.of(cached.value);
+    if (cached && cached.error) throw new RpcException(cached.error);
+
+    const get = this.userInfo
       .getUserInfo(request.token)
       .then((res) => res.data)
       .then((data) => ({
@@ -124,6 +62,20 @@ export class AuthGrpcController {
         });
       });
 
-    return rx.from(fetch);
+    // == cache the result
+    return rx.from(get).pipe(
+      rx.map(async (value) => {
+        await this.cache
+          .set(request.token, { value }, 60 * 60 * 1000) // 1 hour
+          .catch(() => null);
+        return value;
+      }),
+      rx.catchError(async (error) => {
+        await this.cache
+          .set(request.token, { error }, 60 * 60 * 1000) // 1 hour
+          .catch(() => null);
+        throw error;
+      }),
+    );
   }
 }
