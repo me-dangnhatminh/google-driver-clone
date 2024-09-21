@@ -3,18 +3,17 @@ import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import * as grpc from '@grpc/grpc-js';
 
-import { AUTH_SERVICE } from './constants';
+export const PAYMENT_CLIENT = Symbol('PAYMENT_CLIENT');
 
 @Module({
   imports: [
     ClientsModule.registerAsync([
       {
-        name: AUTH_SERVICE,
+        name: PAYMENT_CLIENT,
         inject: [ConfigService],
         useFactory: (configService: ConfigService) => {
-          const grpcConfig = configService.get('grpc.auth');
+          const grpcConfig = configService.get('grpc.payment');
 
-          // TODO: Implement the logic to return the gRPC client options
           const urlIsLocal = ['localhost', '127.0.0.1', '0.0.0.0'].includes(
             grpcConfig.url.split(':')[0],
           );
@@ -34,6 +33,13 @@ import { AUTH_SERVICE } from './constants';
       },
     ]),
   ],
-  exports: [ClientsModule],
+  providers: [
+    {
+      provide: 'SubscriptionService',
+      inject: [PAYMENT_CLIENT],
+      useFactory: (client) => client.getService('SubscriptionService'),
+    },
+  ],
+  exports: ['SubscriptionService'],
 })
-export class AuthClientModule {}
+export class PaymentClientModule {}

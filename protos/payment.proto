@@ -2,3 +2,19 @@ syntax = "proto3";
 
 package nest.microservices;
 
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+service SubscriptionService {
+  rpc customerPlan(CustomerPlanRequest) returns (CustomerPlanResponse);
+}
+
+message CustomerPlanRequest {
+  string customerId = 1;
+}
+
+message CustomerPlanResponse {
+  string plan = 3; // plan name
+  map<string, string> metadata = 4;
+}
+

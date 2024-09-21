@@ -27,7 +27,7 @@ const config = registerAs('grpc', () => {
     auth: {
       package: packageName,
       protoPath: protoFiles,
-      url: '0.0.0.0:50051',
+      url: '0.0.0.0:30051',
       loader,
     },
     storage: {

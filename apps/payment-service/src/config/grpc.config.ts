@@ -1,3 +1,4 @@
+import { GrpcOptions } from '@nestjs/microservices';
 import { registerAs } from '@nestjs/config';
 import * as path from 'path';
 import * as fs from 'fs-extra';
@@ -10,13 +11,15 @@ const config = registerAs('grpc', () => {
   }
 
   const protoFiles = glob.sync('**/*.proto', { cwd: includeDir });
+
   const packageName = 'nest.microservices';
-  const loader = {
+  const loader: GrpcOptions['options']['loader'] = {
     keepCase: false,
     longs: String,
     enums: String,
-    defaults: true,
-    oneofs: true,
+    defaults: false,
+    oneofs: false,
+    arrays: true,
     includeDirs: [includeDir],
   };
 
@@ -24,10 +27,16 @@ const config = registerAs('grpc', () => {
     auth: {
       package: packageName,
       protoPath: protoFiles,
+      url: '0.0.0.0:30051',
+      loader,
+    },
+    payment: {
+      package: packageName,
+      protoPath: protoFiles,
       url: '0.0.0.0:50051',
       loader,
     },
-  };
+  } as const satisfies Record<string, GrpcOptions['options']>;
 });
 
 export default config;

@@ -20,6 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@grpc/reflection": "^1.0.4",
     "@nestjs-cls/transactional": "^2.4.2",
     "@nestjs-cls/transactional-adapter-prisma": "^1.2.4",
     "@nestjs/cache-manager": "^2.2.2",

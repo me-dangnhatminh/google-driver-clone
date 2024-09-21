@@ -5,15 +5,11 @@ import {
   Provider,
 } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER } from '@nestjs/core';
 
-import {
-  HTTPLogger,
-  ResponseInterceptor,
-  HttpExceptionFilter,
-} from 'lib/common';
-
-import { AuthClientModule } from 'lib/auth-client';
+import { HTTPLogger, HttpExceptionFilter } from 'libs/common';
+import { AuthClientModule } from 'libs/auth-client';
+import { PaymentClientModule } from 'libs/payment-client';
 
 import config from 'src/config';
 import { CacheModule, StripeModule } from 'src/infa/apdaters';
@@ -22,11 +18,7 @@ import { controllers } from 'src/infa/controllers';
 import { services } from 'src/app/services';
 
 const providers: Provider[] = [];
-providers.push(
-  { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
-  { provide: APP_FILTER, useClass: HttpExceptionFilter },
-);
-
+providers.push({ provide: APP_FILTER, useClass: HttpExceptionFilter });
 providers.push(...services);
 
 @Module({
@@ -38,11 +30,12 @@ providers.push(...services);
       expandVariables: true,
       load: config,
     }),
-    CacheModule,
     PersistencesModule,
+    CacheModule,
     StripeModule,
 
     AuthClientModule,
+    PaymentClientModule,
   ],
   controllers,
   providers,

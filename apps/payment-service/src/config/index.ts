@@ -5,6 +5,7 @@ import dbConfig from './db.config';
 import grpcConfig from './grpc.config';
 import rmqConfig from './rmq.config';
 import corsConfig from './cors.config';
+import redisConfig from './redis.config';
 
 const configs = {
   app: appConfig,
@@ -12,6 +13,7 @@ const configs = {
   db: dbConfig,
   grpc: grpcConfig,
   rmq: rmqConfig,
+  redis: redisConfig,
 };
 
 export type Configs = {

@@ -12,6 +12,7 @@ import { CacheModule, MulterModule } from './infa/adapters';
 import { HTTPLogger } from 'libs/common';
 import { AuthClientModule } from 'libs/auth-client';
 import { StorageClientModule } from 'libs/storage-client';
+import { PaymentClientModule } from 'libs/payment-client';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { StorageClientModule } from 'libs/storage-client';
     MulterModule,
     // ===================== GRPC CLIENT MODULES =====================
     AuthClientModule,
+    PaymentClientModule,
     StorageClientModule,
   ],
   controllers,

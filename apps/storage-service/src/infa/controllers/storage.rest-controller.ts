@@ -10,6 +10,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   Res,
   StreamableFile,
   UploadedFile,
@@ -18,7 +19,6 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { ClientGrpcProxy } from '@nestjs/microservices';
 import { Transactional } from '@nestjs-cls/transactional';
 import {
   FileFieldsInterceptor as FileFields,
@@ -46,39 +46,36 @@ import * as rx from 'rxjs';
 import * as z from 'zod';
 
 import { Authenticated, HttpUser } from 'libs/auth-client';
-import {
-  STORAGE_SERVICE_NAME,
-  HttpStorage,
-  StorageLoaded,
-} from 'libs/storage-client';
+import { HttpStorage, StorageLoaded } from 'libs/storage-client';
 
 import { fileUtil, StorageRoutes } from 'src/common';
 import { useZodPipe } from '../pipes';
 import { DiskStorageService } from '../adapters';
+import { PlanLoadedGuard, toGB } from 'libs/payment-client';
 
 const RootOrKey = z.union([z.literal('root'), UUID]);
 type RootOrKey = Omit<string, 'root'> | 'root';
 
 @Controller()
-@UseGuards(Authenticated, StorageLoaded)
+@UseGuards(Authenticated, StorageLoaded, PlanLoadedGuard)
 export class StorageRestController {
-  private readonly storageService: any;
-
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
     private readonly diskStorageService: DiskStorageService,
-    @Inject(STORAGE_SERVICE_NAME) client: ClientGrpcProxy,
-  ) {
-    this.storageService = client.getService('StorageService');
-  }
+    @Inject('StorageService')
+    private readonly storageService,
+  ) {}
 
   @Get(StorageRoutes.STORAGE_DETAIL)
-  myStorage(@HttpStorage() storage: any) {
+  myStorage(@Req() req) {
+    const storage = req.storage;
+    const plan = req.plan;
     return {
       name: 'My Storage',
       used: storage.used,
-      total: storage.total,
+      plan: plan.name,
+      total: toGB(plan.metadata.my_storage) * 1024 * 1024 * 1024, // TODO: Fix this
     };
   }
 

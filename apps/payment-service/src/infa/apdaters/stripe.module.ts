@@ -5,7 +5,6 @@ import {
   Module,
   NestInterceptor,
 } from '@nestjs/common';
-import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { catchError } from 'rxjs';
 
@@ -47,7 +46,6 @@ export class StripeExceptionInterceptor implements NestInterceptor {
         return new Stripe(process.env.STRIPE_SECRET_KEY || '');
       },
     },
-    { provide: APP_INTERCEPTOR, useClass: StripeExceptionInterceptor },
   ],
   exports: [Stripe],
 })

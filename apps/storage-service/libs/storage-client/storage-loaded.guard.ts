@@ -9,16 +9,12 @@ import {
 } from '@nestjs/common';
 import * as grpc from '@grpc/grpc-js';
 import * as rx from 'rxjs';
-import { STORAGE_SERVICE_NAME } from './constant';
-import { ClientGrpcProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class StorageLoaded implements CanActivate {
   private readonly logger = new Logger(StorageLoaded.name);
-  private storageService: any;
-  constructor(@Inject(STORAGE_SERVICE_NAME) client: ClientGrpcProxy) {
-    this.storageService = client.getService('StorageService');
-  }
+  constructor(@Inject('StorageService') private readonly storageService) {}
+
   canActivate(context: ExecutionContext) {
     const req = context.switchToHttp().getRequest();
     const ownerId: string = req.auth.user.sub;
