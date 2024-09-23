@@ -23,6 +23,7 @@ model FileRef {
   description String?   @map("description")
 
   folder FileInFolder[]
+  perm   FilePermission? @relation("file_permission")
 
   @@map("files")
 }
@@ -55,7 +56,8 @@ model Folder {
   flatChild Folder[] @relation("RootFlatChild")
 
   // -- for service (MyStorage)
-  myStorage MyStorage? @relation("MyStorage")
+  myStorage MyStorage?        @relation("MyStorage")
+  perm      FolderPermission? @relation("folder_permission")
 
   @@index([lft, rgt])
   @@map("folder_hierarchy")
@@ -83,4 +85,49 @@ model MyStorage {
 
   @@index([ownerId])
   @@map("my_storage")
+}
+
+// ================== Share ================== 
+model FilePermission {
+  id     String @id @map("id")
+  fileId String @unique @map("file_id")
+  type   String @map("type") // user, group, public
+  perm   String @map("perm") // read, write, admin
+
+  file   FileRef      @relation("file_permission", fields: [fileId], references: [id], onDelete: Cascade)
+  shared FileShared[] @relation("file_shared")
+
+  @@map("file_permission")
+}
+
+model FileShared {
+  id     String @id @map("id")
+  permId String @map("perm_id")
+  userId String @map("user_id")
+
+  perm FilePermission @relation("file_shared", fields: [permId], references: [id], onDelete: Cascade)
+
+  @@map("file_shared")
+}
+
+model FolderPermission {
+  id       String @id @map("id")
+  folderId String @unique @map("folder_id")
+  type     String @map("type") // user, group, public
+  perm     String @map("perm") // read, write, admin
+
+  folder Folder         @relation("folder_permission", fields: [folderId], references: [id], onDelete: Cascade)
+  shared FolderShared[] @relation("folder_shared")
+
+  @@map("folder_permission")
+}
+
+model FolderShared {
+  id     String @id @map("id")
+  permId String @map("perm_id")
+  userId String @map("user_id")
+
+  perm FolderPermission @relation("folder_shared", fields: [permId], references: [id], onDelete: Cascade)
+
+  @@map("folder_shared")
 }

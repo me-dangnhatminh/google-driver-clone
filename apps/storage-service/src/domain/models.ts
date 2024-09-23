@@ -9,12 +9,6 @@ export type FolderInfo = z.infer<typeof FolderInfo>;
 export type RootFolder = z.infer<typeof RootFolder>;
 export type MyStorage = z.infer<typeof MyStorage>;
 
-export type Owner = z.infer<typeof Owner>;
-export type Viewer = z.infer<typeof Viewer>;
-export type Editor = z.infer<typeof Editor>;
-export type Admin = z.infer<typeof Admin>;
-export type Accessor = z.infer<typeof Accessor>;
-
 // ============================= Schemas ============================= //
 export const UUID = z.string().uuid();
 export const OnwerId = z.string();
@@ -75,38 +69,15 @@ export const MyStorage = z.object({
 });
 
 // ========= Access control ========= //
-export const Accessor = z.object({ id: UUID });
-export const Owner = Accessor.brand('Owner');
-export const Viewer = Accessor.brand('Viewer');
-export const Editor = Accessor.brand('Editor');
-export const Admin = Accessor.brand('Admin');
+export const PermissionType = z.enum(['public', 'private']);
+export const Permission = z.enum(['read', 'write', '*']);
 
-export type ResourceTypes = FolderInfo | Folder | FileRef;
-export type AccessorTypes = Accessor | Owner | Viewer | Editor | Admin;
-export type PermissionWrapper<
-  A extends AccessorTypes = AccessorTypes,
-  R extends ResourceTypes = ResourceTypes,
-  Meta = unknown,
-> = Readonly<{
-  accessor: A;
-  resource: R;
-  meta: Meta;
-}>;
+export const FolderPermission = FolderInfo.extend({
+  type: PermissionType.default('private'),
+  permission: Permission.default('*'),
+});
 
-const isOwner = <
-  A extends AccessorTypes = AccessorTypes,
-  R extends ResourceTypes = ResourceTypes,
-  Meta = unknown,
->(
-  accessor: A,
-  resource: R,
-  meta: Meta,
-): PermissionWrapper<Owner, R, Meta> | null => {
-  const isOwner = accessor['id'] === resource['ownerId'];
-  if (!isOwner) return null;
-  return structuredClone({ accessor: Owner.parse(accessor), resource, meta });
-};
-
-export const Permissions = {
-  isOwner,
-} as const;
+export const FilePermission = FileRef.extend({
+  type: PermissionType.default('private'),
+  permission: Permission.default('*'),
+});

@@ -69,6 +69,7 @@ export class StorageRestController {
   ) {}
 
   @Get(StorageRoutes.STORAGE_DETAIL)
+  @UseGuards(PlanLoadedGuard)
   myStorage(@Req() req) {
     const storage = req.storage;
     const plan = req.plan;
@@ -282,26 +283,3 @@ export class StorageRestController {
     await this.commandBus.execute(cmd);
   }
 }
-// === ex for send file in grpc === //
-// const meta = new grpc.Metadata();
-// meta.add('accessorId', userId);
-// meta.add('file', JSON.stringify(cmd.item));
-
-// const readStream = fs.createReadStream(file.path);
-// const subject = new rx.Subject();
-// readStream.on('data', (chunk) => {
-//   const buffer = Buffer.from(chunk);
-//   subject.next({ content: buffer, offset: buffer.length });
-// });
-
-// readStream.on('end', () => {
-//   subject.complete();
-// });
-
-// readStream.on('error', (error) => {
-//   subject.error(error);
-// });
-
-// const fetch = this._storageService.uploadFile(subject, meta);
-// await rx.firstValueFrom(fetch);
-// =================================== //
