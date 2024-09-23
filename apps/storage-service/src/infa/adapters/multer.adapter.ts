@@ -17,12 +17,15 @@ import { Request } from 'express';
 import Decimal from 'decimal.js';
 import * as JSZip from 'jszip';
 import { randomUUID as uuid } from 'crypto';
-import * as RxJs from 'rxjs';
+import * as rx from 'rxjs';
 import * as multer from 'multer';
 import * as path from 'path';
 import * as fs from 'fs-extra';
 
 import { fileUtil } from 'src/common';
+
+// ======= constants =======
+const ROLLBACK_EVENT = Symbol('file-rollback');
 
 @Injectable()
 export class DiskStorageService implements MulterOptionsFactory {
@@ -30,7 +33,6 @@ export class DiskStorageService implements MulterOptionsFactory {
   private readonly destination: string;
   private readonly rootDir: string;
   private readonly folderDefaultName = 'Untitled';
-  private readonly fileDefaultName = 'Untitled';
 
   constructor(private readonly configService: ConfigService<any, true>) {
     const rootDirConfigPath = 'storage.disk.rootDir';
@@ -80,11 +82,11 @@ export class DiskStorageService implements MulterOptionsFactory {
            * (node:8908) MaxListenersExceededWarning: Possible EventEmitter memory leak detected
            */
           req.setMaxListeners(Infinity);
-          const rollback = () =>
-            req.on(ROLLBACK_EVENT, async () => {
-              console.log('Rollback: unlink', file.path);
-              await fs.unlink(file.path);
+          const rollback = () => {
+            req.on(ROLLBACK_EVENT, () => {
+              fs.unlinkSync(file.path);
             });
+          };
           file.stream.on('end', rollback);
           // don't listen req.on "close" or "error"
 
@@ -106,7 +108,7 @@ export class DiskStorageService implements MulterOptionsFactory {
     fs.writeFileSync(fullPath, buffer);
   }
 
-  async buildZipAsync(
+  buildZipSync(
     folderName: string,
     flatFolders: {
       id: string;
@@ -169,13 +171,11 @@ export class DiskStorageService implements MulterOptionsFactory {
       zip.file(foldername, null, { dir: true }),
     );
 
-    const promises = Object.entries(fileTree).map(([filepath, file]) => {
+    Object.entries(fileTree).map(([filepath, file]) => {
       const filePath = this.filePath(file.id);
       if (!filePath.isExists) throw new Error(`File not found: ${file.id}`);
       return zip.file(filepath, fs.readFileSync(filePath.fullPath));
     });
-
-    await Promise.all(promises);
 
     return {
       zip,
@@ -191,18 +191,20 @@ export class DiskStorageService implements MulterOptionsFactory {
     });
   }
 }
-export type Zipped = Awaited<ReturnType<DiskStorageService['buildZipAsync']>>;
+export type Zipped = ReturnType<DiskStorageService['buildZipSync']>;
 
-const ROLLBACK_EVENT = Symbol('file-rollback');
 @Injectable()
 export class FileRollback implements NestInterceptor {
-  intercept(
-    context: ExecutionContext,
-    next: CallHandler,
-  ): RxJs.Observable<unknown> {
-    const request = context.switchToHttp().getRequest();
-    const emitRollback = (err: unknown) => request.emit(ROLLBACK_EVENT, err);
-    return next.handle().pipe(RxJs.tap({ error: emitRollback }));
+  constructor() {}
+
+  intercept(context: ExecutionContext, next: CallHandler) {
+    const request: Request = context.switchToHttp().getRequest();
+    return next.handle().pipe(
+      rx.catchError((err) => {
+        request.emit(ROLLBACK_EVENT, err);
+        throw err;
+      }),
+    );
   }
 }
 
@@ -211,6 +213,7 @@ export class FileRollback implements NestInterceptor {
   exports: [DiskStorageService],
 })
 class DiskStorageModule {}
+
 @Module({
   imports: [
     DiskStorageModule,

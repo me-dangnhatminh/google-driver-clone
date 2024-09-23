@@ -59,7 +59,7 @@ const RootOrKey = z.union([z.literal('root'), UUID]);
 type RootOrKey = Omit<string, 'root'> | 'root';
 
 @Controller()
-@UseGuards(Authenticated, StorageLoaded, PlanLoadedGuard)
+@UseGuards(Authenticated, StorageLoaded)
 export class StorageRestController {
   constructor(
     private readonly commandBus: CommandBus,
@@ -151,6 +151,7 @@ export class StorageRestController {
   // File controller                                    //
   // ================================================== //
   @Post(StorageRoutes.FILE_UPLOAD)
+  @UseGuards(PlanLoadedGuard)
   @UseInterceptors(FileField('file'))
   @Transactional()
   async fileUpload(
@@ -180,27 +181,6 @@ export class StorageRestController {
     });
 
     await this.commandBus.execute(cmd);
-    // const meta = new grpc.Metadata();
-    // meta.add('accessorId', userId);
-    // meta.add('file', JSON.stringify(cmd.item));
-
-    // const readStream = fs.createReadStream(file.path);
-    // const subject = new rx.Subject();
-    // readStream.on('data', (chunk) => {
-    //   const buffer = Buffer.from(chunk);
-    //   subject.next({ content: buffer, offset: buffer.length });
-    // });
-
-    // readStream.on('end', () => {
-    //   subject.complete();
-    // });
-
-    // readStream.on('error', (error) => {
-    //   subject.error(error);
-    // });
-
-    // const fetch = this._storageService.uploadFile(subject, meta);
-    // await rx.firstValueFrom(fetch);
   }
 
   @Get(StorageRoutes.FILE_DOWNLOAD)
@@ -254,12 +234,10 @@ export class StorageRestController {
   ) {
     const query = new FolderDownloadQuery(folderId);
     const { name, flatContent } = await this.queryBus.execute(query);
-    const zipped = await this.diskStorageService.buildZipAsync(
-      name,
-      flatContent,
-    );
+    const zipped = this.diskStorageService.buildZipSync(name, flatContent);
     const zip = zipped.zip;
     const filename = zipped.foldername;
+
     res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Length', zipped.totalSize);
@@ -273,6 +251,7 @@ export class StorageRestController {
   }
 
   @Post(StorageRoutes.FOLDER_UPLOAD)
+  @UseGuards(PlanLoadedGuard)
   @UseInterceptors(FileFields([{ name: 'files' }], { preservePath: true }))
   @Transactional()
   async folderUpload(
@@ -291,7 +270,11 @@ export class StorageRestController {
     const totalSize = upload.files.reduce((acc, f) => acc + f.size, 0);
     if (total - used < totalSize) {
       const msg = `Storage limit exceeded: free ${total - used}, but file size is ${totalSize}`;
-      throw new BadRequestException(msg);
+      throw new BadRequestException({
+        type: 'invalid_request',
+        code: 'storage_limit_exceeded',
+        message: msg,
+      });
     }
 
     const folderId = UUID.parse(key === 'root' ? rootId : key);
@@ -299,3 +282,26 @@ export class StorageRestController {
     await this.commandBus.execute(cmd);
   }
 }
+// === ex for send file in grpc === //
+// const meta = new grpc.Metadata();
+// meta.add('accessorId', userId);
+// meta.add('file', JSON.stringify(cmd.item));
+
+// const readStream = fs.createReadStream(file.path);
+// const subject = new rx.Subject();
+// readStream.on('data', (chunk) => {
+//   const buffer = Buffer.from(chunk);
+//   subject.next({ content: buffer, offset: buffer.length });
+// });
+
+// readStream.on('end', () => {
+//   subject.complete();
+// });
+
+// readStream.on('error', (error) => {
+//   subject.error(error);
+// });
+
+// const fetch = this._storageService.uploadFile(subject, meta);
+// await rx.firstValueFrom(fetch);
+// =================================== //
