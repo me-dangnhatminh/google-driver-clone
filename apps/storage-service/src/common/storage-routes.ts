@@ -3,6 +3,7 @@ const STORAGE_DETAIL = `${BASE}`;
 
 const FILE_DOWNLOAD = `${BASE}/files/:key/download`;
 const FILE_UPLOAD = `${BASE}/folders/:key/files/upload`;
+const FILE_UPLOADS = `${BASE}/folders/:key/files/uploads`;
 const FILE_UPDATE = `${BASE}/files/:key`;
 
 const FOLDER_DETAIL = `${BASE}/folders/:key`;
@@ -20,6 +21,7 @@ export const StorageRoutes = {
   STORAGE_DETAIL,
   FILE_DOWNLOAD,
   FILE_UPLOAD,
+  FILE_UPLOADS,
   FILE_UPDATE,
   FOLDER_DETAIL,
   FOLDER_CREATE,

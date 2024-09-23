@@ -9,6 +9,7 @@ service StorageService {
   rpc myStorage(google.protobuf.Empty) returns (StorageInfo);
   rpc createFolder(CreateFolderRequest) returns (FolderInfo);
   rpc getFolder(GetFolderRequest) returns (GetFolderResponse);
+  rpc getFolderInfo(GetFolderInfoRequest) returns (FolderInfo);
   rpc updateFolder(UpdateFolderRequest) returns (google.protobuf.Empty);
   rpc hardDeleteItem(DeleteItemRequest) returns (google.protobuf.Empty);
 
@@ -66,6 +67,10 @@ message GetFolderRequest {
   string folderId = 1;
   string label = 3;
   optional Pagination pagination = 4;
+}
+
+message GetFolderInfoRequest {
+  string folderId = 1;
 }
 
 message ContentResult {

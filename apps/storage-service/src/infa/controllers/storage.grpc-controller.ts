@@ -179,4 +179,11 @@ export class StorageGrpcController {
       },
     });
   }
+
+  @GrpcMethod('StorageService', 'getFolderInfo')
+  getFolderInfo(request, metadata: Metadata) {
+    const accessorId: string = String(metadata.get('accessorId')[0]);
+    if (!accessorId) throw new RpcException('Metadata missing: accessorId');
+    return this.tx.folder.findUnique({ where: { id: request.folderId } });
+  }
 }

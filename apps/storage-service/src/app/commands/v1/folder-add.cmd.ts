@@ -52,7 +52,6 @@ export class FolderAddHandler implements ICommandHandler<AddFolderCmd> {
     // =================== Express Multer =================== //
     let totalSize = new Decimal(0);
     flatFiles.forEach((file) => {
-      file.originalname = decodeURIComponent(file.originalname);
       totalSize = totalSize.add(new Decimal(file.size));
     });
 

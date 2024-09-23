@@ -86,6 +86,41 @@ export const useUploadFile = (refId?: string) => {
   return mutation;
 };
 
+export const useUploadFiles = (refId?: string) => {
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationKey: ["uploadFiles", refId],
+    throwOnError: (err) => {
+      if (err instanceof Error && err.name === "CanceledError") return false;
+      return true;
+    },
+    mutationFn(req: {
+      files: File[];
+      onProgress?: (progress: number) => void;
+      signal?: AbortSignal;
+    }) {
+      return StorageApi.uploadFiles(
+        { files: req.files, parentId: refId },
+        {
+          signal: req.signal,
+          onUploadProgress(event) {
+            const progress = event.progress;
+            if (!progress) return req.onProgress?.(0);
+            req.onProgress?.(Math.ceil(progress * 100));
+          },
+        }
+      );
+    },
+    onMutate: (values) => values.onProgress?.(0),
+    onSuccess: (_data, values) => {
+      values.onProgress?.(100);
+      queryClient.refetchQueries({ queryKey: ["folder", refId] });
+      queryClient.refetchQueries({ queryKey: ["storage"] });
+    },
+  });
+  return mutation;
+};
+
 export const useUploadFolder = (refId?: string) => {
   const queryClient = useQueryClient();
 

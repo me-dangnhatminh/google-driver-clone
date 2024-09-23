@@ -104,6 +104,7 @@ export class StorageApi extends Api {
   static readonly URL = {
     MY_STORAGE: `${Api.baseURL}/storage`,
     UPLOAD_FILE: `${Api.baseURL}/storage/folders/:key/files/upload`,
+    UPLOAD_FILES: `${Api.baseURL}/storage/folders/:key/files/uploads`,
     UPLOAD_FOLDER: `${Api.baseURL}/storage/folders/:key/upload`,
     DOWNLOAD_FILE: `${Api.baseURL}/storage/files/:key/download`,
     DOWNLOAD_FOLDER: `${Api.baseURL}/storage/folders/:key/download`,
@@ -168,7 +169,7 @@ export class StorageApi extends Api {
     return Api.post(url, formData, null, { headers, ...config }).then(() => {});
   }
 
-  static async uploadFile(
+  static uploadFile(
     req: { file: File; parentId?: string },
     config?: AxiosRequestConfig
   ) {
@@ -181,7 +182,22 @@ export class StorageApi extends Api {
       "Content-Encoding": "gzip",
     };
     const url = StorageApi.URL.UPLOAD_FILE.replace(":key", parentId);
-    return await Api.post(url, formData, undefined, { headers, ...config });
+    return Api.post(url, formData, undefined, { headers, ...config });
+  }
+
+  static uploadFiles(
+    req: { files: File[]; parentId?: string },
+    config?: AxiosRequestConfig
+  ) {
+    const parentId = req.parentId ?? StorageApi.ROOT_ID;
+    const files = req.files;
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append("files", file, encodeURIComponent(file.name));
+    });
+    const url = StorageApi.URL.UPLOAD_FILES.replace(":key", parentId);
+    const headers = { "Content-Type": "multipart/form-data" };
+    return Api.post(url, formData, null, { headers, ...config });
   }
 
   static updateFile(req: UpdateItemDTO, config?: AxiosRequestConfig) {

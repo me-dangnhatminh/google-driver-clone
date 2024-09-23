@@ -8,7 +8,7 @@ import {
 } from "@components/ui/popover";
 import { Separator } from "@components/ui/separator";
 import { routesUtils } from "@constants";
-import { useDownloadFile, useFolder, useFolderInfinite } from "@hooks";
+import { useDownloadFile, useFolderInfinite, useUploadFile } from "@hooks";
 import {
   ArchiveRestore,
   DownloadIcon,
@@ -24,6 +24,7 @@ import { useNavigate } from "react-router-dom";
 import { useHardDelete, useUpdateFile, useUpdateFolder } from "@hooks";
 import { toast } from "sonner";
 import { EmptyBackgroup, Loading } from "./helper-component";
+import DropZone from "./drop-zone";
 
 namespace GridView {
   export type File = FileRef;
@@ -98,30 +99,33 @@ function GridView(props: GridView.Props) {
 
   if (files.length === 0 && folders.length === 0) return <EmptyBackgroup />;
   const girdClass = `grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6`;
-  return (
-    <div
-      ref={containerRef}
-      className="w-full h-full overflow-y-auto scroll-mx-0 px-4 pb-4 space-y-2"
-    >
-      <div className="space-y-2" hidden={folders.length === 0}>
-        <h2 className="font-semibold text-md">Folder</h2>
-        <div className={girdClass}>
-          {folders.map((folder, idx) => (
-            <FolderCard key={idx} item={folder} />
-          ))}
-        </div>
-      </div>
 
-      <div className="space-y-2" hidden={files.length === 0}>
-        <h2 className="font-semibold text-md">Files</h2>
-        <div className={girdClass}>
-          {files.map((file, idx) => (
-            <FileCard key={idx} item={file} />
-          ))}
+  return (
+    <DropZone folderId={props.folderId}>
+      <div
+        ref={containerRef}
+        className="w-full h-full overflow-y-auto scroll-mx-0 px-4 pb-4 space-y-2"
+      >
+        <div className="space-y-2" hidden={folders.length === 0}>
+          <h2 className="font-semibold text-md">Folder</h2>
+          <div className={girdClass}>
+            {folders.map((folder, idx) => (
+              <FolderCard key={idx} item={folder} />
+            ))}
+          </div>
         </div>
-        {parent.isFetchingNextPage && <Loading />}
+
+        <div className="space-y-2" hidden={files.length === 0}>
+          <h2 className="font-semibold text-md">Files</h2>
+          <div className={girdClass}>
+            {files.map((file, idx) => (
+              <FileCard key={idx} item={file} />
+            ))}
+          </div>
+          {parent.isFetchingNextPage && <Loading />}
+        </div>
       </div>
-    </div>
+    </DropZone>
   );
 }
 
@@ -382,6 +386,7 @@ const FolderCard = (props: { item: GridView.Folder }) => {
 
   return (
     <div
+      data-folder_id={item.id}
       className="
         select-none
         bg-white dark:bg-neutral-800 rounded-lg p-2 shadow-sm space-y-1 cursor-pointer

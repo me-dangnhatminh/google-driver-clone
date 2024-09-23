@@ -30,9 +30,10 @@ import { Response } from 'express';
 import {
   FileUpdateCmd,
   FileUploadCmd,
-  AddFolderCmd,
   FileContentQuery,
   FolderDownloadQuery,
+  FolderAddContentCmd,
+  AddFolderCmd,
   ItemLabel,
   UpdateItemDTO,
   ItemHardDelete,
@@ -53,7 +54,12 @@ import { FileRef, UUID } from 'src/domain';
 import { fileUtil, StorageRoutes } from 'src/common';
 
 import { useZodPipe } from '../pipes';
-import { DiskStorageService } from '../adapters';
+import {
+  buildStructure,
+  DiskStorageService,
+  structureToDoamin,
+  totalSize,
+} from '../adapters';
 
 const RootOrKey = z.union([z.literal('root'), UUID]);
 type RootOrKey = Omit<string, 'root'> | 'root';
@@ -184,6 +190,43 @@ export class StorageRestController {
     await this.commandBus.execute(cmd);
   }
 
+  @Post(StorageRoutes.FILE_UPLOADS)
+  @UseGuards(PlanLoadedGuard)
+  @UseInterceptors(FileFields([{ name: 'files' }], { preservePath: true }))
+  @Transactional()
+  async fileUploads(
+    @Req() req,
+    @HttpUser('sub') userId: string,
+    @HttpStorage('refId') rootId: string,
+    @Param('key', useZodPipe(RootOrKey)) key: RootOrKey,
+    @UploadedFiles(new ParseFilePipe({ fileIsRequired: true }))
+    upload: { files: Express.Multer.File[] },
+  ) {
+    const folderId = UUID.parse(key === 'root' ? rootId : key);
+    const check = this.checkFreeSpace(req, upload.files);
+    if (check.isFree) {
+      const msg = `Storage limit exceeded: free ${check.free}, but file size is ${check.upload}`;
+      throw new BadRequestException(msg);
+    }
+
+    const tree = buildStructure(upload.files);
+    const folder = await this.storageService
+      .getFolderInfo({ folderId })
+      .toPromise();
+
+    const uploaded = structureToDoamin(tree, folder, userId);
+
+    const cmd = new FolderAddContentCmd({
+      accessorId: userId,
+      folderId: folderId,
+      content: uploaded,
+    });
+
+    await this.commandBus.execute(cmd);
+
+    // throw new BadRequestException('Not implemented');
+  }
+
   @Get(StorageRoutes.FILE_DOWNLOAD)
   @Transactional()
   async fileDownload(
@@ -281,5 +324,21 @@ export class StorageRestController {
     const folderId = UUID.parse(key === 'root' ? rootId : key);
     const cmd = new AddFolderCmd(folderId, userId, upload.files);
     await this.commandBus.execute(cmd);
+  }
+
+  private checkFreeSpace(req, files: Express.Multer.File[]) {
+    const storage = req.storage;
+    const plan = req.plan;
+    const used = storage.used;
+    const total = toGB(plan.metadata.my_storage) * 1024 * 1024 * 1024; // TODO: Fix this
+    const upSize = totalSize(files);
+
+    const isFree = total - used <= upSize;
+    return {
+      isFree,
+      free: total - used,
+      total: totalSize,
+      upload: totalSize,
+    };
   }
 }

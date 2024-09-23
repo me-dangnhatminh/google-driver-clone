@@ -55,7 +55,7 @@ const Authenticated = () => {
 
 const HomePage = lazy(() => import("@pages/home/home.page"));
 
-const StoragePage = lazy(() => import("@pages/storage/storage.page"));
+const StoragePage = lazy(() => import("@pages/storage"));
 const MeetingPage = lazy(() => import("@pages/meeting/meeting.page"));
 
 const router = sentryCreateBrowserRouter([

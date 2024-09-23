@@ -7,4 +7,9 @@ import svgrPlugin from "vite-plugin-svgr";
 export default defineConfig({
   plugins: [react(), viteTsconfigPaths(), svgrPlugin()],
   resolve: {},
+  define: {
+    api: {
+      baseUrl: "http://localhost:3000",
+    },
+  },
 });

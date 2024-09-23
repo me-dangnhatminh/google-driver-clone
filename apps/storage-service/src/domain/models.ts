@@ -6,6 +6,7 @@ export type PastTime = z.infer<typeof PastTime>;
 export type FileRef = z.infer<typeof FileRef>;
 export type Folder = z.infer<typeof Folder>;
 export type FolderInfo = z.infer<typeof FolderInfo>;
+export type FolderContent = z.infer<typeof FolderContent>;
 export type RootFolder = z.infer<typeof RootFolder>;
 export type MyStorage = z.infer<typeof MyStorage>;
 
@@ -39,6 +40,11 @@ export const FolderInfo = z.object({
 
   pinnedAt: PastTime.nullable().default(null),
   archivedAt: PastTime.nullable().default(null),
+});
+
+export const FolderContent = FolderInfo.extend({
+  files: z.lazy(() => z.array(FileRef)),
+  folders: z.lazy(() => z.array(FolderContent)),
 });
 
 export const Folder = FolderInfo.extend({
