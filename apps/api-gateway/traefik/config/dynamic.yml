@@ -47,6 +47,12 @@ http:
       entrypoints: https
       tls: {}
 
+    payment:
+      rule: Host(`api.{{env "BASE_DOMAIN"}}`) && PathPrefix(`/api/payment`)
+      service: payment-http
+      entrypoints: https
+      tls: {}
+
     wordpress:
       rule: Host(`wordpress.{{env "BASE_DOMAIN"}}`)
       service: wordpress
@@ -82,3 +88,8 @@ http:
       loadBalancer:
         servers:
           - url: http://172.17.0.1:3000
+
+    payment-http:
+      loadBalancer:
+        servers:
+          - url: http://172.17.0.1:5000

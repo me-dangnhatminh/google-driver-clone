@@ -2,100 +2,57 @@
 // import * as swagger from '@nestjs/swagger';
 // import { Response } from 'express';
 
-// import { UUID } from 'src/domain';
-// import { CreatePlanDTO, PlanDTO } from 'src/app/dtos';
-// import { PaymentService } from 'src/app/services';
+import { Cache } from '@nestjs/cache-manager';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Post,
+  Req,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import Stripe from 'stripe';
 
-// import { AuthRequired } from '../decorators';
-// import { useZod } from '../pipes';
-// import { CreatePlanOperation, GetPlanByIdOperation } from '../docs';
+@Controller('payment')
+export class PaymentRestController {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly cache: Cache,
+    private readonly stripe: Stripe,
+  ) {}
 
-// @AuthRequired()
-// @common.Controller({ path: 'payment', version: '1' })
-// @swagger.ApiTags('payment')
-// @swagger.ApiBearerAuth()
-// export class PaymentRestController {
-//   constructor(private readonly paymentService: PaymentService) {}
+  @Get('stripe-webhook')
+  async stripeWebhookGet() {
+    return 'stripe webhook';
+  }
 
-//   @common.Get('plans')
-//   async listPlans() {
-//     return await this.paymentService.listPlans();
-//   }
+  @Post('stripe-webhook')
+  async stripeWebhook(@Req() req) {
+    const endpointSecret = this.configService.get('STRIPE_WEBHOOK_SECRET');
+    const sig = req.headers['stripe-signature'];
 
-//   @common.Post('plans')
-//   @swagger.ApiOperation(CreatePlanOperation)
-//   async createPlan(
-//     @common.Body(useZod(CreatePlanDTO)) dto,
-//     @common.Res({ passthrough: true }) res: Response,
-//   ) {
-//     const plan = await this.paymentService.createPlan(dto);
-//     res.setHeader('Location', `${res.req.url}/${plan.id}`);
-//     return PlanDTO.parse(plan);
-//   }
+    let event: Stripe.Event;
 
-//   @common.Get('plans/:id')
-//   @swagger.ApiOperation(GetPlanByIdOperation)
-//   async getPlanById(@common.Param('id', useZod(UUID)) id) {
-//     return await this.paymentService.getPlanById(id);
-//   }
-// }
-// // @common.UseGuards(AuthGuard)
-// // @common.Get('users')
-// // getHello(): string {
-// //   return 'Hello World!';
-// // }
+    try {
+      event = this.stripe.webhooks.constructEvent(
+        req.rawBody.toString(),
+        sig,
+        endpointSecret,
+      );
+    } catch (err: any) {
+      console.error(err);
+      const msg = `Webhook Error: ${err.message}`;
+      throw new BadRequestException(msg);
+    }
 
-// // @common.Get('subscribe')
-// // subscribe() {
-// //   return 'Subscribe';
-// // }
-
-// // @common.Get('unsubscribe')
-// // unsubscribe() {
-// //   return 'Unsubscribe';
-// // }
-
-// // @common.Get('invoices')
-// // invoices() {
-// //   return 'Invoices';
-// // }
-
-// // @common.Get('invoices/:id')
-// // invoiceById() {
-// //   return 'Invoice by ID';
-// // }
-
-// // @common.Get('subscriptions')
-// // subscriptions() {
-// //   return 'Subscriptions';
-// // }
-
-// // @common.Get('subscriptions/:id')
-// // subscriptionById() {
-// //   return 'Subscription by ID';
-// // }
-
-// // @common.Get('subscriptions/:id/invoices')
-// // subscriptionInvoices() {
-// //   return 'Subscription invoices';
-// // }
-
-// // @common.Get('subscriptions/:id/invoices/:invoiceId')
-// // subscriptionInvoiceById() {
-// //   return 'Subscription invoice by ID';
-// // }
-
-// // @common.Get('subscriptions/:id/usage')
-// // subscriptionUsage() {
-// //   return 'Subscription usage';
-// // }
-
-// // @common.Get('subscriptions/:id/usage/:usageId')
-// // subscriptionUsageById() {
-// //   return 'Subscription usage by ID';
-// // }
-
-// // @common.Get('subscriptions/:id/usage/:usageId/invoices')
-// // subscriptionUsageInvoices() {
-// //   return 'Subscription usage invoices';
-// // }
+    console.log('event', event);
+    if (event.type.startsWith('customer.subscription')) {
+      const subscription = event.data.object as Stripe.Subscription;
+      const customerId = subscription.customer.toString();
+      const customer = await this.stripe.customers.retrieve(customerId);
+      if (customer.deleted) throw new BadRequestException('Customer not found');
+      if (customer.email) await this.cache.del(customer.email);
+      console.log('Deleted cache', customer.email);
+    }
+  }
+}

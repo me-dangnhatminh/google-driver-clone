@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-import { Api, FileRef, FolderContent, FolderInfo, ItemLabel } from "@api";
+import { FileRef, FolderContent, FolderInfo, ItemLabel } from "@api";
 import { Input } from "@components/ui/input";
 import {
   Popover,
@@ -8,7 +8,7 @@ import {
 } from "@components/ui/popover";
 import { Separator } from "@components/ui/separator";
 import { routesUtils } from "@constants";
-import { useDownloadFile, useFolderInfinite } from "@hooks";
+import { useDownloadFile, useFolderInfinite, useUploadFiles } from "@hooks";
 import {
   ArchiveRestore,
   DownloadIcon,
@@ -16,17 +16,19 @@ import {
   MoreVertical,
   PencilIcon,
   PinIcon,
-  MoveUp,
-  MoveDown,
   Trash,
   TrashIcon,
 } from "lucide-react";
-import React from "react";
+import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDropzone } from "react-dropzone";
 import { useHardDelete, useUpdateFile, useUpdateFolder } from "@hooks";
 import { toast } from "sonner";
 import { EmptyBackgroup, Loading } from "./helper-component";
 import DropZone from "./drop-zone";
+import { cn } from "@/lib/utils";
+
+const uuid = () => Math.random().toString(36).slice(2);
 
 namespace GridView {
   export type File = FileRef;
@@ -47,6 +49,8 @@ namespace GridView {
     loading?: boolean;
   };
   export type Props = { folderId?: string; label?: ItemLabel };
+  export type FileCardProps = { item: File };
+  export type FolderCardProps = { item: Folder };
 }
 
 function GridView(props: GridView.Props) {
@@ -108,7 +112,7 @@ function GridView(props: GridView.Props) {
       ) : (
         <div
           ref={containerRef}
-          className="w-full h-full overflow-y-auto scroll-mx-0 px-4 pb-4 space-y-2"
+          className="w-full h-full overflow-y-auto scroll-mx-0 px-4 pb-4 space-y-2 select-auto"
         >
           <div className="space-y-2" hidden={folders.length === 0}>
             <h2 className="font-semibold text-md">Folder</h2>
@@ -134,7 +138,7 @@ function GridView(props: GridView.Props) {
   );
 }
 
-const FileCard = (props: { item: GridView.File }) => {
+const FileCard = (props: GridView.FileCardProps) => {
   const item = props.item;
   const thumbnailRef = React.useRef<HTMLImageElement>(null);
   const [action, setAction] = React.useState<GridView.Action>();
@@ -292,13 +296,52 @@ const FileCard = (props: { item: GridView.File }) => {
   );
 };
 
-const FolderCard = (props: { item: GridView.Folder }) => {
+const FolderCard = (props: GridView.FolderCardProps) => {
   const item = props.item;
-  const navigate = useNavigate();
+  const [slected, setSelected] = React.useState(false);
   const [action, setAction] = React.useState<GridView.Action>();
-
+  const uploadFiles = useUploadFiles(item.id);
   const update = useUpdateFolder();
   const hardDelete = useHardDelete();
+  const navigate = useNavigate();
+
+  const { getRootProps } = useDropzone({
+    noClick: true,
+    onDrop: (acceptedFiles, _, e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const files = acceptedFiles.map((file) => {
+        if ("path" in file && typeof file.path === "string")
+          return new File([file], file.path.replace(/^\//, ""), file);
+        else return new File([file], file.name, file);
+      });
+      if (files.length === 0) return;
+
+      const controller = new AbortController();
+      const toastOpts = {
+        id: `upload-${uuid()}`,
+        closeButton: true,
+        onDismiss: () => controller.abort(),
+      };
+
+      uploadFiles.mutate(
+        {
+          files: files,
+          signal: controller.signal,
+          onProgress: (progress) => {
+            const msg = `Uploading... ${progress}%`;
+            toast.message(msg, toastOpts);
+          },
+        },
+        {
+          onSettled: () => controller.abort(),
+          onSuccess: () => toast.success("Uploaded", toastOpts),
+          onError: () => toast.error("Error uploading", toastOpts),
+        }
+      );
+    },
+  });
+  const dropZoneProps = useMemo(() => getRootProps(), [getRootProps]);
 
   const url = routesUtils("FOLDERS")(item.id);
 
@@ -306,9 +349,9 @@ const FolderCard = (props: { item: GridView.Folder }) => {
     if (name === item.name) return setAction(undefined);
     const updating = update
       .mutateAsync({
+        label: "rename",
         name: name,
         id: item.id,
-        label: "rename",
       })
       .then(() => setAction(undefined));
     toast.promise(updating, { success: "Renamed!", error: "Error renaming" });
@@ -378,11 +421,16 @@ const FolderCard = (props: { item: GridView.Folder }) => {
         autoFocus
         onBlur={(e) => {
           e.stopPropagation();
-          rename(e.target.value);
+          const v = e.target.value.trim();
+          rename(v);
         }}
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onKeyDown={(e: any) => {
-          if (e.key === "Enter") rename(`${e.target.value}`.trim());
+          if (e.key === "Enter") {
+            e.stopPropagation();
+            e.preventDefault();
+            e.target.blur();
+          }
         }}
       />
     ) : (
@@ -391,12 +439,18 @@ const FolderCard = (props: { item: GridView.Folder }) => {
 
   return (
     <div
-      data-folder_id={item.id}
-      className="
-        select-none
-        bg-white dark:bg-neutral-800 rounded-lg p-2 shadow-sm space-y-1 cursor-pointer
-        hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200 ease-in-out
-        "
+      {...dropZoneProps}
+      onClick={(e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        setSelected((p) => !p);
+      }}
+      className={cn(
+        "selectable",
+        "bg-white dark:bg-neutral-800 rounded-lg p-2 shadow-sm space-y-1 cursor-pointer",
+        "hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200 ease-in-out",
+        slected && "bg-gray-200 dark:bg-gray-600"
+      )}
     >
       <div
         className="flex items-center justify-between space-x-2"
@@ -418,8 +472,6 @@ const FolderCard = (props: { item: GridView.Folder }) => {
     </div>
   );
 };
-
-export default GridView;
 
 const ItemActions = (props: GridView.ActionProps) => {
   const [open, setOpen] = React.useState(false);
@@ -498,32 +550,4 @@ const ItemActions = (props: GridView.ActionProps) => {
   );
 };
 
-// <div id="filter-bar" className="px-2 py-1 flex justify-between">
-// <div></div>
-// <div className="flex items-center space-x-2">
-//   <Button
-//     className="rounded-md w-8 h-8 p-2"
-//     onClick={() => setOrder((s) => (s === "asc" ? "desc" : "asc"))}
-//   >
-//     {order === "asc" ? <MoveUp /> : <MoveDown />}
-//   </Button>
-//   <Select
-//     defaultValue={sort}
-//     onValueChange={(v) =>
-//       setSort(v as "name" | "date" | "lastModified")
-//     }
-//   >
-//     <SelectTrigger className="w-[180px]">
-//       <SelectValue placeholder="Select a fruit" />
-//     </SelectTrigger>
-//     <SelectContent>
-//       <SelectGroup>
-//         <SelectLabel>Order By</SelectLabel>
-//         <SelectItem value="name">Name</SelectItem>
-//         <SelectItem value="date">Date</SelectItem>
-//         <SelectItem value="lastModified">Last Modified</SelectItem>
-//       </SelectGroup>
-//     </SelectContent>
-//   </Select>
-// </div>
-// </div>
+export default GridView;

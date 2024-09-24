@@ -18,7 +18,7 @@ export class SubscriptionGprcController {
     const customer = await this.stripe.customers
       .list({
         email: request.customerId,
-        expand: ['data.subscriptions'],
+        expand: ['data.subscriptions.data.plan'],
         limit: 1,
       })
       .then((res) => res.data[0]);
@@ -39,11 +39,11 @@ export class SubscriptionGprcController {
       return res;
     }
 
-    const res = {
-      plan: subscription.items.data[0].plan.nickname,
-      metadata: subscription.items.data[0].plan.metadata,
-    };
+    const productId = subscription.items.data[0].plan.product?.toString();
+    if (!productId) throw new Error('Product not found');
 
+    const product = await this.stripe.products.retrieve(productId);
+    const res = { plan: product.name, metadata: product.metadata };
     await this.cache.set(request.customerId, res, 10 * 60 * 1000); // 10 minutes
     return res;
   }
