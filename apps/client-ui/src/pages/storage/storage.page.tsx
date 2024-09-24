@@ -12,6 +12,7 @@ import { ItemLabel } from "@api";
 import DocActions from "./doc-actions";
 import ListView from "./list-view";
 import GridView from "./gird-view";
+import FilterBar from "./filter-bar";
 
 namespace StoragePage {
   export type Props = { folderId?: string; label?: ItemLabel };
@@ -62,6 +63,7 @@ export const StoragePage = (props: StoragePage.Props) => {
           layout={layout}
           toggle={toggleLayout}
         />
+        <FilterBar />
         <ViewCom {...props} />
       </div>
     </div>

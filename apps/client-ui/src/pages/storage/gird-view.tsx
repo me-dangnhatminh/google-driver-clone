@@ -8,7 +8,7 @@ import {
 } from "@components/ui/popover";
 import { Separator } from "@components/ui/separator";
 import { routesUtils } from "@constants";
-import { useDownloadFile, useFolderInfinite, useUploadFile } from "@hooks";
+import { useDownloadFile, useFolderInfinite } from "@hooks";
 import {
   ArchiveRestore,
   DownloadIcon,
@@ -16,6 +16,8 @@ import {
   MoreVertical,
   PencilIcon,
   PinIcon,
+  MoveUp,
+  MoveDown,
   Trash,
   TrashIcon,
 } from "lucide-react";
@@ -97,34 +99,37 @@ function GridView(props: GridView.Props) {
   const folders = folder?.content.folders ?? [];
   const files = folder?.content.files ?? [];
 
-  if (files.length === 0 && folders.length === 0) return <EmptyBackgroup />;
   const girdClass = `grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6`;
 
   return (
     <DropZone folderId={props.folderId}>
-      <div
-        ref={containerRef}
-        className="w-full h-full overflow-y-auto scroll-mx-0 px-4 pb-4 space-y-2"
-      >
-        <div className="space-y-2" hidden={folders.length === 0}>
-          <h2 className="font-semibold text-md">Folder</h2>
-          <div className={girdClass}>
-            {folders.map((folder, idx) => (
-              <FolderCard key={idx} item={folder} />
-            ))}
+      {files.length === 0 && folders.length === 0 ? (
+        <EmptyBackgroup />
+      ) : (
+        <div
+          ref={containerRef}
+          className="w-full h-full overflow-y-auto scroll-mx-0 px-4 pb-4 space-y-2"
+        >
+          <div className="space-y-2" hidden={folders.length === 0}>
+            <h2 className="font-semibold text-md">Folder</h2>
+            <div className={girdClass}>
+              {folders.map((folder, idx) => (
+                <FolderCard key={idx} item={folder} />
+              ))}
+            </div>
           </div>
-        </div>
 
-        <div className="space-y-2" hidden={files.length === 0}>
-          <h2 className="font-semibold text-md">Files</h2>
-          <div className={girdClass}>
-            {files.map((file, idx) => (
-              <FileCard key={idx} item={file} />
-            ))}
+          <div className="space-y-2" hidden={files.length === 0}>
+            <h2 className="font-semibold text-md">Files</h2>
+            <div className={girdClass}>
+              {files.map((file, idx) => (
+                <FileCard key={idx} item={file} />
+              ))}
+            </div>
+            {parent.isFetchingNextPage && <Loading />}
           </div>
-          {parent.isFetchingNextPage && <Loading />}
         </div>
-      </div>
+      )}
     </DropZone>
   );
 }
@@ -492,3 +497,33 @@ const ItemActions = (props: GridView.ActionProps) => {
     </Popover>
   );
 };
+
+// <div id="filter-bar" className="px-2 py-1 flex justify-between">
+// <div></div>
+// <div className="flex items-center space-x-2">
+//   <Button
+//     className="rounded-md w-8 h-8 p-2"
+//     onClick={() => setOrder((s) => (s === "asc" ? "desc" : "asc"))}
+//   >
+//     {order === "asc" ? <MoveUp /> : <MoveDown />}
+//   </Button>
+//   <Select
+//     defaultValue={sort}
+//     onValueChange={(v) =>
+//       setSort(v as "name" | "date" | "lastModified")
+//     }
+//   >
+//     <SelectTrigger className="w-[180px]">
+//       <SelectValue placeholder="Select a fruit" />
+//     </SelectTrigger>
+//     <SelectContent>
+//       <SelectGroup>
+//         <SelectLabel>Order By</SelectLabel>
+//         <SelectItem value="name">Name</SelectItem>
+//         <SelectItem value="date">Date</SelectItem>
+//         <SelectItem value="lastModified">Last Modified</SelectItem>
+//       </SelectGroup>
+//     </SelectContent>
+//   </Select>
+// </div>
+// </div>
