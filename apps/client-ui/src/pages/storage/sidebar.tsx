@@ -56,7 +56,14 @@ function Sidebar(props: SidebarProps) {
             return (
               <div className="flex flex-col space-y-2 px-4">
                 <Progress className="h-2" value={percent} />
-                <span>{[usedBytes, totalBytes].join(" of ")}</span>
+                <span className="text-sm text-muted-foreground">
+                  {[usedBytes, totalBytes].join(" of ")}
+                </span>
+                <Link to="/payment">
+                  <Button size="sm" className="w-full rounded-full">
+                    Upgrade Storage
+                  </Button>
+                </Link>
               </div>
             );
           })()}
