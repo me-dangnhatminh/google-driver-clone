@@ -9,17 +9,62 @@ import {
   Get,
   Post,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Authenticated, HttpUser } from 'libs/auth-client';
 import Stripe from 'stripe';
 
 @Controller('payment')
+@ApiTags('payment')
 export class PaymentRestController {
   constructor(
     private readonly configService: ConfigService,
     private readonly cache: Cache,
     private readonly stripe: Stripe,
   ) {}
+
+  @Get('billing/customer-session')
+  @UseGuards(Authenticated)
+  @ApiBearerAuth()
+  async stripePublicKey(@HttpUser() user) {
+    const email = user.email;
+    if (!email) throw new Error("Missing 'email' in 'user'");
+    const cached = await this.cache.get(`stripe-customer-session-${email}`);
+    if (cached) return cached;
+
+    const customer = await this.stripe.customers
+      .list({ email })
+      .then((r) => r.data[0]);
+    if (!customer) throw new Error('customer.not_found');
+
+    return await this.stripe.customerSessions
+      .create({
+        customer: customer.id,
+        components: {
+          pricing_table: { enabled: true },
+        },
+      })
+      .then((session) => {
+        return {
+          data: {
+            clientSecret: session.client_secret,
+            expiresAt: session.expires_at,
+          },
+        };
+      })
+      .then((session) => {
+        const ttl = session.data.expiresAt * 1000 - Date.now();
+        return this.cache
+          .set(`stripe-customer-session-${email}`, session, ttl)
+          .then(() => session);
+      })
+      .catch((err) => {
+        console.error(err);
+        throw new BadRequestException(err.message);
+      });
+  }
 
   @Get('stripe-webhook')
   async stripeWebhookGet() {

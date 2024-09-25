@@ -201,6 +201,8 @@ export class FileRollback implements NestInterceptor {
   constructor() {}
 
   intercept(context: ExecutionContext, next: CallHandler) {
+    const isHttp = context.getType() === 'http';
+    if (!isHttp) return next.handle();
     const request: Request = context.switchToHttp().getRequest();
     return next.handle().pipe(
       rx.catchError((err) => {

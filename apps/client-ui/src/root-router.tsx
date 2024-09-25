@@ -56,6 +56,7 @@ const Authenticated = () => {
 const HomePage = lazy(() => import("@pages/home/home.page"));
 
 const StoragePage = lazy(() => import("@pages/storage"));
+const PaymentPage = lazy(() => import("@pages/payment"));
 const MeetingPage = lazy(() => import("@pages/meeting/meeting.page"));
 
 const router = sentryCreateBrowserRouter([
@@ -66,6 +67,7 @@ const router = sentryCreateBrowserRouter([
       {
         Component: Authenticated,
         children: [
+          { path: "payment", Component: PaymentPage },
           { path: RoutesPath.STORAGE, Component: StoragePage },
           { path: RoutesPath.FOLDERS, Component: StoragePage },
           { path: RoutesPath.PINNED, Component: StoragePage },

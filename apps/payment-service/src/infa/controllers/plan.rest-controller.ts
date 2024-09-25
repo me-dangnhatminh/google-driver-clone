@@ -4,7 +4,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Authenticated, HttpUser } from 'libs/auth-client';
 import Stripe from 'stripe';
 
-@Controller('payments/plan')
+@Controller('plan')
 @ApiTags('plan')
 @ApiBearerAuth()
 @UseGuards(Authenticated)
