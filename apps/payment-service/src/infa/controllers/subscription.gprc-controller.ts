@@ -1,10 +1,14 @@
 import { Cache } from '@nestjs/cache-manager';
-import { Controller } from '@nestjs/common';
+import { Controller, UseInterceptors } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
+import { GrpcLoggingInterceptor } from 'libs/common';
 import Stripe from 'stripe';
 
 @Controller()
+@UseInterceptors(GrpcLoggingInterceptor)
 export class SubscriptionGprcController {
+  private readonly TIME_CACHE = 10 * 60 * 1000; // 10 minutes
+
   constructor(
     private readonly stripe: Stripe,
     private readonly cache: Cache,
@@ -21,10 +25,16 @@ export class SubscriptionGprcController {
         expand: ['data.subscriptions.data.plan'],
         limit: 1,
       })
-      .then((res) => res.data[0]);
-    if (!customer) throw new Error('Customer not found');
+      .then((res) => res.data[0])
+      .then((c) => {
+        if (c) return c;
+        return this.stripe.customers.create({ email: request.customerId });
+      });
 
     const subscription = customer.subscriptions?.data[0];
+
+    let res: { plan: string; metadata: Record<string, string> };
+
     if (!subscription) {
       const FREE_PLAN = 'Free';
       const freeProduct = await this.stripe.products
@@ -34,17 +44,16 @@ export class SubscriptionGprcController {
           return products.find((product) => product.name === FREE_PLAN);
         });
       if (!freeProduct) throw new Error('Free plan not found');
-      const res = { plan: FREE_PLAN, metadata: freeProduct.metadata };
-      await this.cache.set(request.customerId, res, 10 * 60 * 1000); // 10 minutes
-      return res;
+      res = { plan: FREE_PLAN, metadata: freeProduct.metadata };
+    } else {
+      const productId = subscription.items.data[0].plan.product?.toString();
+      if (!productId) throw new Error('Product not found');
+
+      const product = await this.stripe.products.retrieve(productId);
+      res = { plan: product.name, metadata: product.metadata };
     }
 
-    const productId = subscription.items.data[0].plan.product?.toString();
-    if (!productId) throw new Error('Product not found');
-
-    const product = await this.stripe.products.retrieve(productId);
-    const res = { plan: product.name, metadata: product.metadata };
-    await this.cache.set(request.customerId, res, 10 * 60 * 1000); // 10 minutes
+    await this.cache.set(request.customerId, res, this.TIME_CACHE);
     return res;
   }
 }

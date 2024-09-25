@@ -1,27 +1,33 @@
-export type IEvent<TName extends string = string, TPayload = unknown> = {
-  // id: string;
-  // timestamp: number;
-  name: TName;
+export type IEvent<TType extends string = string, TPayload = unknown> = {
+  type: TType;
   payload: TPayload;
 };
 
-export type IPlanedPayload = {
-  name: string;
-  planId: string;
-  amount: number;
-};
-export type IPlanedEvent = IEvent<'planed', IPlanedPayload>;
+export type IPlanedEvent = IEvent<
+  'planed',
+  {
+    name: string;
+    planId: string;
+    amount: number;
+  }
+>;
 
-export class PlanedEvent implements IPlanedEvent {
-  public readonly name = 'planed';
-  public readonly payload: IPlanedPayload;
-  constructor(payload: IPlanedPayload) {
-    this.payload = payload;
+export type IPaymentEvent = IPlanedEvent;
+
+export class PaymentEvent<TE extends IPaymentEvent = IPaymentEvent> {
+  constructor(public event: TE) {}
+
+  get type() {
+    return this.event.type;
+  }
+
+  get payload() {
+    return this.event.payload;
   }
 
   get tuple() {
-    return [this.name, this.payload] as const;
+    return [this.type, this.payload] as const;
   }
 }
 
-export type PaymentEvent = PlanedEvent;
+export class PlanedEvent extends PaymentEvent<IPlanedEvent> {}

@@ -1,52 +1,29 @@
-import {
-  CallHandler,
-  ExecutionContext,
-  Logger,
-  Module,
-  NestInterceptor,
-} from '@nestjs/common';
+import { Logger, Module, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { catchError } from 'rxjs';
 
 import Stripe from 'stripe';
-
-export class StripeExceptionInterceptor implements NestInterceptor {
-  private readonly logger = new Logger(StripeExceptionInterceptor.name);
-
-  constructor() {}
-
-  intercept(context: ExecutionContext, next: CallHandler) {
-    return next.handle().pipe(
-      catchError((error: unknown) => {
-        const isStripeError = error instanceof Stripe.errors.StripeError;
-        if (!isStripeError) throw new Error('Stripe library error');
-
-        const type = error.type;
-        switch (type) {
-          case 'StripeInvalidRequestError':
-            throw 'invalid_request_error';
-
-          case 'StripeAPIError':
-            throw 'api_error';
-
-          default:
-            throw error;
-        }
-      }),
-    );
-  }
-}
 
 @Module({
   providers: [
     {
       provide: Stripe,
       inject: [ConfigService],
-      useFactory: () => {
-        return new Stripe(process.env.STRIPE_SECRET_KEY || '');
+      useFactory: (configService: ConfigService) => {
+        const stripeSecretKey = configService.get('STRIPE_SECRET_KEY');
+        const timeout = 3000;
+        return new Stripe(stripeSecretKey, { timeout });
       },
     },
   ],
   exports: [Stripe],
 })
-export class StripeModule {}
+export class StripeModule implements OnModuleInit {
+  private readonly logger = new Logger(StripeModule.name);
+  constructor(private readonly stripe: Stripe) {}
+
+  onModuleInit() {
+    return this.stripe.accounts.list({ limit: 1 }).then(() => {
+      this.logger.log(`Stripe connected`);
+    });
+  }
+}
