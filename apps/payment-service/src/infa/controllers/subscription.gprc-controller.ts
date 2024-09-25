@@ -25,10 +25,17 @@ export class SubscriptionGprcController {
         expand: ['data.subscriptions.data.plan'],
         limit: 1,
       })
-      .then((res) => res.data[0])
-      .then((c) => {
-        if (c) return c;
-        return this.stripe.customers.create({ email: request.customerId });
+      .then((res) => {
+        if (res.data.length > 1) {
+          throw new Error(`customer.duplicated: ${request.customerId}`);
+        } else if (res.data[0]) {
+          return res.data[0];
+        } else {
+          return this.stripe.customers.create({
+            email: request.customerId,
+            expand: ['subscriptions.data.plan'],
+          });
+        }
       });
 
     const subscription = customer.subscriptions?.data[0];
