@@ -5,10 +5,10 @@ import { TerminusModule } from '@nestjs/terminus';
 import { HttpModule } from '@nestjs/axios';
 
 import { HTTPLogger } from 'libs/common';
+import { AuthClientModule } from 'libs/auth-client';
 
 import { controllers, Auth0Module, CacheModule } from 'src/infa';
 import configs from 'src/config';
-import { AuthClientModule } from 'libs/auth-client';
 
 @Module({
   imports: [
