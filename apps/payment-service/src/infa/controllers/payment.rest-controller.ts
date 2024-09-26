@@ -10,7 +10,6 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Request } from 'express';
 import { Authenticated, HttpUser } from 'libs/auth-client';
 import { Configs } from 'src/config';
 import Stripe from 'stripe';
@@ -82,7 +81,7 @@ export class PaymentRestController {
   // cus_QuYqPCmwAH2Yfy
   // cus_QtH6te5U1OkQbi
   @Get('demo')
-  async demo(@Req() req: Request) {
+  async demo(@Req() req) {
     let res;
     res = await this.stripe.billingPortal.sessions.create({
       customer: 'cus_QtH6te5U1OkQbi',

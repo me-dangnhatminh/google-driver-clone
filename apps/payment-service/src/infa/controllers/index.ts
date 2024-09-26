@@ -12,3 +12,5 @@ export const controllers = [
   BillingRestController,
   SubscriptionRestController,
 ];
+
+export default controllers;

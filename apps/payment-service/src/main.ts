@@ -1,3 +1,5 @@
+declare const module: any;
+
 import { ReflectionService } from '@grpc/reflection';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
@@ -58,5 +60,10 @@ async function bootstrap() {
   await connectGRPC(app);
   await app.listen(port, host);
   logger.log(`${appName} started at http://${host}:${port}`);
+
+  if (module.hot) {
+    module.hot.accept();
+    module.hot.dispose(() => app.close());
+  }
 }
 bootstrap();
