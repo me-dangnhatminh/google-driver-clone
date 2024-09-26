@@ -1,7 +1,11 @@
 import { Controller } from '@nestjs/common';
 import { GrpcMethod, RpcException } from '@nestjs/microservices';
 
-import { ResponseError, UserInfoClient } from '../adapters/auth0.module';
+import {
+  ManagementClient,
+  ResponseError,
+  UserInfoClient,
+} from '../adapters/auth0.module';
 import { UnauthenticatedRpcException, UnknownRpcException } from 'libs/common';
 import { ErrorType } from 'src/common';
 import { Cache } from '../adapters';
@@ -21,6 +25,7 @@ const wwwAuthToJson = (wwwAuth: string) => {
 export class AuthGrpcController {
   constructor(
     private readonly userInfo: UserInfoClient,
+    private readonly manager: ManagementClient,
     private readonly cache: Cache,
   ) {}
 
@@ -32,7 +37,9 @@ export class AuthGrpcController {
 
     const get = this.userInfo
       .getUserInfo(request.token)
-      .then((res) => res.data)
+      .then((res) => {
+        return res.data;
+      })
       .then((data) => ({
         id: data.sub,
         email: data.email,

@@ -3,6 +3,7 @@ import { ConfigType, registerAs } from '@nestjs/config';
 import appConfig from './app.config';
 import dbConfig from './db.config';
 import grpcConfig from './grpc.config';
+import rmqConfig from './rmq.config';
 
 const corsConfig = registerAs('cors', () => ({
   enabled: process.env.CORS_ENABLED || true,
@@ -32,6 +33,7 @@ const configs = {
   redis: redisConfig,
   swagger: swaggerConfig,
   cors: corsConfig,
+  rmq: rmqConfig,
 };
 
 export type Configs = {

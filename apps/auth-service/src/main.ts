@@ -1,3 +1,5 @@
+declare const module: any;
+
 import { NestFactory } from '@nestjs/core';
 import { ForbiddenException, INestApplication, Logger } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
@@ -76,7 +78,10 @@ async function bootstrap() {
     logger.log(`REST API is running on ${appConfig.host}:${appConfig.port}`);
   });
 
-  return app;
+  if (module.hot) {
+    module.hot.accept();
+    module.hot.dispose(() => app.close());
+  }
 }
 
 bootstrap();

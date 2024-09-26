@@ -6,6 +6,7 @@ import grpcConfig from './grpc.config';
 import rmqConfig from './rmq.config';
 import corsConfig from './cors.config';
 import redisConfig from './redis.config';
+import stripeConfig from './stripe.config';
 
 const configs = {
   app: appConfig,
@@ -14,6 +15,7 @@ const configs = {
   grpc: grpcConfig,
   rmq: rmqConfig,
   redis: redisConfig,
+  stripe: stripeConfig,
 };
 
 export type Configs = {

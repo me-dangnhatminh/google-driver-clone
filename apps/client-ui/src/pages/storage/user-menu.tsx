@@ -52,13 +52,21 @@ function UserMenu() {
 
           <DropdownMenuSeparator />
           <div>
+            {/* href="https://billing.stripe.com/p/login/test_aEU01E7RP03m5faaEE" */}
+
+            <DropdownMenuItem className="w-full cursor-pointer text-muted-foreground">
+              <a
+                role="button"
+                href="https://billing.stripe.com/p/login/test_aEU01E7RP03m5faaEE"
+                target="_blank"
+                rel="noreferrer"
+                children="Portal"
+              ></a>
+            </DropdownMenuItem>
             <DropdownMenuItem className="w-full cursor-pointer text-muted-foreground">
               <div role="button">Account</div>
             </DropdownMenuItem>
-            <DropdownMenuItem
-              asChild
-              className="w-full cursor-pointer text-muted-foreground"
-            >
+            <DropdownMenuItem className="w-full cursor-pointer text-muted-foreground">
               <div onClick={signOut} role="button" children="Sign out" />
             </DropdownMenuItem>
           </div>

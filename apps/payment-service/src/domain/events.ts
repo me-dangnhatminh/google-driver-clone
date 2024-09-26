@@ -1,9 +1,9 @@
-export type IEvent<TType extends string = string, TPayload = unknown> = {
+export type TEvent<TType extends string = string, TData = unknown> = {
   type: TType;
-  payload: TPayload;
+  data: TData;
 };
 
-export type IPlanedEvent = IEvent<
+export type TPlanedEvent = TEvent<
   'planed',
   {
     name: string;
@@ -12,22 +12,22 @@ export type IPlanedEvent = IEvent<
   }
 >;
 
-export type IPaymentEvent = IPlanedEvent;
+export type TPaymentEvent = TPlanedEvent;
 
-export class PaymentEvent<TE extends IPaymentEvent = IPaymentEvent> {
-  constructor(public event: TE) {}
+export class PaymentEvent<T extends TPaymentEvent = TPaymentEvent> {
+  constructor(public event: T) {}
 
   get type() {
     return this.event.type;
   }
 
-  get payload() {
-    return this.event.payload;
+  get data() {
+    return this.event.data;
   }
 
   get tuple() {
-    return [this.type, this.payload] as const;
+    return [this.type, this.data] as const;
   }
 }
 
-export class PlanedEvent extends PaymentEvent<IPlanedEvent> {}
+export class PlanedEvent extends PaymentEvent<TPaymentEvent> {}
