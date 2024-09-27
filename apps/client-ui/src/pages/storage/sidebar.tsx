@@ -17,6 +17,19 @@ import { cn } from "@/lib/utils";
 
 type SidebarProps = { folderId?: string };
 function Sidebar(props: SidebarProps) {
+  // const fetchBillingPortal = useQuery({
+  //   queryKey: ["billing-portal"],
+  //   queryFn: () =>
+  //     PaymentApi.getCustomerBillingPortal({
+  //       return_url: location.href,
+  //     }),
+  // });
+
+  // const navigateTo = (url: string) => {
+  //   toast("Redirecting to billing portal...");
+  //   window.location.href = url;
+  // };
+
   const storage = useStorage();
   return (
     <div className="w-full h-full bg-white dark:bg-black px-4">

@@ -34,7 +34,6 @@ const connectGRPC = async (app: INestApplication) => {
     { inheritAppConfig: true },
   );
   logger.log(`gRPC connected: ${grpcConfig.url}`);
-  await app.startAllMicroservices();
 };
 
 async function bootstrap() {
@@ -58,8 +57,10 @@ async function bootstrap() {
   const appName = 'Payment Service';
 
   await connectGRPC(app);
-  await app.listen(port, host);
-  logger.log(`${appName} started at http://${host}:${port}`);
+  await app.startAllMicroservices();
+  await app.listen(port, host).then(() => {
+    logger.log(`${appName} started at http://${host}:${port}`);
+  });
 
   if (module.hot) {
     module.hot.accept();

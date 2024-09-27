@@ -16,7 +16,7 @@ http:
 
   routers:
     client-ui:
-      rule: Host(`{{env "BASE_DOMAIN"}}`)
+      rule: Host(`www.{{env "BASE_DOMAIN"}}`)
       service: client-ui
       entrypoints: https
       tls: {}

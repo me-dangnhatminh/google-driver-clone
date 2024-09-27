@@ -59,6 +59,9 @@ importers:
       cache-manager-redis-yet:
         specifier: ^5.1.3
         version: 5.1.5
+      express:
+        specifier: ^4.21.0
+        version: 4.21.0
       fs-extra:
         specifier: ^11.2.0
         version: 11.2.0

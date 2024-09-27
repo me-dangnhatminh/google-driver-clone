@@ -5,14 +5,19 @@ import { RoutesPath } from "@constants";
 import { useAuth0 } from "@auth0/auth0-react";
 
 const HomePage = () => {
+  const navigate = useNavigate();
   const {
     isAuthenticated: isAuth,
     user: me,
     loginWithRedirect,
-    logout,
+    logout: auth0Logout,
   } = useAuth0();
 
-  const navigate = useNavigate();
+  const login = () => loginWithRedirect();
+  const logout = () => {
+    auth0Logout({ logoutParams: { returnTo: window.location.origin } });
+  };
+
   const [atTop, setAtTop] = React.useState(true);
   const [open, setOpen] = React.useState(false);
 
@@ -120,25 +125,23 @@ const HomePage = () => {
             <div className="flex flex-col divide-y divide-neutral-200">
               {(() => {
                 if (isAuth) return null;
-                const toSignUp = () => loginWithRedirect();
-                const toSignIn = () => loginWithRedirect();
 
                 return (
                   <>
                     <div
                       className="flex h-0 flex-1 cursor-pointer"
-                      onClick={toSignUp}
+                      onClick={login}
                     >
                       <a className="flex w-full items-center justify-center rounded-none rounded-tr-lg border border-transparent px-4 py-3 text-sm font-medium text-orange-600 hover:text-orange-500 focus:z-10 focus:outline-none focus:ring-2 focus:ring-orange-500">
-                        Sign Up
+                        Register
                       </a>
                     </div>
                     <div
                       className="flex h-0 flex-1 cursor-pointer"
-                      onClick={toSignIn}
+                      onClick={login}
                     >
                       <a className="flex w-full items-center justify-center rounded-none rounded-br-lg border border-transparent px-4 py-3 text-sm font-medium text-neutral-700 hover:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-orange-500">
-                        Sign In
+                        Log In
                       </a>
                     </div>
                   </>
@@ -146,24 +149,19 @@ const HomePage = () => {
               })()}
               {(() => {
                 if (!isAuth) return null;
-                const toSignOut = () => logout();
-                const toProfile = () => navigate(RoutesPath.PROFILE);
                 return (
                   <>
-                    <div
-                      className="flex h-0 flex-1 cursor-pointer"
-                      onClick={toProfile}
-                    >
+                    <div className="flex h-0 flex-1 cursor-pointer">
                       <a className="flex w-full items-center justify-center rounded-none rounded-tr-lg border border-transparent px-4 py-3 text-sm font-medium text-orange-600 hover:text-orange-500 focus:z-10 focus:outline-none focus:ring-2 focus:ring-orange-500">
                         Profile
                       </a>
                     </div>
                     <div
                       className="flex h-0 flex-1 cursor-pointer"
-                      onClick={toSignOut}
+                      onClick={logout}
                     >
                       <a className="flex w-full items-center justify-center rounded-none rounded-br-lg border border-transparent px-4 py-3 text-sm font-medium text-neutral-700 hover:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-orange-500">
-                        Sign Out
+                        Log Out
                       </a>
                     </div>
                   </>

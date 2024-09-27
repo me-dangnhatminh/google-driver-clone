@@ -111,9 +111,7 @@ export class PaymentRestController {
     return await this.stripe.customerSessions
       .create({
         customer: customer.id,
-        components: {
-          pricing_table: { enabled: true },
-        },
+        components: { pricing_table: { enabled: true } },
       })
       .then((session) => {
         return {
