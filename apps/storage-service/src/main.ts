@@ -1,3 +1,5 @@
+declare const module: any;
+
 import { NestFactory } from '@nestjs/core';
 import { INestApplication, Logger, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -97,6 +99,11 @@ async function bootstrap() {
     logger.log(`Documentation is running on ${doc}`);
     logger.log(`REST API is running on ${appConfig.host}:${appConfig.port}`);
   });
+
+  if (module.hot) {
+    module.hot.accept();
+    module.hot.dispose(() => app.close());
+  }
 }
 
 bootstrap();
