@@ -63,8 +63,8 @@ message Pagination {
 }
 
 message GetFolderRequest {
-  string rootId = 2;
-  string folderId = 1;
+  string rootId = 1;
+  string folderId = 2;
   string label = 3;
   optional Pagination pagination = 4;
 }

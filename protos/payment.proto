@@ -11,11 +11,12 @@ service SubscriptionService {
 
 message CustomerPlanRequest {
   string customerId = 1;
+  string status = 2; // active, inactive, pending
 }
 
 message CustomerPlanResponse {
-  string plan = 3; // plan name
-  string status = 4; // active, inactive, pending
-  map<string, string> metadata = 4;
+  string plan = 1; // plan name
+  string status = 2; // active, inactive, pending
+  map<string, string> metadata = 3;
 }
 

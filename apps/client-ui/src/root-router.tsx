@@ -28,9 +28,16 @@ const Authenticated = () => {
     isAuthenticated: isAuth,
     loginWithRedirect,
     isLoading,
+    error,
+    logout,
   } = useAuth0();
 
   const path = location.pathname;
+
+  if (error) {
+    alert(error.message);
+    logout({ logoutParams: { returnTo: window.location.origin } });
+  }
 
   React.useEffect(() => {
     if (isLoading) return;
@@ -63,10 +70,10 @@ const router = sentryCreateBrowserRouter([
   {
     ErrorBoundary: () => useRouteError(),
     children: [
-      { path: RoutesPath.HOME, Component: HomePage },
       {
         Component: Authenticated,
         children: [
+          { path: RoutesPath.HOME, Component: HomePage },
           { path: "payment", Component: PaymentPage },
           { path: RoutesPath.STORAGE, Component: StoragePage },
           { path: RoutesPath.FOLDERS, Component: StoragePage },
