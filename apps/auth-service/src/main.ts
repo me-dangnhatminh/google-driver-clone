@@ -36,6 +36,18 @@ const connectGRPC = (app: INestApplication) => {
   logger.log(`gRPC connected: ${grpcConfig.url}`);
 };
 
+const connectRmq = (app: INestApplication) => {
+  const configService = app.get(ConfigService<Configs, true>);
+  const rmqConfig = configService.get('rmq', { infer: true });
+  app.connectMicroservice<MicroserviceOptions>(
+    {
+      transport: Transport.RMQ,
+      options: rmqConfig.auth,
+    },
+    { inheritAppConfig: true },
+  );
+};
+
 const buildCors = (app: INestApplication) => {
   const configService = app.get(ConfigService<Configs, true>);
   const corsConfig = configService.get('cors', { infer: true });
@@ -69,6 +81,7 @@ async function bootstrap() {
 
   buildCors(app);
   connectGRPC(app);
+  connectRmq(app);
 
   const doc = setupSwagger(app).docPrefix;
   await app.startAllMicroservices();

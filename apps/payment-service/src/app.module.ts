@@ -11,6 +11,9 @@ import { CacheModule, StripeModule } from 'src/infa/apdaters';
 import { PersistencesModule } from 'src/infa/persistence';
 import { controllers } from 'src/infa/controllers';
 
+import services from './app/services';
+import processors from './app/processors';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -28,7 +31,11 @@ import { controllers } from 'src/infa/controllers';
     PaymentClientModule,
   ],
   controllers,
-  providers: [{ provide: APP_FILTER, useClass: HttpExceptionFilter }],
+  providers: [
+    ...services,
+    ...processors,
+    { provide: APP_FILTER, useClass: HttpExceptionFilter },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

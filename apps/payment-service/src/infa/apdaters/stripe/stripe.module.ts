@@ -27,3 +27,5 @@ export class StripeModule implements OnModuleInit {
     });
   }
 }
+
+export default StripeModule;

@@ -15,6 +15,7 @@ message CustomerPlanRequest {
 
 message CustomerPlanResponse {
   string plan = 3; // plan name
+  string status = 4; // active, inactive, pending
   map<string, string> metadata = 4;
 }
 

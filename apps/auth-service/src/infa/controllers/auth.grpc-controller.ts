@@ -37,15 +37,14 @@ export class AuthGrpcController {
 
     const get = this.userInfo
       .getUserInfo(request.token)
-      .then((res) => {
-        return res.data;
-      })
+      .then((res) => res.data)
       .then((data) => ({
         id: data.sub,
         email: data.email,
         name: data.name,
         roles: ['user'],
         permissions: data.permissions || [],
+        email_verified: data.email_verified,
       }))
       .catch((err: ResponseError) => {
         const status = err.statusCode;
