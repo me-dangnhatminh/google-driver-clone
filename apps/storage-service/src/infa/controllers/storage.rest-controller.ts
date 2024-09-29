@@ -163,7 +163,7 @@ export class StorageRestController {
   @Transactional()
   async fileUpload(
     @Req() req,
-    @HttpUser('sub') userId: string,
+    @HttpUser('id') userId: string,
     @HttpStorage('refId') rootId: string,
     @Param('key', useZodPipe(RootOrKey)) key: RootOrKey,
     @UploadedFile(new ParseFilePipe({ fileIsRequired: true }))
@@ -196,7 +196,7 @@ export class StorageRestController {
   @Transactional()
   async fileUploads(
     @Req() req,
-    @HttpUser('sub') userId: string,
+    @HttpUser('id') userId: string,
     @HttpStorage('refId') rootId: string,
     @Param('key', useZodPipe(RootOrKey)) key: RootOrKey,
     @UploadedFiles(new ParseFilePipe({ fileIsRequired: true }))
@@ -230,7 +230,7 @@ export class StorageRestController {
   @Get(StorageRoutes.FILE_DOWNLOAD)
   @Transactional()
   async fileDownload(
-    @HttpUser('sub') userId: string,
+    @HttpUser('id') userId: string,
     @Param('key', useZodPipe(UUID)) fileKey: string,
     @Res({ passthrough: true }) res: Response,
   ) {
@@ -261,7 +261,7 @@ export class StorageRestController {
   @Patch(StorageRoutes.FILE_UPDATE)
   @Transactional()
   async fileUpdate(
-    @HttpUser('sub') userId: string,
+    @HttpUser('id') userId: string,
     @Param('key', useZodPipe(UUID)) key: string,
     @Body(useZodPipe(UpdateItemDTO)) dto: UpdateItemDTO,
   ) {
@@ -300,7 +300,7 @@ export class StorageRestController {
   @Transactional()
   async folderUpload(
     @Req() req,
-    @HttpUser('sub') userId: string,
+    @HttpUser('id') userId: string,
     @HttpStorage('refId') rootId: string,
     @Param('key', useZodPipe(RootOrKey)) key: RootOrKey,
     @UploadedFiles(new ParseFilePipe({ fileIsRequired: true }))

@@ -17,7 +17,7 @@ export class StorageLoaded implements CanActivate {
 
   canActivate(context: ExecutionContext) {
     const req = context.switchToHttp().getRequest();
-    const ownerId: string = req.auth.user.sub;
+    const ownerId: string = req.auth.user.id;
     if (!ownerId) {
       this.logger.error('No ownerId found in request');
       throw new InternalServerErrorException();
