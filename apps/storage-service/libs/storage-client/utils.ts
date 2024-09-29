@@ -9,11 +9,15 @@ const MAP = {
 };
 
 export const toGB = (bytes: string) => {
+  if (typeof bytes !== 'string') {
+    throw new Error(`"bytes" must be a string, but got ${typeof bytes}`);
+  }
   bytes = bytes.toUpperCase();
   const reg = /(\d+)([KMGTPEZY]?B)/;
   const v = reg.exec(bytes);
   if (!v) {
-    throw new Error('Invalid size');
+    const msg = `"bytes" must be a /(\d+)([KMGTPEZY]?B)/ like "1GB", but got ${bytes}`;
+    throw new Error(msg);
   }
   const [_, size, unit] = v;
   return parseFloat(size) * MAP[unit];
