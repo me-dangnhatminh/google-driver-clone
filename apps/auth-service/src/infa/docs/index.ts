@@ -1,10 +1,14 @@
+import { INestApplication, Logger } from '@nestjs/common';
 import {
   DocumentBuilder,
   SwaggerCustomOptions,
   SwaggerModule,
 } from '@nestjs/swagger';
+import { Server } from 'http';
+import { AddressInfo } from 'net';
 
-export function setupSwagger(app) {
+export function buildSwagger(app: INestApplication) {
+  const logger = new Logger('Swagger');
   const docPrefix = 'api/docs';
   const docName = 'Identity Service';
   const docDesc = 'API Documentation';
@@ -36,7 +40,14 @@ export function setupSwagger(app) {
   };
 
   SwaggerModule.setup(docPrefix, app, document, customOptions);
-  return { docPrefix, docName, docDesc, docVersion };
+  const server: Server = app.getHttpServer();
+  server.on('listening', () => {
+    const address = server.address() as AddressInfo;
+    const host = address.address === '::' ? 'localhost' : address.address;
+    const port = address.port;
+    logger.log(`Swagger UI is running on http://${host}:${port}/${docPrefix}`);
+  });
+  return document;
 }
 
-export default setupSwagger;
+export default buildSwagger;

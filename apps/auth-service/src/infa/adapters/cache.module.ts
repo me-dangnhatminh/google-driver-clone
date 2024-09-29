@@ -1,5 +1,5 @@
 export * from '@nestjs/cache-manager';
-import { Logger, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import {
   CACHE_MANAGER,
   CacheModule as NestCacheModule,
@@ -17,7 +17,6 @@ import { redisStore } from 'cache-manager-redis-yet';
       useFactory: (configService: ConfigService<Configs, true>) => {
         const redis = configService.get('redis', { infer: true });
         const url = `redis://${redis.host}:${redis.port}/${redis.db}`;
-        Logger.log(`Redis connected: ${url}`, CacheModule.name);
         return {
           store: redisStore,
           url: url,

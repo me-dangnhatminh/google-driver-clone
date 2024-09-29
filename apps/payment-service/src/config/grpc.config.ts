@@ -20,6 +20,7 @@ const config = registerAs('grpc', () => {
     defaults: false,
     oneofs: false,
     arrays: true,
+    json: true,
     includeDirs: [includeDir],
   };
 

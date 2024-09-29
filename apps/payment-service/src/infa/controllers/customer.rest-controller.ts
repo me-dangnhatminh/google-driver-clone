@@ -56,25 +56,7 @@ export class CustomerRestController {
 
   @Get('demo')
   async demo(@HttpUser() user) {
-    const customer = await this.upsertByEmail({ email: user.email });
-
-    if (customer.account_id) {
-      return await this.stripe.customers.retrieve(customer.account_id);
-    }
-
-    const idempotencyKey = `stripe_customer_${customer.id}`;
-    return await this.stripe.customers
-      .create({ email: user.email }, { idempotencyKey })
-      .then((stripeCustomer) =>
-        this.updateCustomer({
-          id: customer.id,
-          data: {
-            account_id: stripeCustomer.id,
-            account_isp: 'stripe',
-            updated_at: new Date(stripeCustomer.created * 1000),
-          },
-        }).then(() => stripeCustomer),
-      );
+    return user;
   }
 
   @Get('billing-portal')

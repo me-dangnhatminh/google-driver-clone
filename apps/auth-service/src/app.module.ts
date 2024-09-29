@@ -32,3 +32,4 @@ export class AppModule implements NestModule {
     consumer.apply(HTTPLogger).forRoutes('*');
   }
 }
+export default AppModule;

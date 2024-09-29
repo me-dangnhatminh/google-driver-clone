@@ -14,13 +14,22 @@ const config = registerAs('grpc', () => {
 
   const packageName = 'nest.microservices';
   const loader: GrpcOptions['options']['loader'] = {
-    keepCase: false,
+    keepCase: true,
     longs: String,
     enums: String,
     defaults: false,
     oneofs: false,
     arrays: true,
+    json: true,
     includeDirs: [includeDir],
+  };
+
+  const retryPolicy = {
+    maxAttempts: 4,
+    initialBackoff: '0.1s',
+    maxBackoff: '1s',
+    backoffMultiplier: 2,
+    retryableStatusCodes: ['UNAVAILABLE'],
   };
 
   return {
@@ -29,12 +38,19 @@ const config = registerAs('grpc', () => {
       protoPath: protoFiles,
       url: '0.0.0.0:30051',
       loader,
+      channelOptions: {
+        retryPolicy,
+        hello: 'world',
+      },
     },
     storage: {
       package: packageName,
       protoPath: protoFiles,
       url: '0.0.0.0:40051',
       loader,
+      channelOptions: {
+        retryPolicy,
+      },
     },
   } as const satisfies Record<string, GrpcOptions['options']>;
 });

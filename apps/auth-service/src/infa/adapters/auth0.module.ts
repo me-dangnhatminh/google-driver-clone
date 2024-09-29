@@ -3,6 +3,16 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { UserInfoClient, ManagementClient } from 'auth0';
 
+export const wwwAuthToJson = (wwwAuth: string) => {
+  const parts = wwwAuth.split(',');
+  const detail: any = {};
+  parts.forEach((part) => {
+    const [key, value] = part.split('=');
+    detail[key.trim()] = value.replace(/"/g, '');
+  });
+  return detail;
+};
+
 @Module({
   providers: [
     {

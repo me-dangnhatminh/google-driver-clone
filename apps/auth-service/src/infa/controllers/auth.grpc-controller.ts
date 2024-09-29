@@ -5,21 +5,12 @@ import {
   ManagementClient,
   ResponseError,
   UserInfoClient,
+  wwwAuthToJson,
 } from '../adapters/auth0.module';
 import { UnauthenticatedRpcException, UnknownRpcException } from 'libs/common';
 import { ErrorType } from 'src/common';
 import { Cache } from '../adapters';
 import * as rx from 'rxjs';
-
-const wwwAuthToJson = (wwwAuth: string) => {
-  const parts = wwwAuth.split(',');
-  const detail: any = {};
-  parts.forEach((part) => {
-    const [key, value] = part.split('=');
-    detail[key.trim()] = value.replace(/"/g, '');
-  });
-  return detail;
-};
 
 @Controller()
 export class AuthGrpcController {
@@ -31,6 +22,7 @@ export class AuthGrpcController {
 
   @GrpcMethod('AuthService', 'verifyToken')
   async verifyToken(request) {
+    await this.cache.del(request.token);
     const cached: any = await this.cache.get(request.token).catch(() => null);
     if (cached && cached.value) return rx.of(cached.value);
     if (cached && cached.error) throw new RpcException(cached.error);
@@ -38,14 +30,17 @@ export class AuthGrpcController {
     const get = this.userInfo
       .getUserInfo(request.token)
       .then((res) => res.data)
-      .then((data) => ({
-        id: data.sub,
-        email: data.email,
-        name: data.name,
-        roles: ['user'],
-        permissions: data.permissions || [],
-        email_verified: data.email_verified,
-      }))
+      .then(({ sub, email, email_verified, name, permissions, auth, pay }) => {
+        // TODO: not good to have this here
+        return {
+          id: sub,
+          email,
+          name,
+          permissions,
+          email_verified,
+          metadata: Object.assign({}, auth, pay),
+        };
+      })
       .catch((err: ResponseError) => {
         const status = err.statusCode;
         if (status === 401) {
@@ -69,7 +64,7 @@ export class AuthGrpcController {
       });
 
     // == cache the result
-    return rx.from(get).pipe(
+    return await rx.from(get).pipe(
       rx.map(async (value) => {
         await this.cache
           .set(request.token, { value }, 60 * 60 * 1000) // 1 hour

@@ -18,7 +18,7 @@ export class PlanLoadedGuard implements CanActivate {
     return rx
       .from(this.subscriptionService.customerPlan({ customerId: email }))
       .pipe(
-        rx.map((plan) => {
+        rx.map((plan: any) => {
           req.plan = plan;
           return true;
         }),

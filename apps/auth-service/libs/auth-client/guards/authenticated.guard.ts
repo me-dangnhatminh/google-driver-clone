@@ -12,6 +12,7 @@ export class Authenticated implements CanActivate {
   constructor(@Inject('AuthService') private readonly authService: any) {}
 
   canActivate(context: ExecutionContext) {
+    if (context.getType() !== 'http') return true;
     const [request] = context.getArgs();
     let token = request.headers.authorization;
     if (!token) return false;
