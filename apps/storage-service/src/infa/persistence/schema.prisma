@@ -77,6 +77,9 @@ model MyStorage {
   ownerId String @unique @map("owner_id")
   refId   String @unique @map("ref_id")
 
+  used  BigInt @map("used")
+  total BigInt @map("total")
+
   createdAt  DateTime  @map("created_at")
   modifiedAt DateTime  @map("modified_at")
   archivedAt DateTime? @map("archived_at")

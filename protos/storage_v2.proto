@@ -1,0 +1,162 @@
+syntax = "proto3";
+
+package nest.microservices_2;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+service StorageService {
+  rpc get(GetStorageRequest) returns (Storage);
+  rpc getFolder(GetFolderRequest) returns (Folder);
+  rpc createFolder(CreateFolderRequest) returns (Folder);
+  rpc updateFolder(UpdateFolderRequest) returns (google.protobuf.Empty);
+  rpc deleteFolder(DeleteFolderRequest) returns (google.protobuf.Empty);
+  rpc listFolder(ListFolderRequest) returns (ListFolderResponse);
+
+  rpc getFile(GetFileRequest) returns (FileRef);
+  rpc uploadFile(stream UploadFileRequest) returns (FileRef);
+  rpc updateFile(UpdateFileRequest) returns (google.protobuf.Empty);
+  rpc deleteFile(DeleteFileRequest) returns (google.protobuf.Empty);
+  rpc listFile(ListFileRequest) returns (ListFileResponse);
+}
+
+message Owner {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+  string picture = 4;
+}
+
+message Storage {
+  string id = 1;
+  string name = 2;
+  oneof owner {
+    string owner_id = 3;
+    Owner owner_data = 4;
+  }
+
+  optional int64 used = 5;
+  optional int64 total = 6;
+  oneof ref {
+    string ref_id = 7;
+    FileRef ref_data = 8;
+  }
+  
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp modified_at = 10;
+  optional google.protobuf.Timestamp archived_at = 11;
+  map<string, string> metadata = 12;
+}
+
+message Folder {
+  string id = 1;
+  string name = 2;
+  oneof owner {
+    string owner_id = 3;
+    Owner owner_data = 4;
+  }
+  optional string thumbnail = 5;
+  optional string description = 6;
+  optional int64 size = 7;
+
+  oneof parent {
+    string parent_id = 8;
+    Folder parent_data = 9;
+  }
+
+  google.protobuf.Timestamp created_at = 10;
+  google.protobuf.Timestamp modified_at = 11;
+  optional google.protobuf.Timestamp pinned_at = 12;
+  optional google.protobuf.Timestamp archived_at = 13;
+}
+
+message FileRef {
+  string id = 1;
+  string name = 2;
+  int64 size = 3;
+  string content_type = 4;
+  optional string thumbnail = 5;
+  optional string description = 6;
+  oneof owner {
+    string owner_id = 7;
+    Owner owner_data = 8;
+  }
+
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp modified_at = 10;
+  optional google.protobuf.Timestamp pinned_at = 11;
+  optional google.protobuf.Timestamp archived_at = 12;
+}
+
+message CreateFolderRequest {
+  optional string name = 1;
+  optional string parent_id = 2;
+  optional string thumbnail = 4;
+  optional string description = 5;
+}
+
+message UpdateFolderRequest {
+  string id = 1;
+  optional string name = 2;
+  optional string thumbnail = 3;
+  optional string description = 4;
+  optional string parent_id = 5; // move folder to another folder
+}
+
+message DeleteFolderRequest {
+  string id = 1;
+}
+
+message ListFolderRequest {
+  optional string parent_id = 1;
+  optional int32 limit = 2;
+  optional string folder_cursor = 3;
+}
+
+message ListFolderResponse {
+  repeated Folder folders = 1;
+  optional string folder_cursor = 2;
+}
+
+message GetFolderRequest {
+  string id = 1;
+}
+
+message GetStorageRequest {
+  string id = 1;
+}
+
+message GetFileRequest {
+  string id = 1;
+}
+
+message UploadFileRequest {
+  string id = 1;
+  string name = 2;
+  string content_type = 3;
+  int64 size = 4;
+  bytes data = 5;
+}
+
+message UpdateFileRequest {
+  string id = 1;
+  optional string name = 2;
+  optional string content_type = 3;
+  optional int64 size = 4;
+  optional bytes data = 5;
+}
+
+message DeleteFileRequest {
+  string id = 1;
+}
+
+message ListFileRequest {
+  optional string folder_id = 1;
+  optional int32 limit = 2;
+  optional string file_cursor = 3;
+}
+
+message ListFileResponse {
+  repeated FileRef files = 1;
+  optional string file_cursor = 2;
+}

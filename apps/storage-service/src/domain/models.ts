@@ -71,11 +71,10 @@ export const MyStorage = z.object({
   name: z.string().optional(),
 
   refId: UUID,
-  used: Bytes.optional(),
-  total: Bytes.optional(),
+  used: Bytes.default(0),
+  total: Bytes.default(0),
 
   metadata: z.record(z.string()).default({}),
-
   createdAt: PastTime.default(() => new Date()),
   modifiedAt: PastTime.default(() => new Date()),
   archivedAt: PastTime.nullable().default(null),

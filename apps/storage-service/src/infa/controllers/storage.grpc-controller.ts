@@ -40,13 +40,10 @@ export class StorageGrpcController {
   myStorage(request, metadata: Metadata) {
     const accessorId: string = String(metadata.get('accessorId')[0]);
     if (!accessorId) throw new RpcException('Metadata missing: accessorId');
-
-    const ownerId = accessorId;
     const id = uuid();
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const ownerId = accessorId;
     const { refId, ...my } = MyStorage.parse({ id, ownerId, refId: id });
-    const root = RootFolder.parse({ id, ownerId, name: 'My Storage' });
+    const root = RootFolder.parse({ id: refId, ownerId, name: 'My Storage' });
     return this.tx.myStorage
       .upsert({
         where: { ownerId },
@@ -54,11 +51,11 @@ export class StorageGrpcController {
         create: { ...my, ref: { create: root } },
         update: {},
       })
-      .then((rs) => {
-        const total = 2 * 1024 * 1024 * 1024; // 2GB, TODO: load from config
-        return { ...rs, name: rs.ref.name, used: Number(rs.ref.size), total };
+      .then((m) => {
+        m['name'] = m.ref.name;
+        return m;
       })
-      .then((rs) => MyStorage.parse(rs));
+      .then((m) => MyStorage.parse(m));
   }
 
   @GrpcMethod('StorageService', 'getFolder')

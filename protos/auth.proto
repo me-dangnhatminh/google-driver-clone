@@ -37,7 +37,8 @@ message UserModel {
   google.protobuf.Timestamp updated_at = 9;
   optional google.protobuf.Timestamp deleted_at = 10;
   
-  google.protobuf.Struct metadata = 11; // additional metadata
+  // google.protobuf.Struct metadata = 11; // additional metadata
+  map<string, string> metadata = 11; // additional metadata
 }
 
 message GetUserRequest {
