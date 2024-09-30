@@ -7,69 +7,95 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/any.proto";
 
-
 // =========== AUTH ===========
 service AuthService {
-  rpc verifyToken(VerifyTokenReq) returns (UserDTO);
+  rpc verifyToken(VerifyTokenReq) returns (UserModel);
+}
+
+service UserService {
+  rpc create(CreateUserRequest) returns (UserModel);
+  rpc get(GetUserRequest) returns (UserModel);
+  rpc list(ListUserRequest) returns (ListUserResponse);
+  rpc update(UpdateUserRequest) returns (UserModel);
+  rpc delete(DeleteUserRequest) returns (UserModel);
+  rpc deleteMany(DeleteManyRequest) returns (DeleteManyResponse);
 }
 
 message VerifyTokenReq {
   string token = 1;
 }
 
-// =========== USER ===========
-service UserService {
-  rpc getById(GetByIdReq) returns (UserDTO);
-  rpc getByEmail(GetByEmailReq) returns (UserDTO);
-  rpc create(CreateUserReq) returns (UserDTO);
-  rpc update(UpdateUserReq) returns (UserDTO);
-  rpc delete(DeleteUserReq) returns (google.protobuf.Empty);
-  rpc list(PaginationOptions) returns (stream UserListDTO);
-}
-
-message UserDTO {
+message UserModel {
   string id = 1;
-  string name = 2;
-  string email = 3;
-  bool email_verified = 4;
-  repeated string roles = 5;
-  repeated string permissions = 6;
-  map<string, string> metadata = 7;
+  string email = 2;
+  bool email_verified = 3;
+  string name = 4; 
+  optional string picture = 5; 
+  repeated string roles = 6;
+  repeated string permissions = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+  optional google.protobuf.Timestamp deleted_at = 10;
+  
+  google.protobuf.Struct metadata = 11; // additional metadata
 }
 
-message UserListDTO {
-  repeated UserDTO users = 1;
-  optional string cursor = 2;
-  int32 limit = 3;
-  int32 total = 4;
-}
-
-message GetByIdReq {
-  string id = 1;
-}
-
-message GetByEmailReq {
-  string email = 1;
-}
-
-message UpdateUserReq {
+message GetUserRequest {
   optional string id = 1;
-  optional string email = 3;
-  optional string name = 2;
-  repeated string roles = 4;
 }
 
-message CreateUserReq {
+message ListUserRequest {
   optional string email = 1;
   optional string name = 2;
-  repeated string roles = 3;
+  optional string role = 3;
+  optional string permission = 4;
+  optional bool email_verified = 5;
+  optional bool is_deleted = 6;
+
+  optional google.protobuf.Timestamp created_at = 7;
+  optional google.protobuf.Timestamp updated_at = 8;
+
+  optional int32 limit = 9; // default 10
+  optional int32 offset = 10; // default 0
 }
 
-message DeleteUserReq {
-  string id = 1;
+message ListUserResponse {
+  repeated UserModel items = 1;
+  optional int32 total = 2;
+  optional int32 limit = 3;
+  optional int32 offset = 4;
 }
 
-message PaginationOptions {
-  optional int32 page = 1;
-  optional int32 limit = 2;
+message CreateUserRequest {
+  optional string email = 1;
+  optional string password = 2;
+  optional string name = 3;
+  optional string picture = 4;
+  repeated string roles = 5;
+  repeated string permissions = 6;
+  optional google.protobuf.Struct metadata = 7;
+}
+
+message UpdateUserRequest {
+  optional string id = 1;
+  optional string email = 2;
+  optional string name = 3;
+  optional string picture = 4;
+  repeated string roles = 5;
+  repeated string permissions = 6;
+  optional google.protobuf.Struct metadata = 7;
+}
+
+message DeleteUserRequest {
+  optional string id = 1;
+}
+
+message DeleteManyRequest {
+  repeated string ids = 1;
+}
+
+message DeleteManyResponse {
+  repeated UserModel items = 1;
+  int32 total = 2;
+  int32 deleted = 3;
 }
