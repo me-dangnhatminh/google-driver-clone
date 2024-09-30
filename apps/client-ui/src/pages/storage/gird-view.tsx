@@ -207,7 +207,7 @@ const FileCard = (props: GridView.FileCardProps) => {
   };
 
   const erase = () => {
-    const deleting = hardDelete.mutateAsync({ id: item.id, type: "folder" });
+    const deleting = hardDelete.mutateAsync({ id: item.id, type: "file" });
     toast.promise(deleting, { success: "Deleted!", error: "Error deleting" });
     return deleting;
   };

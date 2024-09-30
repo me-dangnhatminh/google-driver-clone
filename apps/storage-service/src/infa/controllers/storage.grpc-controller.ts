@@ -53,6 +53,7 @@ export class StorageGrpcController {
       })
       .then((m) => {
         m['name'] = m.ref.name;
+        m['used'] = m.ref.size;
         return m;
       })
       .then((m) => MyStorage.parse(m));
