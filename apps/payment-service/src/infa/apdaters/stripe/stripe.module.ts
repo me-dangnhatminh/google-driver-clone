@@ -22,9 +22,14 @@ export class StripeModule implements OnModuleInit {
   constructor(private readonly stripe: Stripe) {}
 
   onModuleInit() {
-    return this.stripe.accounts.list({ limit: 1 }).then(() => {
-      this.logger.log(`Stripe connected`);
-    });
+    return this.stripe.accounts
+      .list({ limit: 1 })
+      .then(() => {
+        this.logger.log(`Stripe connected`);
+      })
+      .catch((error) => {
+        this.logger.error(`Stripe connection error: ${error}`, error.stack);
+      });
   }
 }
 

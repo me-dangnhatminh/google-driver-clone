@@ -40,7 +40,7 @@ export function setupSwagger(app: INestApplication) {
   SwaggerModule.setup(docPrefix, app, document, customOptions);
 
   const server: Server = app.getHttpServer();
-  server.on('listening', () => {
+  server?.on('listening', () => {
     const address = server.address() as { address: string; port: number };
     Logger.log(
       `Swagger UI started on http://${address.address}:${address.port}/${docPrefix}`,
