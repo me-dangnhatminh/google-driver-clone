@@ -155,23 +155,17 @@ export class PaymentRestController {
 
     switch (event.type) {
       case 'customer.created':
-        await this.customerCreatedHandler(event);
-        break;
+        return await this.customerCreatedHandler(event);
       case 'customer.subscription.created':
-        await this.subscriptionCreatedHandler(event);
-        event;
-        break;
+        return await this.subscriptionCreatedHandler(event);
       default:
-        console.log('Unhandled event', event.type);
-        break;
+        console.log('Unhandled event type:', event.type);
+        return { received: true };
     }
-
-    console.log('event', event);
   }
 
   async customerCreatedHandler(event: Stripe.CustomerCreatedEvent) {
-    // regis free plan for new customer
-    const customer = event.data.object;
+    throw new Error('Method not implemented.');
   }
 
   async subscriptionCreatedHandler(
@@ -190,6 +184,6 @@ export class PaymentRestController {
       ownerId: accountId,
       total: 5 * GB_as_byte, // TODO: change 'total' to 'limit'
     });
-    await rx.from(fetch).toPromise();
+    return await rx.from(fetch).toPromise();
   }
 }

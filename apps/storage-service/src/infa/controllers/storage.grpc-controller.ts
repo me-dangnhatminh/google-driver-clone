@@ -40,12 +40,11 @@ export class StorageGrpcController {
   @Transactional()
   async initial(request) {
     let cmd: StorageInitialCmd;
-    console.log(request);
-    request['ownerId'] = request['owner_id']; // TODO: fix
+    request['ownerId'] = request['owner_id'];
     try {
       cmd = new StorageInitialCmd(request);
     } catch (err) {
-      this.logger.debug(err);
+      this.logger.debug({ request, error: err });
       const msg = err instanceof AppError ? err.message : 'Invalid input';
       throw new InvalidArgumentRpcException(msg);
     }
@@ -60,7 +59,7 @@ export class StorageGrpcController {
       name: string;
       description: string;
       metadata: Record<string, any>;
-      total: number; // in bytes
+      total: number;
     }> & { id: string },
   ) {
     return this.tx.myStorage.update({
