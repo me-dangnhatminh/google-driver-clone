@@ -55,7 +55,7 @@ async function bootstrap() {
     .then((server: Server) => {
       const address = server.address() as { address: string; port: number };
       Logger.log(
-        `Server started on http://${address.address}:${address.port}`,
+        `Application is running on: http://${address.address}:${address.port}`,
         'NestApplication',
       );
     });
