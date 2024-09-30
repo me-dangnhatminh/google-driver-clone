@@ -23,19 +23,19 @@ export const EventType = arrayToEnum(
 export type EventTypes = keyof typeof EventType;
 
 export type TCustomerPlaned = TEvent<
-  (typeof EventType)['customer_planed'],
+  typeof EventType.customer_planed,
   { customer_id: string; plan_id: string }
 >;
 export type TCustomerPlanCreated = TEvent<
-  (typeof EventType)['customer_plan_created'],
+  typeof EventType.customer_plan_created,
   { id: string; customer_id: string; plan_id: string }
 >;
 export type TCustomerPlanUpdated = TEvent<
-  (typeof EventType)['customer_plan_updated'],
+  typeof EventType.customer_plan_updated,
   { id: string; customer_id: string; plan_id: string }
 >;
 export type TCustomerPlanDeleted = TEvent<
-  (typeof EventType)['customer_plan_deleted'],
+  typeof EventType.customer_plan_deleted,
   { id: string; customer_id: string; plan_id: string }
 >;
 

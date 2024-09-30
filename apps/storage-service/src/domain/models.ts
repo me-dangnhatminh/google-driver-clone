@@ -1,4 +1,5 @@
 import * as z from 'zod';
+import { randomUUID as uuid } from 'crypto';
 
 export type UUID = z.infer<typeof UUID>;
 export type Bytes = z.infer<typeof Bytes>;
@@ -66,7 +67,7 @@ export const RootFolder = Folder.omit({ files: true, folders: true }).extend({
 });
 
 export const MyStorage = z.object({
-  id: UUID,
+  id: UUID.default(uuid),
   ownerId: OnwerId,
   name: z.string().optional(),
 

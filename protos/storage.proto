@@ -6,6 +6,7 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 
 service StorageService {
+  rpc initial(InitialStorageRequest) returns (google.protobuf.Empty);
   rpc myStorage(google.protobuf.Empty) returns (StorageInfo);
   rpc createFolder(CreateFolderRequest) returns (FolderInfo);
   rpc getFolder(GetFolderRequest) returns (GetFolderResponse);
@@ -14,6 +15,16 @@ service StorageService {
   rpc hardDeleteItem(DeleteItemRequest) returns (google.protobuf.Empty);
 
   rpc uploadFile(stream UploadFileRequest) returns (FileRef);
+}
+
+message InitialStorageRequest {
+  string owner_id = 6;
+  optional string name = 1;
+  optional string description = 2;
+  optional string ref_id = 5;
+  
+  optional int64 used = 3; // init 0
+  optional int64 total = 4; // init -1 for unlimited
 }
 
 message Owner {

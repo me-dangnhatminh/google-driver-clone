@@ -4,6 +4,7 @@ import {
   BadRequestException,
   Controller,
   Get,
+  Inject,
   Post,
   Req,
   UseGuards,
@@ -13,15 +14,19 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Authenticated, HttpUser } from 'libs/auth-client';
 import { Configs } from 'src/config';
 import Stripe from 'stripe';
+import { randomUUID as uuid } from 'crypto';
+import * as rx from 'rxjs';
 
 @Controller('payment')
 @ApiTags('payment')
 export class PaymentRestController {
   readonly stripeConfig = this.configService.get('stripe', { infer: true });
+
   constructor(
     private readonly configService: ConfigService<Configs, true>,
     private readonly cache: Cache,
     private readonly stripe: Stripe,
+    @Inject('StorageService') private readonly storageService: any,
   ) {}
 
   async getFreeProduct() {
@@ -148,14 +153,43 @@ export class PaymentRestController {
       throw new BadRequestException(msg);
     }
 
-    console.log('event', event);
-    if (event.type.startsWith('customer.subscription')) {
-      const subscription = event.data.object as Stripe.Subscription;
-      const customerId = subscription.customer.toString();
-      const customer = await this.stripe.customers.retrieve(customerId);
-      if (customer.deleted) throw new BadRequestException('Customer not found');
-      if (customer.email) await this.cache.del(customer.email);
-      console.log('Deleted cache', customer.email);
+    switch (event.type) {
+      case 'customer.created':
+        await this.customerCreatedHandler(event);
+        break;
+      case 'customer.subscription.created':
+        await this.subscriptionCreatedHandler(event);
+        event;
+        break;
+      default:
+        console.log('Unhandled event', event.type);
+        break;
     }
+
+    console.log('event', event);
+  }
+
+  async customerCreatedHandler(event: Stripe.CustomerCreatedEvent) {
+    // regis free plan for new customer
+    const customer = event.data.object;
+  }
+
+  async subscriptionCreatedHandler(
+    event: Stripe.CustomerSubscriptionCreatedEvent,
+  ) {
+    const subscription = event.data.object;
+    const customer = subscription.customer;
+    const customer_id = typeof customer === 'string' ? customer : customer.id;
+    const customerData = await this.stripe.customers.retrieve(customer_id);
+    if (customerData.deleted) throw new Error('Customer deleted');
+    const accountId = customerData.metadata.auth0_user_id;
+    if (!accountId) throw new Error("Missing 'auth0_user_id' in customer");
+    const GB_as_byte = 1024 * 1024 * 1024; // 1 GB
+    console.log('accountId', accountId);
+    const fetch: rx.Observable<unknown> = this.storageService.initial({
+      ownerId: accountId,
+      total: 5 * GB_as_byte, // TODO: change 'total' to 'limit'
+    });
+    await rx.from(fetch).toPromise();
   }
 }

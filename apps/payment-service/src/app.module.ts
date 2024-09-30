@@ -13,6 +13,7 @@ import { controllers } from 'src/infa/controllers';
 
 import services from './app/services';
 import processors from './app/processors';
+import { StorageClientModule } from 'libs/storage-client';
 
 @Module({
   imports: [
@@ -27,8 +28,9 @@ import processors from './app/processors';
     CacheModule,
     StripeModule,
 
-    AuthClientModule,
     PaymentClientModule,
+    AuthClientModule,
+    StorageClientModule,
   ],
   controllers,
   providers: [

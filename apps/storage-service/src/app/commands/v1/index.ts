@@ -6,6 +6,8 @@ import { FolderAddHandler } from './folder-add.cmd';
 import { FolderCreateHandler } from './folder-create.cmd';
 import { FolderUpdateHandler } from './folder-update.cmd';
 import { HardDeleteItemHandler } from './item-hard-delete.cmd';
+import { StorageInitialHandler } from './storage-initial.cmd';
+import { StorageUpdateHandler } from './storage-update.cmd';
 
 export * from './file-update.cmd';
 export * from './file-add.cmd';
@@ -18,6 +20,9 @@ export * from './folder-add-content';
 export * from './folder-create.cmd';
 
 export * from './item-hard-delete.cmd';
+
+export * from './storage-update.cmd';
+export * from './storage-initial.cmd';
 
 export const commands = [
   FileAddHandler,
@@ -32,6 +37,9 @@ export const commands = [
   FolderCreateHandler,
   FolderUpdateHandler,
   FolderUpdateHandler,
+
+  StorageInitialHandler,
+  StorageUpdateHandler,
 ];
 
 export default commands;

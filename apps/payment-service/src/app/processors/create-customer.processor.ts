@@ -1,5 +1,4 @@
 import Stripe from 'stripe';
-import { CustomerService } from '../services';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { Logger } from '@nestjs/common';
@@ -7,10 +6,7 @@ import { Logger } from '@nestjs/common';
 @Processor('CustomerQueue')
 export class CreateCustomerProcessor extends WorkerHost {
   private readonly logger = new Logger(CreateCustomerProcessor.name);
-  constructor(
-    private readonly customerService: CustomerService,
-    private readonly stripe: Stripe,
-  ) {
+  constructor(private readonly stripe: Stripe) {
     super();
   }
   async process(job: Job): Promise<any> {

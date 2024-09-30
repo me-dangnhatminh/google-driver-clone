@@ -21,7 +21,7 @@ const config = registerAs('grpc', () => {
 
   const packageName = 'nest.microservices';
   const loader: GrpcOptions['options']['loader'] = {
-    keepCase: false,
+    keepCase: true,
     longs: String,
     enums: String,
     defaults: false,

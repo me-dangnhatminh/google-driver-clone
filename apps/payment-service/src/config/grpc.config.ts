@@ -3,6 +3,7 @@ import { registerAs } from '@nestjs/config';
 import * as path from 'path';
 import * as fs from 'fs-extra';
 import * as glob from 'glob';
+import { Logger } from '@nestjs/common';
 
 const config = registerAs('grpc', () => {
   const includeDir = path.resolve(__dirname, '../../../protos');
@@ -10,11 +11,16 @@ const config = registerAs('grpc', () => {
     throw new Error(`Protos directory not found: ${includeDir}`);
   }
 
-  const protoFiles = glob.sync('**/*.proto', { cwd: includeDir });
+  const protoFiles = glob.sync('**/*.proto', {
+    cwd: includeDir,
+    absolute: true,
+  });
+
+  Logger.log(`Found proto files: ${JSON.stringify(protoFiles, null, 2)}`);
 
   const packageName = 'nest.microservices';
   const loader: GrpcOptions['options']['loader'] = {
-    keepCase: false,
+    keepCase: true,
     longs: String,
     enums: String,
     defaults: false,
@@ -30,6 +36,11 @@ const config = registerAs('grpc', () => {
       protoPath: protoFiles,
       url: '0.0.0.0:30051',
       loader,
+    },
+    storage: {
+      package: packageName,
+      protoPath: protoFiles,
+      url: '0.0.0.0:40051',
     },
     payment: {
       package: packageName,

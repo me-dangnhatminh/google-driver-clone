@@ -14,13 +14,13 @@ import {
   FolderCreateCmd,
   FolderUpdateCmd,
   HardDeleteItemCmd,
+  StorageInitialCmd,
 } from 'src/app';
 import { AppError } from 'src/common';
-import { FileRef, MyStorage, RootFolder } from 'src/domain';
+import { FileRef, MyStorage } from 'src/domain';
 import * as rx from 'rxjs';
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import { randomUUID as uuid } from 'crypto';
 import { InvalidArgumentRpcException, UnknownRpcException } from 'libs/common';
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
 import { Cache } from '@nestjs/cache-manager';
@@ -36,21 +36,46 @@ export class StorageGrpcController {
     private readonly cacheManager: Cache,
   ) {}
 
+  @GrpcMethod('StorageService', 'initial')
+  @Transactional()
+  async initial(request) {
+    let cmd: StorageInitialCmd;
+    console.log(request);
+    request['ownerId'] = request['owner_id']; // TODO: fix
+    try {
+      cmd = new StorageInitialCmd(request);
+    } catch (err) {
+      this.logger.debug(err);
+      const msg = err instanceof AppError ? err.message : 'Invalid input';
+      throw new InvalidArgumentRpcException(msg);
+    }
+    await this.commandBus.execute(cmd);
+    return cmd.input;
+  }
+
+  @GrpcMethod('StorageService', 'update')
+  @Transactional()
+  async update(
+    request: Partial<{
+      name: string;
+      description: string;
+      metadata: Record<string, any>;
+      total: number; // in bytes
+    }> & { id: string },
+  ) {
+    return this.tx.myStorage.update({
+      where: { id: request.id },
+      data: { metadata: request.metadata, total: request.total },
+    });
+  }
+
   @GrpcMethod('StorageService', 'myStorage')
   myStorage(request, metadata: Metadata) {
     const accessorId: string = String(metadata.get('accessorId')[0]);
     if (!accessorId) throw new RpcException('Metadata missing: accessorId');
-    const id = uuid();
     const ownerId = accessorId;
-    const { refId, ...my } = MyStorage.parse({ id, ownerId, refId: id });
-    const root = RootFolder.parse({ id: refId, ownerId, name: 'My Storage' });
     return this.tx.myStorage
-      .upsert({
-        where: { ownerId },
-        include: { ref: true },
-        create: { ...my, ref: { create: root } },
-        update: {},
-      })
+      .findUniqueOrThrow({ where: { ownerId }, include: { ref: true } })
       .then((m) => {
         m['name'] = m.ref.name;
         m['used'] = m.ref.size;
