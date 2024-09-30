@@ -47,8 +47,7 @@ import * as rx from 'rxjs';
 import * as z from 'zod';
 
 import { Authenticated, HttpUser } from 'libs/auth-client';
-import { HttpStorage, StorageLoaded, toGB } from 'libs/storage-client';
-import { PlanLoadedGuard } from 'libs/payment-client';
+import { HttpStorage, StorageLoaded } from 'libs/storage-client';
 
 import { FileRef, UUID } from 'src/domain';
 import { fileUtil, StorageRoutes } from 'src/common';
@@ -75,16 +74,9 @@ export class StorageRestController {
   ) {}
 
   @Get(StorageRoutes.STORAGE_DETAIL)
-  @UseGuards(PlanLoadedGuard)
   myStorage(@Req() req) {
     const storage = req.storage;
-    const plan = req.plan;
-    return {
-      name: 'My Storage',
-      used: storage.used,
-      plan: plan.name,
-      total: toGB(plan.metadata.my_storage) * 1024 * 1024 * 1024, // TODO: Fix this
-    };
+    return storage;
   }
 
   @Get(StorageRoutes.FOLDER_DETAIL)
@@ -158,7 +150,6 @@ export class StorageRestController {
   // File controller                                    //
   // ================================================== //
   @Post(StorageRoutes.FILE_UPLOAD)
-  @UseGuards(PlanLoadedGuard)
   @UseInterceptors(FileField('file'))
   @Transactional()
   async fileUpload(
@@ -169,14 +160,7 @@ export class StorageRestController {
     @UploadedFile(new ParseFilePipe({ fileIsRequired: true }))
     file: Express.Multer.File,
   ) {
-    const storage = req.storage;
-    const plan = req.plan;
-    const used = storage.used;
-    const total = toGB(plan.metadata.my_storage) * 1024 * 1024 * 1024; // TODO: Fix this
-    if (total - used < file.size) {
-      const msg = `Storage limit exceeded: free ${total - used}, but file size is ${file.size}`;
-      throw new BadRequestException(msg);
-    }
+    this.upsertFreeSpace(req, [file]);
 
     const folderId = UUID.parse(key === 'root' ? rootId : key);
     const cmd = new FileUploadCmd(rootId, folderId, userId, {
@@ -191,7 +175,6 @@ export class StorageRestController {
   }
 
   @Post(StorageRoutes.FILE_UPLOADS)
-  @UseGuards(PlanLoadedGuard)
   @UseInterceptors(FileFields([{ name: 'files' }], { preservePath: true }))
   @Transactional()
   async fileUploads(
@@ -202,13 +185,9 @@ export class StorageRestController {
     @UploadedFiles(new ParseFilePipe({ fileIsRequired: true }))
     upload: { files: Express.Multer.File[] },
   ) {
-    const folderId = UUID.parse(key === 'root' ? rootId : key);
-    const check = this.checkFreeSpace(req, upload.files);
-    if (check.isFree) {
-      const msg = `Storage limit exceeded: free ${check.free}, but file size is ${check.upload}`;
-      throw new BadRequestException(msg);
-    }
+    this.upsertFreeSpace(req, upload.files);
 
+    const folderId = UUID.parse(key === 'root' ? rootId : key);
     const tree = buildStructure(upload.files);
     const folder = await this.storageService
       .getFolderInfo({ folderId })
@@ -295,7 +274,6 @@ export class StorageRestController {
   }
 
   @Post(StorageRoutes.FOLDER_UPLOAD)
-  @UseGuards(PlanLoadedGuard)
   @UseInterceptors(FileFields([{ name: 'files' }], { preservePath: true }))
   @Transactional()
   async folderUpload(
@@ -306,34 +284,36 @@ export class StorageRestController {
     @UploadedFiles(new ParseFilePipe({ fileIsRequired: true }))
     upload: { files: Express.Multer.File[] },
   ) {
-    const storage = req.storage;
-    const plan = req.plan;
-    const used = storage.used;
-    const total = toGB(plan.metadata.my_storage) * 1024 * 1024 * 1024; // TODO: Fix this
-
-    const totalSize = upload.files.reduce((acc, f) => acc + f.size, 0);
-    if (total - used < totalSize) {
-      const msg = `Storage limit exceeded: free ${total - used}, but file size is ${totalSize}`;
-      throw new BadRequestException({
-        type: 'invalid_request',
-        code: 'storage_limit_exceeded',
-        message: msg,
-      });
-    }
+    this.upsertFreeSpace(req, upload.files);
 
     const folderId = UUID.parse(key === 'root' ? rootId : key);
     const cmd = new AddFolderCmd(folderId, userId, upload.files);
     await this.commandBus.execute(cmd);
   }
 
-  private checkFreeSpace(req, files: Express.Multer.File[]) {
+  private upsertFreeSpace(req, files: Express.Multer.File[]) {
+    const upSize = totalSize(files);
     const storage = req.storage;
-    const plan = req.plan;
     const used = storage.used;
-    const total = toGB(plan.metadata.my_storage) * 1024 * 1024 * 1024; // TODO: Fix this
+    const total = storage.total;
+    const isFree = used + upSize <= total;
+    if (!isFree) {
+      const msg = `Storage limit exceeded: free ${total - used}, but file size is ${upSize}`;
+      throw new BadRequestException(msg);
+    }
+
+    const free = total - used - upSize;
+    return free;
+  }
+
+  private checkFreeSpace(req, files: Express.Multer.File[]) {
     const upSize = totalSize(files);
 
-    const isFree = total - used <= upSize;
+    const storage = req.storage;
+    const used = storage.used;
+    const total = storage.total;
+
+    const isFree = used + upSize <= total;
     return {
       isFree,
       free: total - used,

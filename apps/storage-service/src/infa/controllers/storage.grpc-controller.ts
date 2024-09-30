@@ -43,25 +43,22 @@ export class StorageGrpcController {
 
     const ownerId = accessorId;
     const id = uuid();
-    const my = MyStorage.parse({ id, ownerId, refId: id });
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { refId, ...my } = MyStorage.parse({ id, ownerId, refId: id });
     const root = RootFolder.parse({ id, ownerId, name: 'My Storage' });
     return this.tx.myStorage
       .upsert({
         where: { ownerId },
         include: { ref: true },
-        create: {
-          id: my.id,
-          ownerId: my.ownerId,
-          createdAt: my.createdAt,
-          modifiedAt: my.modifiedAt,
-          ref: { create: root },
-        },
+        create: { ...my, ref: { create: root } },
         update: {},
       })
-      .then((my) => {
-        my['used'] = Number(my.ref.size);
-        return my;
-      });
+      .then((rs) => {
+        const total = 2 * 1024 * 1024 * 1024; // 2GB, TODO: load from config
+        return { ...rs, name: rs.ref.name, used: Number(rs.ref.size), total };
+      })
+      .then((rs) => MyStorage.parse(rs));
   }
 
   @GrpcMethod('StorageService', 'getFolder')

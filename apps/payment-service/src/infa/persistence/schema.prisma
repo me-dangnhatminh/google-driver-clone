@@ -14,7 +14,9 @@ model Customer {
   email       String   @unique @map("email")
   status      String   @map("status")
   created_at  DateTime @map("created_at")
-  updated_at  DateTime @updatedAt @map("updated_at")
+  updated_at  DateTime @map("updated_at")
 
   metadata Json @map("metadata")
+
+  @@map("customers")
 }

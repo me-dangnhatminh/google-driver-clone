@@ -68,7 +68,14 @@ export const RootFolder = Folder.omit({ files: true, folders: true }).extend({
 export const MyStorage = z.object({
   id: UUID,
   ownerId: OnwerId,
+  name: z.string().optional(),
+
   refId: UUID,
+  used: Bytes.optional(),
+  total: Bytes.optional(),
+
+  metadata: z.record(z.string()).default({}),
+
   createdAt: PastTime.default(() => new Date()),
   modifiedAt: PastTime.default(() => new Date()),
   archivedAt: PastTime.nullable().default(null),

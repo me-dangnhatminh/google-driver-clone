@@ -5,18 +5,62 @@ package nest.microservices;
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 
+// // customer service
+// // payment service
+// // billing service
+// // subscription service
+
+// // Customer service
+service CustomerService {
+  rpc get(google.protobuf.Empty) returns (google.protobuf.Empty);
+  // rpc get(GetCustomerRequest) returns (GetCustomerResponse);
+  // rpc list(ListCustomerRequest) returns (ListCustomerResponse);
+  // rpc search(SearchCustomerRequest) returns (SearchCustomerResponse);
+  // rpc create(CreateCustomerRequest) returns (Customer);
+  // rpc update(UpdateCustomerRequest) returns (Customer);
+  // rpc delete(DeleteCustomerRequest) returns (google.protobuf.Empty);
+}
+
 service SubscriptionService {
-  rpc customerPlan(CustomerPlanRequest) returns (CustomerPlanResponse);
+  rpc get(google.protobuf.Empty) returns (google.protobuf.Empty);
 }
 
-message CustomerPlanRequest {
-  string customerId = 1;
-  string status = 2; // active, inactive, pending
-}
+// message Customer {
+//   string id = 1; 
+//   string name = 2;
+//   string email = 3;
 
-message CustomerPlanResponse {
-  string plan = 1; // plan name
-  string status = 2; // active, inactive, pending
-  map<string, string> metadata = 3;
-}
+//   google.protobuf.Timestamp created_at = 4;
+//   google.protobuf.Timestamp updated_at = 5;
 
+//   oneof plan {
+//     string plan_id = 6;
+//     Plan plan = 7;
+//   }
+
+//   map<string, string> features = 8;
+//   map<string, string> metadata = 9;
+// }
+
+// message RequestOptions {
+//   repeated string expand = 1;
+//   repeated string fields = 2;
+//   optional number limit = 3;
+//   optional number offset = 4;
+
+//   map<string, string> filter = 5;// ex: filter[status]=active, filter[created_at]=2020-01-01, filter[updated_at]=2020-01-01, filter[plan]=free
+//   map<string, string> sort = 6; // ex: sort=created_at, sort=-updated_at
+// }
+
+
+// message GetCustomerRequest {
+//   string id = 1;
+//   // RequestOptions options = 2;
+// }
+
+// message GetCustomerResponse {
+//   Customer customer = 1;
+
+//   bool more = 2;
+//   number total = 3;
+// }

@@ -49,10 +49,11 @@ message FolderInfo {
 }
 
 message StorageInfo {
-  optional string id = 1;
-  optional string name = 2;
-  optional int64 used = 3;
-  optional int64 total = 4;
+  string id = 1;
+  string name = 2;
+  int64 used = 3;
+  int64 total = 4;
+  map<string, string> metadata = 6;
   optional string refId = 5;
 }
 

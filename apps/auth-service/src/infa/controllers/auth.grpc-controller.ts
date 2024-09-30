@@ -22,7 +22,6 @@ export class AuthGrpcController {
 
   @GrpcMethod('AuthService', 'verifyToken')
   async verifyToken(request) {
-    await this.cache.del(request.token);
     const cached: any = await this.cache.get(request.token).catch(() => null);
     if (cached && cached.value) return rx.of(cached.value);
     if (cached && cached.error) throw new RpcException(cached.error);

@@ -81,6 +81,8 @@ model MyStorage {
   modifiedAt DateTime  @map("modified_at")
   archivedAt DateTime? @map("archived_at")
 
+  metadata Json @map("metadata")
+
   ref Folder @relation("MyStorage", fields: [refId], references: [id], onDelete: Cascade)
 
   @@index([ownerId])
