@@ -5,58 +5,75 @@ import { Request } from 'express';
 import Stripe from 'stripe';
 
 import { Authenticated, HttpUser } from 'libs/auth-client';
-import { Transactional, TransactionHost } from '@nestjs-cls/transactional';
-import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
-import { Customer } from 'src/domain';
-
-import { randomUUID as uuid } from 'crypto';
+import { Configs } from 'src/config';
+import { ConfigService } from '@nestjs/config';
 
 @ApiTags('customer')
 @ApiBearerAuth()
 @Controller('payment/customer')
 @UseGuards(Authenticated)
 export class CustomerRestController {
-  private readonly tx: TransactionHost<TransactionalAdapterPrisma>['tx'];
-
+  private readonly stripeConfig = this.config.get('stripe', { infer: true });
   constructor(
+    private readonly config: ConfigService<Configs, true>,
     private readonly stripe: Stripe,
     private readonly cache: Cache,
-    txHost: TransactionHost<TransactionalAdapterPrisma>,
-  ) {
-    this.tx = txHost.tx;
-  }
+  ) {}
 
-  @Transactional()
-  async upsertByEmail(request: { email: string }) {
-    const now = new Date();
-    const email = request.email;
-    const customer: Customer = await this.tx.customer
-      .upsert({
-        where: { email },
-        create: {
-          id: uuid(),
-          email: email,
-          created_at: now,
-          updated_at: now,
-          metadata: {},
-          status: 'active',
-        },
-        update: {},
+  @Get('entitlements')
+  async getEntitlements(@HttpUser() user) {
+    const customerId = user.metadata.customer_id;
+    // luu subscription_id vao metadata cua user
+    if (!customerId) throw new Error('"customer_id" is required');
+
+    const res = await this.stripe.subscriptions.list({
+      customer: customerId,
+      expand: [
+        'data.plan.product',
+        'data.plan.product.default_price',
+        'data.customer',
+      ],
+    });
+
+    return res;
+    const plan = res.data[0]['plan'] as Stripe.Plan;
+    if (!plan) throw new Error('Plan not found');
+    return plan;
+
+    return await this.stripe.entitlements.activeEntitlements
+      .list({
+        customer: customerId,
+        expand: ['data.feature'],
+        limit: 1,
       })
-      .then((rs) => Customer.parse(rs));
-    return customer;
-  }
-
-  @Transactional()
-  async updateCustomer(request: { id: string; data: any }) {
-    return await this.tx.customer
-      .update({ where: { id: request.id }, data: request.data })
-      .then((rs) => Customer.parse(rs));
-  }
-
-  @Get('demo')
-  async demo(@HttpUser() user) {
-    return user;
+      .then((r) => {
+        return r.data[0];
+      })
+      .then(async (e) => {
+        if (e) return e;
+        const freeProduct = this.stripeConfig.product.free;
+        const product = await this.stripe.products.retrieve(freeProduct, {
+          expand: ['default_price'],
+        });
+        if (!product) throw new Error('Product not found');
+        const defaultPrice = product.default_price;
+        if (!defaultPrice) throw new Error('Product price not found');
+        if (typeof defaultPrice !== 'object')
+          throw new Error('Product price not found');
+        const defaultPriceId = defaultPrice.id;
+        return await this.stripe.subscriptions
+          .create({
+            customer: customerId,
+            items: [{ price: defaultPriceId }],
+          })
+          .then((sub) => {
+            return this.stripe.entitlements.activeEntitlements
+              .list({ customer: customerId, expand: ['data.feature'] })
+              .then((r) => {
+                return r.data[0];
+              });
+          });
+      });
   }
 
   @Get('billing-portal')
@@ -66,15 +83,14 @@ export class CustomerRestController {
     @Req() req: Request,
     @Query('return_url') return_url?: string,
   ) {
-    const customer = await this.upsertByEmail({ email: user.email });
-
-    const cachekey = `stripe_portal_${customer.id}`;
-    await this.cache.del(cachekey);
+    const customerId = user.metadata.customer_id;
+    if (!customerId) throw new Error('"customer_id" is required');
+    const cachekey = `stripe_portal_${customerId}`;
     const cached = await this.cache.get<{ id: string; url: string }>(cachekey);
     if (cached) return cached;
     return this.stripe.billingPortal.sessions
       .create({
-        customer: customer.id,
+        customer: customerId,
         return_url: return_url ?? req.headers.referer,
         expand: ['configuration'],
       })

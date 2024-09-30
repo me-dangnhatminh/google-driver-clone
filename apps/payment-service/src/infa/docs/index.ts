@@ -1,10 +1,12 @@
+import { INestApplication, Logger } from '@nestjs/common';
 import {
   DocumentBuilder,
   SwaggerCustomOptions,
   SwaggerModule,
 } from '@nestjs/swagger';
+import { Server } from 'http';
 
-export function setupSwagger(app) {
+export function setupSwagger(app: INestApplication) {
   const docPrefix = 'docs';
   const docName = 'Payment Service API';
   const docDesc = 'The payment service API description';
@@ -36,6 +38,17 @@ export function setupSwagger(app) {
   };
 
   SwaggerModule.setup(docPrefix, app, document, customOptions);
+
+  const server: Server = app.getHttpServer();
+  server.on('listening', () => {
+    const address = server.address() as { address: string; port: number };
+    Logger.log(
+      `Swagger UI started on http://${address.address}:${address.port}/${docPrefix}`,
+      'NestApplication',
+    );
+  });
+
+  return document;
 }
 
 export default setupSwagger;
