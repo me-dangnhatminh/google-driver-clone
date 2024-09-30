@@ -24,6 +24,7 @@ import * as path from 'path';
 import { InvalidArgumentRpcException, UnknownRpcException } from 'libs/common';
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
 import { Cache } from '@nestjs/cache-manager';
+import { GetStorageQuery } from 'src/app/queries/get-storage.query';
 
 @Controller()
 export class StorageGrpcController {
@@ -35,6 +36,12 @@ export class StorageGrpcController {
     private readonly txHost: TransactionHost<TransactionalAdapterPrisma>,
     private readonly cacheManager: Cache,
   ) {}
+
+  @GrpcMethod('StorageService', 'get')
+  async get(request) {
+    const query = new GetStorageQuery(request);
+    return await this.queryBus.execute(query);
+  }
 
   @GrpcMethod('StorageService', 'initial')
   @Transactional()
