@@ -20,6 +20,7 @@ http:
           - DELETE
           - OPTIONS
         accessControlAllowHeaders: "*"
+        accessControlAllowCredentials: true
         accessControlAllowOriginList: "*"
         accessControlMaxAge: 100
         addVaryHeader: true

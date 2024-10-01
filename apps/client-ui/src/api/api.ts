@@ -14,9 +14,6 @@ if (!baseURL) throw new Error("API URL is not defined");
 export const apiInstance: AxiosInstance = axios.create({
   baseURL: baseURL,
   timeout: timeout,
-  headers: { "Content-Type": "application/json" },
-  withCredentials: true,
-  // validateStatus: (status) => status >= 200 && status < 500,
 });
 
 export async function responseSuccess(res: AxiosResponse) {
