@@ -63,12 +63,12 @@ function Sidebar(props: SidebarProps) {
             if (!storage.data) return null;
             const total = storage.data.total;
             const used = storage.data.used;
-            const percent = (used / total) * 100;
+            const percent = total == 0 ? 100 : (used / total) * 100;
             const totalBytes = FileUtils.formatBytes(total);
             const usedBytes = FileUtils.formatBytes(used);
             return (
               <div className="flex flex-col space-y-2 px-4">
-                <Progress className="h-2" value={percent} />
+                <Progress className={cn("h-2", "bg-red-50")} value={percent} />
                 <span className="text-sm text-muted-foreground">
                   {[usedBytes, totalBytes].join(" of ")}
                 </span>

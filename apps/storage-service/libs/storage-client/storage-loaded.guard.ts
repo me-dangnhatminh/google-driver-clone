@@ -17,14 +17,14 @@ export class StorageLoaded implements CanActivate {
 
   canActivate(context: ExecutionContext) {
     const req = context.switchToHttp().getRequest();
-    const ownerId: string = req.auth.user.id;
-    if (!ownerId) {
-      this.logger.error('No ownerId found in request');
+    const owner_id: string = req.auth.user.id;
+    if (!owner_id) {
+      this.logger.error('No owner_id found in request');
       throw new InternalServerErrorException();
     }
     const meta = new grpc.Metadata();
-    meta.add('accessorId', ownerId);
-    const get: rx.Observable<any> = this.storageService.myStorage({}, meta);
+    meta.add('accessorId', owner_id);
+    const get: rx.Observable<any> = this.storageService.get({ owner_id }, meta);
     return rx.from(get).pipe(
       rx.catchError((err) => {
         this.logger.error(err);

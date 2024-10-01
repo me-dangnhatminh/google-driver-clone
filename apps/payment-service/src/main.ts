@@ -40,14 +40,6 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, prefix: 'v' });
-  app.enableCors({
-    origin: (origin, callback) => {
-      Logger.warn(`Origin: ${origin}`);
-      callback(null, origin);
-    },
-    credentials: true,
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  });
   setupSwagger(app);
 
   await app

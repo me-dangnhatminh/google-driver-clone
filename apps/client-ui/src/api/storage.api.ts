@@ -9,7 +9,7 @@ const Bytes = z.coerce.number().int().min(0);
 const PastTime = z.coerce.date();
 
 export const MyStorage = z.object({
-  name: z.string(),
+  name: z.string().default("My Storage"),
   total: Bytes,
   used: Bytes,
 });

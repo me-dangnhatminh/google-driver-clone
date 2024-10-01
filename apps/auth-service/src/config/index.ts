@@ -5,11 +5,6 @@ import dbConfig from './db.config';
 import grpcConfig from './grpc.config';
 import rmqConfig from './rmq.config';
 
-const corsConfig = registerAs('cors', () => ({
-  enabled: process.env.CORS_ENABLED || true,
-  origin: process.env.CORS_ORIGIN || '*',
-}));
-
 const redisConfig = registerAs('redis', () => ({
   host: process.env.REDIS_HOST || 'localhost',
   port: process.env.REDIS_PORT || 6379,
@@ -32,7 +27,6 @@ const configs = {
   grpc: grpcConfig,
   redis: redisConfig,
   swagger: swaggerConfig,
-  cors: corsConfig,
   rmq: rmqConfig,
 };
 

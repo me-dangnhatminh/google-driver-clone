@@ -13,7 +13,6 @@ import { Configs } from './config';
 import AppModule from './app.module';
 
 import buildSwagger from './infa/docs';
-import buildCors from './cors';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -26,7 +25,6 @@ async function bootstrap() {
 
   // ----- http server -----
   app.setGlobalPrefix('api');
-  buildCors(app);
   buildSwagger(app);
   await app
     .listen(process.env.PORT || 3000, process.env.HOST || 'localhost')
