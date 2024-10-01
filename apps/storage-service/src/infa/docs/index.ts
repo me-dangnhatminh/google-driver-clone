@@ -1,8 +1,10 @@
+import { Logger } from '@nestjs/common';
 import {
   DocumentBuilder,
   SwaggerCustomOptions,
   SwaggerModule,
 } from '@nestjs/swagger';
+import { Server } from 'http';
 
 export function setupSwagger(app) {
   const docPrefix = 'api/docs';
@@ -36,7 +38,17 @@ export function setupSwagger(app) {
   };
 
   SwaggerModule.setup(docPrefix, app, document, customOptions);
-  return { docPrefix, docName, docDesc, docVersion };
+
+  const http: Server = app.getHttpServer();
+  http.on('listening', () => {
+    const address = http.address() as { address: string; port: number };
+    Logger.log(
+      `Swagger UI is available on: http://${address.address}:${address.port}/${docPrefix}`,
+      'NestApplication',
+    );
+  });
+
+  return document;
 }
 
 export default setupSwagger;

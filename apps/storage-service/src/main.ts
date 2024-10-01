@@ -11,39 +11,35 @@ import * as grpc from '@grpc/grpc-js';
 import { AppModule } from 'src/app.module';
 import { Configs } from './config';
 import setupSwagger from './infa/docs';
+import { Server } from 'http';
 
-const connectGRPC = (app: INestApplication) => {
-  const logger = new Logger('bootstrap');
+const buildMicroservice = (app: INestApplication) => {
   const configService = app.get(ConfigService<Configs, true>);
 
   const grpcConfig = configService.get('grpc.storage', { infer: true });
 
-  app.connectMicroservice<MicroserviceOptions>(
-    {
-      transport: Transport.GRPC,
-      options: {
-        url: grpcConfig.url,
-        package: grpcConfig.package,
-        protoPath: grpcConfig.protoPath,
-        loader: grpcConfig.loader,
-        credentials: grpc.ServerCredentials.createInsecure(),
-        onLoadPackageDefinition: (pkg, server: grpc.Server) => {
-          const reflection = new ReflectionService(pkg);
-          return reflection.addToServer(server);
-        },
+  const service = app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.GRPC,
+    options: {
+      ...grpcConfig,
+      credentials: grpc.ServerCredentials.createInsecure(),
+      onLoadPackageDefinition: (pkg, server: grpc.Server) => {
+        const reflection = new ReflectionService(pkg);
+        return reflection.addToServer(server);
       },
     },
-    { inheritAppConfig: true },
-  );
-  logger.log(`gRPC connected: ${grpcConfig.url}`);
+  });
+  service.listen().then(() => {
+    Logger.log(`gRPC connected: ${grpcConfig.url}`, 'NestMicroservice');
+  });
+  return service;
 };
 
-const connectRMQ = (app: INestApplication) => {
-  const logger = new Logger('bootstrap');
+const buildRmq = (app: INestApplication) => {
   const configService = app.get(ConfigService<Configs, true>);
   const rmqConfig = configService.get('rmq', { infer: true });
 
-  app.connectMicroservice<MicroserviceOptions>({
+  const service = app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.RMQ,
     options: {
       urls: [rmqConfig.url],
@@ -52,7 +48,10 @@ const connectRMQ = (app: INestApplication) => {
       queueOptions: { durable: false },
     },
   });
-  logger.log(`RMQ connected: ${rmqConfig.url}`);
+
+  service.listen().then(() => {
+    Logger.log(`RMQ connected: ${rmqConfig.url}`, 'NestMicroservice');
+  });
 };
 
 async function bootstrap() {
@@ -60,22 +59,18 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, prefix: 'v' });
+  setupSwagger(app);
 
-  const configService = app.get(ConfigService<Configs, true>);
-  const appConfig = configService.get('app', { infer: true });
+  await app
+    .listen(process.env.PORT || 3000, process.env.HOST || 'localhost')
+    .then((server: Server) => {
+      const address = server.address() as { address: string; port: number };
+      const msg = `Application is running on: ${address.address}:${address.port}`;
+      Logger.log(msg, 'NestApplication');
+    });
 
-  const doc = setupSwagger(app).docPrefix;
-
-  connectGRPC(app);
-  connectRMQ(app);
-
-  const logger = new Logger('bootstrap');
-  await app.startAllMicroservices();
-  await app.listen(appConfig.port, appConfig.host).then(() => {
-    logger.log(`${appConfig.name} is running`);
-    logger.log(`Documentation is running on ${doc}`);
-    logger.log(`REST API is running on ${appConfig.host}:${appConfig.port}`);
-  });
+  await buildRmq(app);
+  await buildMicroservice(app);
 
   if (module.hot) {
     module.hot.accept();
