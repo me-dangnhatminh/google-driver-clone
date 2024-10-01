@@ -1,18 +1,6 @@
-import { ConfigType } from '@nestjs/config';
+export * from './config.module';
 
-import appConfig from './app.config';
-import dbConfig from './db.config';
-import grpcConfig from './grpc.config';
-import rmqConfig from './rmq.config';
-
-const configs = {
-  app: appConfig,
-  db: dbConfig,
-  grpc: grpcConfig,
-  rmq: rmqConfig,
-};
-
-export type Configs = {
-  [K in keyof typeof configs]: ConfigType<(typeof configs)[K]>;
-};
-export default Object.values(configs);
+export * from './app.config';
+export * from './db.config';
+export * from './grpc.config';
+export * from './rmq.config';

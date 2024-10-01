@@ -56,6 +56,7 @@ const buildRmq = (app: INestApplication) => {
 
 async function bootstrap() {
   const app = await NestFactory.create<INestApplication>(AppModule);
+  const configService = app.get(ConfigService<Configs, true>);
 
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, prefix: 'v' });
@@ -69,13 +70,24 @@ async function bootstrap() {
       Logger.log(msg, 'NestApplication');
     });
 
+  configService.changes$.subscribe((config) => {
+    if (config.path == 'app') {
+      Logger.log('Vault config changed, reloading app', 'NestApplication');
+      app.close();
+    }
+  });
+
   await buildRmq(app);
   await buildMicroservice(app);
+
+  // reload app per 10 minutes if vault changes
 
   if (module.hot) {
     module.hot.accept();
     module.hot.dispose(() => app.close());
   }
+
+  return app;
 }
 
 bootstrap();

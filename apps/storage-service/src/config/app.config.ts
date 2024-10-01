@@ -1,5 +1,5 @@
+import z from 'zod';
 import { ConfigType, registerAs } from '@nestjs/config';
-import { z } from 'zod';
 
 export type AppConfig = ConfigType<typeof config>;
 
