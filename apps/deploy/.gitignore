@@ -1,0 +1,6 @@
+.env
+
+**/certs/*
+**/pass/*
+
+**/letsencrypt/*
