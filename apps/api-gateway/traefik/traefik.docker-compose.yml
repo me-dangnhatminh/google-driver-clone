@@ -1,11 +1,10 @@
 version: "3.9"
 
 networks:
-  proxy-network:
-    external: true
+  proxy-network: {}
 
 services:
-  reverse-proxy:
+  traefik:
     image: traefik:v3.1.2
     container_name: traefik
     restart: always
@@ -16,10 +15,10 @@ services:
       - 443:443/tcp # TCP for HTTPS
       - 443:443/udp # TCP and UDP for QUIC
       - 127.0.0.1:8080:8080 # Dashboard (only accessible from localhost)
-    env_file: .env
+    env_file: ../.env
     environment:
       - BASE_DOMAIN=${BASE_DOMAIN}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
-      - ./traefik/config:/etc/config:ro
+      - ./traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./config:/etc/config:ro

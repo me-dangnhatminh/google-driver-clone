@@ -6,55 +6,75 @@ tls:
     - certFile: /etc/config/certs/cert.pem # time to live 25/8/2024 + 15 years
       keyFile: /etc/config/certs/key.pem
 
-tcp:
-
 http:
   middlewares:
     auth:
       basicAuth:
         usersFile: /etc/config/pass/users.htpasswd
+    cors:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        accessControlAllowHeaders: "*"
+        accessControlAllowOriginList: "*"
+        accessControlMaxAge: 100
+        addVaryHeader: true
 
   routers:
     client-ui:
-      rule: Host(`www.{{env "BASE_DOMAIN"}}`)
+      rule: Host(`www.{{env "APP_DOMAIN"}}`)
       service: client-ui
       entrypoints: https
       tls: {}
 
     # for grpc services
     identity-grpc:
-      rule: Host(`identity-grpc.{{env "BASE_DOMAIN"}}`)
+      rule: Host(`identity-grpc.{{env "APP_DOMAIN"}}`)
       service: identity-grpc
       entrypoints: https
+      middlewares:
+        - cors
       tls: {}
 
     storage-grpc:
-      rule: Host(`storage-grpc.{{env "BASE_DOMAIN"}}`)
+      rule: Host(`storage-grpc.{{env "APP_DOMAIN"}}`)
       service: storage-grpc
       entrypoints: https
+      middlewares:
+        - cors
       tls: {}
 
     # for http services
     storage:
-      rule: Host(`api.{{env "BASE_DOMAIN"}}`) && PathPrefix(`/api/storage`)
+      rule: Host(`api.{{env "APP_DOMAIN"}}`) && PathPrefix(`/api/storage`)
       service: storage-http
       entrypoints: https
+      middlewares:
+        - cors
       tls: {}
 
     identity:
-      rule: Host(`api.{{env "BASE_DOMAIN"}}`) && PathPrefix(`/api/identity`)
+      rule: Host(`api.{{env "APP_DOMAIN"}}`) && PathPrefix(`/api/identity`)
       service: identity-http
       entrypoints: https
+      middlewares:
+        - cors
       tls: {}
 
     payment:
-      rule: Host(`api.{{env "BASE_DOMAIN"}}`) && PathPrefix(`/api/payment`)
+      rule: Host(`api.{{env "APP_DOMAIN"}}`) && PathPrefix(`/api/payment`)
       service: payment-http
       entrypoints: https
+      middlewares:
+        - cors
       tls: {}
 
     wordpress:
-      rule: Host(`wordpress.{{env "BASE_DOMAIN"}}`)
+      rule: Host(`wordpress.{{env "APP_DOMAIN"}}`)
       service: wordpress
       entrypoints: https
       tls: {}

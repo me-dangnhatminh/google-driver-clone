@@ -76,9 +76,19 @@ export class DiskStorageService implements MulterOptionsFactory {
           const id = uuid();
           const filename = `${id}`;
           const fullpath = path.join(destination, filename);
-          file['id'] = id;
           file.originalname = decodeURIComponent(file.originalname);
           file.path = fullpath;
+          Object.assign(file, {
+            id: id,
+            name: file.originalname,
+            contentType: file.mimetype,
+            createdAt: new Date(),
+            modifiedAt: new Date(),
+            archivedAt: null,
+            pinnedAt: null,
+            description: null,
+            thumbnail: null,
+          });
 
           /**
            * req.setMaxListeners(Infinity)

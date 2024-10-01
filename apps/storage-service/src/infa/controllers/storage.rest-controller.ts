@@ -161,16 +161,8 @@ export class StorageRestController {
     file: Express.Multer.File,
   ) {
     this.upsertFreeSpace(req, [file]);
-
     const folderId = UUID.parse(key === 'root' ? rootId : key);
-    const cmd = new FileUploadCmd(rootId, folderId, userId, {
-      id: file.filename,
-      name: file.originalname,
-      size: file.size,
-      contentType: file.mimetype,
-      ownerId: userId,
-    });
-
+    const cmd = new FileUploadCmd(rootId, folderId, userId, file);
     await this.commandBus.execute(cmd);
   }
 
@@ -192,7 +184,6 @@ export class StorageRestController {
     const folder = await this.storageService
       .getFolderInfo({ folderId })
       .toPromise();
-
     const uploaded = structureToDoamin(tree, folder, userId);
 
     const cmd = new FolderAddContentCmd({
@@ -202,8 +193,6 @@ export class StorageRestController {
     });
 
     await this.commandBus.execute(cmd);
-
-    // throw new BadRequestException('Not implemented');
   }
 
   @Get(StorageRoutes.FILE_DOWNLOAD)
