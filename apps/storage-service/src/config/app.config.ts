@@ -1,4 +1,5 @@
 import z from 'zod';
+
 import { ConfigType, registerAs } from '@nestjs/config';
 
 export type AppConfig = ConfigType<typeof config>;

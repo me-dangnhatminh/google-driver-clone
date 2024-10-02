@@ -20,6 +20,8 @@ export class AuthGrpcController {
     private readonly cache: Cache,
   ) {}
 
+  verifyTokenv2(request) {}
+
   @GrpcMethod('AuthService', 'verifyToken')
   async verifyToken(request) {
     const cached: any = await this.cache.get(request.token).catch(() => null);

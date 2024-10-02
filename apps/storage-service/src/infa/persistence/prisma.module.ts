@@ -2,7 +2,12 @@ import { Logger, Module, OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 @Module({
-  providers: [PrismaClient],
+  providers: [
+    {
+      provide: PrismaClient,
+      useValue: new PrismaClient({ datasourceUrl: process.env.DB_URL }),
+    },
+  ],
   exports: [PrismaClient],
 })
 export class PrismaModule implements OnModuleInit {
