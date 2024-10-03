@@ -14,6 +14,8 @@ import { controllers } from 'src/infa/controllers';
 import services from './app/services';
 import processors from './app/processors';
 import { StorageClientModule } from 'libs/storage-client';
+import { TerminusModule } from '@nestjs/terminus';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import { StorageClientModule } from 'libs/storage-client';
       expandVariables: true,
       load: config,
     }),
+    TerminusModule,
+    HttpModule,
     PersistencesModule,
     CacheModule,
     StripeModule,

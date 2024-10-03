@@ -8,9 +8,6 @@ tls:
 
 http:
   middlewares:
-    auth:
-      basicAuth:
-        usersFile: /etc/config/pass/users.htpasswd
     cors:
       headers:
         accessControlAllowMethods:
@@ -25,6 +22,12 @@ http:
         accessControlMaxAge: 100
         addVaryHeader: true
 
+    rate-limit:
+      rateLimit:
+        average: 100
+        burst: 10
+        period: 1s
+
   routers:
     client-ui:
       rule: Host(`www.{{env "APP_DOMAIN"}}`)
@@ -33,12 +36,13 @@ http:
       tls: {}
 
     # for grpc services
-    identity-grpc:
-      rule: Host(`identity-grpc.{{env "APP_DOMAIN"}}`)
+    auth-grpc:
+      rule: Host(`auth-grpc.{{env "APP_DOMAIN"}}`)
       service: identity-grpc
       entrypoints: https
       middlewares:
         - cors
+        - rate-limit
       tls: {}
 
     storage-grpc:
@@ -47,6 +51,7 @@ http:
       entrypoints: https
       middlewares:
         - cors
+        - rate-limit
       tls: {}
 
     # for http services
@@ -56,14 +61,16 @@ http:
       entrypoints: https
       middlewares:
         - cors
+        - rate-limit
       tls: {}
 
-    identity:
-      rule: Host(`api.{{env "APP_DOMAIN"}}`) && PathPrefix(`/api/identity`)
+    auth:
+      rule: Host(`api.{{env "APP_DOMAIN"}}`) && PathPrefix(`/api/auth`)
       service: identity-http
       entrypoints: https
       middlewares:
         - cors
+        - rate-limit
       tls: {}
 
     payment:
@@ -72,6 +79,7 @@ http:
       entrypoints: https
       middlewares:
         - cors
+        - rate-limit
       tls: {}
 
     wordpress:
@@ -112,5 +120,9 @@ http:
 
     payment-http:
       loadBalancer:
+        healthCheck:
+          path: /health
+          interval: 10s
+          timeout: 2s
         servers:
           - url: http://172.17.0.1:5000

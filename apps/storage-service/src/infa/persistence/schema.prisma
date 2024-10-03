@@ -1,63 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DB_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 model FileRef {
-  id         String    @id @map("id")
-  name       String    @map("name")
-  size       BigInt    @map("size")
-  createdAt  DateTime  @map("created_at")
-  modifiedAt DateTime  @map("modified_at")
-  archivedAt DateTime? @map("archived_at")
-
-  // -- cutom metadata
-  ownerId     String    @map("owner_id")
-  pinnedAt    DateTime? @map("pinned_at")
-  contentType String    @map("content_type")
-  thumbnail   String?   @map("thumbnail")
-  description String?   @map("description")
-
-  folder FileInFolder[]
-  perm   FilePermission? @relation("file_permission")
+  id          String          @id @map("id")
+  name        String          @map("name")
+  size        BigInt          @map("size")
+  createdAt   DateTime        @map("created_at")
+  modifiedAt  DateTime        @map("modified_at")
+  archivedAt  DateTime?       @map("archived_at")
+  ownerId     String          @map("owner_id")
+  pinnedAt    DateTime?       @map("pinned_at")
+  contentType String          @map("content_type")
+  thumbnail   String?         @map("thumbnail")
+  description String?         @map("description")
+  folder      FileInFolder?
+  perm        FilePermission? @relation("file_permission")
 
   @@map("files")
 }
 
 model Folder {
-  id         String    @id @map("id")
-  name       String    @map("name")
-  size       BigInt    @map("size")
-  createdAt  DateTime  @map("created_at")
-  modifiedAt DateTime  @map("modified_at")
-  archivedAt DateTime? @map("archived_at")
-
-  // -- cutom metadata
-  ownerId  String    @map("owner_id")
-  pinnedAt DateTime? @map("pinned_at")
-
-  // -- hierarchy and parent-child
-  rootId   String? @map("root_id")
-  parentId String? @map("parent_id")
-  depth    Int     @map("depth")
-  lft      Int     @map("lft")
-  rgt      Int     @map("rgt")
-
-  // -- content
-  files   FileInFolder[] // @relation("FileInFolder")
-  folders Folder[]       @relation("ParentChild")
-
-  parent    Folder?  @relation("ParentChild", fields: [parentId], references: [id], onDelete: Cascade)
-  root      Folder?  @relation("RootFlatChild", fields: [rootId], references: [id], onDelete: Cascade)
-  flatChild Folder[] @relation("RootFlatChild")
-
-  // -- for service (MyStorage)
-  myStorage MyStorage?        @relation("MyStorage")
-  perm      FolderPermission? @relation("folder_permission")
+  id         String            @id @map("id")
+  name       String            @map("name")
+  size       BigInt            @map("size")
+  createdAt  DateTime          @map("created_at")
+  modifiedAt DateTime          @map("modified_at")
+  archivedAt DateTime?         @map("archived_at")
+  ownerId    String            @map("owner_id")
+  pinnedAt   DateTime?         @map("pinned_at")
+  rootId     String?           @map("root_id")
+  parentId   String?           @map("parent_id")
+  depth      Int               @map("depth")
+  lft        Int               @map("lft")
+  rgt        Int               @map("rgt")
+  files      FileInFolder[]
+  parent     Folder?           @relation("ParentChild", fields: [parentId], references: [id], onDelete: Cascade)
+  folders    Folder[]          @relation("ParentChild")
+  root       Folder?           @relation("RootFlatChild", fields: [rootId], references: [id], onDelete: Cascade)
+  flatChild  Folder[]          @relation("RootFlatChild")
+  perm       FolderPermission? @relation("folder_permission")
+  myStorage  MyStorage?        @relation("MyStorage")
 
   @@index([lft, rgt])
   @@map("folder_hierarchy")
@@ -66,39 +54,33 @@ model Folder {
 model FileInFolder {
   fileId   String  @id @map("file_id")
   folderId String  @map("folder_id")
-  folder   Folder  @relation(fields: [folderId], references: [id], onDelete: Cascade)
   file     FileRef @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  folder   Folder  @relation(fields: [folderId], references: [id], onDelete: Cascade)
 
   @@map("file_in_folder")
 }
 
 model MyStorage {
-  id      String @id @map("id")
-  ownerId String @unique @map("owner_id")
-  refId   String @unique @map("ref_id")
-
-  used  BigInt @map("used")
-  total BigInt @map("total")
-
+  id         String    @id @map("id")
+  ownerId    String    @unique @map("owner_id")
+  refId      String    @unique @map("ref_id")
+  used       BigInt    @map("used")
+  total      BigInt    @map("total")
   createdAt  DateTime  @map("created_at")
   modifiedAt DateTime  @map("modified_at")
   archivedAt DateTime? @map("archived_at")
-
-  metadata Json @map("metadata")
-
-  ref Folder @relation("MyStorage", fields: [refId], references: [id], onDelete: Cascade)
+  metadata   Json      @map("metadata")
+  ref        Folder    @relation("MyStorage", fields: [refId], references: [id], onDelete: Cascade)
 
   @@index([ownerId])
   @@map("my_storage")
 }
 
-// ================== Share ================== 
 model FilePermission {
-  id     String @id @map("id")
-  fileId String @unique @map("file_id")
-  type   String @map("type") // user, group, public
-  perm   String @map("perm") // read, write, admin
-
+  id     String       @id @map("id")
+  fileId String       @unique @map("file_id")
+  type   String       @map("type")
+  perm   String       @map("perm")
   file   FileRef      @relation("file_permission", fields: [fileId], references: [id], onDelete: Cascade)
   shared FileShared[] @relation("file_shared")
 
@@ -106,33 +88,30 @@ model FilePermission {
 }
 
 model FileShared {
-  id     String @id @map("id")
-  permId String @map("perm_id")
-  userId String @map("user_id")
-
-  perm FilePermission @relation("file_shared", fields: [permId], references: [id], onDelete: Cascade)
+  id     String         @id @map("id")
+  permId String         @map("perm_id")
+  userId String         @map("user_id")
+  perm   FilePermission @relation("file_shared", fields: [permId], references: [id], onDelete: Cascade)
 
   @@map("file_shared")
 }
 
 model FolderPermission {
-  id       String @id @map("id")
-  folderId String @unique @map("folder_id")
-  type     String @map("type") // user, group, public
-  perm     String @map("perm") // read, write, admin
-
-  folder Folder         @relation("folder_permission", fields: [folderId], references: [id], onDelete: Cascade)
-  shared FolderShared[] @relation("folder_shared")
+  id       String         @id @map("id")
+  folderId String         @unique @map("folder_id")
+  type     String         @map("type")
+  perm     String         @map("perm")
+  folder   Folder         @relation("folder_permission", fields: [folderId], references: [id], onDelete: Cascade)
+  shared   FolderShared[] @relation("folder_shared")
 
   @@map("folder_permission")
 }
 
 model FolderShared {
-  id     String @id @map("id")
-  permId String @map("perm_id")
-  userId String @map("user_id")
-
-  perm FolderPermission @relation("folder_shared", fields: [permId], references: [id], onDelete: Cascade)
+  id     String           @id @map("id")
+  permId String           @map("perm_id")
+  userId String           @map("user_id")
+  perm   FolderPermission @relation("folder_shared", fields: [permId], references: [id], onDelete: Cascade)
 
   @@map("folder_shared")
 }

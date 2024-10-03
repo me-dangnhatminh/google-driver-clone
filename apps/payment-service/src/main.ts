@@ -38,7 +38,7 @@ const buildMicroservice = (app: INestApplication) => {
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
 
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api', { exclude: ['health'] });
   app.enableVersioning({ type: VersioningType.URI, prefix: 'v' });
   setupSwagger(app);
 
