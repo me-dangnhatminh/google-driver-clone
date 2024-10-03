@@ -1,6 +1,6 @@
-.env
+**/.env
 
-**/certs/*
-**/pass/*
-
-**/letsencrypt/*
+**/postgres-data/*
+**/redis-data/*
+**/mongo-data/*
+**/rabbitmq-data/*
