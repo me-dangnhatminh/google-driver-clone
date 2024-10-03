@@ -1,10 +1,11 @@
 version: "3.9"
 
 networks:
+  proxy-network:
+    external: false
+    name: proxy-network
   server-network:
     driver: bridge
-  proxy-network:
-    external: true
 
 services:
   postgres:
@@ -64,4 +65,6 @@ services:
       - 8200:8200
     environment:
       VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_DEV_ROOT_TOKEN_ID:-root}
+    volumes:
+      - ./vault-data:/vault/file
     privileged: true

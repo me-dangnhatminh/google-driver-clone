@@ -1,7 +1,9 @@
 version: "3.9"
 
 networks:
-  proxy-network: {}
+  proxy-network:
+    external: false
+    name: proxy-network
 
 services:
   traefik:

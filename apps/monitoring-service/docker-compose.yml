@@ -5,6 +5,9 @@ volumes:
   grafana_data: {}
 
 networks:
+  proxy-network:
+    external: false
+    name: proxy-network
   front-tier:
   back-tier:
 
@@ -21,20 +24,12 @@ services:
       - "--web.console.templates=/usr/share/prometheus/consoles"
     ports:
       - 9090:9090
-    links:
-      - cadvisor:cadvisor
-      - alertmanager:alertmanager
-    #      - pushgateway:pushgateway
     depends_on:
       - cadvisor
-    #      - pushgateway
     networks:
+      - proxy-network
       - back-tier
     restart: always
-  #    deploy:
-  #      placement:
-  #        constraints:
-  #          - node.hostname == ${HOSTNAME}
 
   node-exporter:
     image: quay.io/prometheus/node-exporter:latest
@@ -52,6 +47,7 @@ services:
     ports:
       - 9100:9100
     networks:
+      - proxy-network
       - back-tier
     restart: always
     deploy:
@@ -64,15 +60,13 @@ services:
     volumes:
       - ./alertmanager/:/etc/alertmanager/
     networks:
+      - proxy-network
       - back-tier
     restart: always
     command:
       - "--config.file=/etc/alertmanager/config.yml"
       - "--storage.path=/alertmanager"
-  #    deploy:
-  #      placement:
-  #        constraints:
-  #          - node.hostname == ${HOSTNAME}
+
   cadvisor:
     image: gcr.io/cadvisor/cadvisor
     volumes:
@@ -83,6 +77,7 @@ services:
     ports:
       - 8000:8080
     networks:
+      - proxy-network
       - back-tier
     restart: always
     deploy:
@@ -101,15 +96,7 @@ services:
     env_file:
       - ./grafana/config.monitoring
     networks:
+      - proxy-network
       - back-tier
       - front-tier
     restart: always
-#  pushgateway:
-#    image: prom/pushgateway
-#    restart: always
-#    expose:
-#      - 9091
-#    ports:
-#      - "9091:9091"
-#    networks:
-#      - back-tier

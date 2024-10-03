@@ -4,3 +4,4 @@
 **/redis-data/*
 **/mongo-data/*
 **/rabbitmq-data/*
+**/vault-data/*
