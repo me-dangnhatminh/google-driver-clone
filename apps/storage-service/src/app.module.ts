@@ -8,7 +8,7 @@ import providers from 'src/app';
 
 import { PersistencesModule } from './infa/persistence';
 import { controllers } from './infa/controllers';
-import { CacheModule, MulterModule } from './infa/adapters';
+import { CacheModule, MulterModule, WinstonModule } from './infa/adapters';
 
 import { HTTPLogger } from 'libs/common';
 import { AuthClientModule } from 'libs/auth-client';
@@ -18,6 +18,7 @@ import { PaymentClientModule } from 'libs/payment-client';
 @Module({
   imports: [
     ConfigModule,
+    WinstonModule,
     CqrsModule,
     CacheModule,
     PersistencesModule,

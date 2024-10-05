@@ -9,7 +9,9 @@ import { ConfigService } from '@nestjs/config';
     {
       inject: [ConfigService],
       provide: Logger,
-      useFactory: () => {
+      useFactory: (configService: ConfigService) => {
+        const app = configService.get('app', { infer: true });
+        console.log(app);
         return NestWinston.createLogger({
           instance: createLogger({
             level: process.env.LOG_LEVEL ?? 'info',

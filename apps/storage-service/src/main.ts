@@ -53,8 +53,13 @@ const buildRmq = (app: INestApplication) => {
 };
 
 async function bootstrap() {
-  const app = await NestFactory.create<INestApplication>(AppModule);
-  const configService = app.get(ConfigService);
+  const app = await NestFactory.create<INestApplication>(AppModule, {
+    abortOnError: true,
+    rawBody: true,
+    bufferLogs: true,
+  });
+  const log = app.get(Logger);
+  if (log) app.useLogger(log);
 
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, prefix: 'v' });
@@ -67,13 +72,6 @@ async function bootstrap() {
       const msg = `Application is running on: ${address.address}:${address.port}`;
       Logger.log(msg, 'NestApplication');
     });
-
-  configService.changes$.subscribe((config) => {
-    if (config.path == 'app') {
-      Logger.log('Vault config changed, reloading app', 'NestApplication');
-      app.close();
-    }
-  });
 
   await buildRmq(app);
   await buildMicroservice(app);

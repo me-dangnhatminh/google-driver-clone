@@ -22,12 +22,6 @@ export type Config = {
 };
 export class ConfigService extends NestConfigService<Config, true> {}
 
-// const vaultClient = vault({
-//   apiVersion: process.env.VAULT_API_VERSION || 'v1',
-//   endpoint: process.env.VAULT_ADDR || 'http://localhost:8200',
-//   token: process.env.VAULT_TOKEN || 'root',
-// });
-
 @Module({
   imports: [
     NestConfig.forRoot({
@@ -36,25 +30,7 @@ export class ConfigService extends NestConfigService<Config, true> {}
       expandVariables: true,
       isGlobal: true,
       cache: true,
-      validate: async (config) => {
-        // only validate env
-        // const values = await vaultClient
-        //   .read('secret/data/env')
-        //   .then((res) => res?.data?.data)
-        //   .catch((err) => {
-        //     Logger.error(err, 'ConfigModule');
-        //   });
-        // if (!values) return config;
-        // for (const key in values) {
-        //   if (Boolean(config[key]) && config[key] !== values[key]) {
-        //     const message = `override env '${key}'`;
-        //     const obj = { message, old: config[key], new: values[key] };
-        //     Logger.warn(JSON.stringify(obj, null, 2), 'ConfigModule');
-        //   }
-        //   process.env[key] = values[key];
-        // }
-        return config;
-      },
+      validate: (config) => config,
     }),
   ],
   providers: [{ provide: ConfigService, useExisting: NestConfigService }],
