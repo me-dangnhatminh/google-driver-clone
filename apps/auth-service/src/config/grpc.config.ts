@@ -52,7 +52,7 @@ const config = registerAs('grpc', () => {
         retryPolicy,
       },
     },
-  } as const satisfies Record<string, GrpcOptions['options']>;
+  } satisfies Record<string, GrpcOptions['options']>;
 });
 
 export default config;

@@ -2,7 +2,8 @@ version: "3.9"
 
 networks:
   proxy-network:
-    external: true
+    name: proxy-network
+    external: false
   elk-network: {}
 
 services:
@@ -11,6 +12,7 @@ services:
     container_name: elasticsearch
     restart: always
     networks:
+      - proxy-network
       - elk-network
     ports:
       - 9200:9200 # for REST API

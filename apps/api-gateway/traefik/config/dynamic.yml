@@ -1,128 +1,135 @@
-# Traefik dynamic configuration file
-# See https://doc.traefik.io/traefik/getting-started/configuration-overview/#the-dynamic-configuration
+# # Traefik dynamic configuration file
+# # See https://doc.traefik.io/traefik/getting-started/configuration-overview/#the-dynamic-configuration
 
-tls:
-  certificates:
-    - certFile: /etc/config/certs/cert.pem # time to live 25/8/2024 + 15 years
-      keyFile: /etc/config/certs/key.pem
+# tls:
+#   certificates:
+#     - certFile: /etc/config/certs/cert.pem # time to live 25/8/2024 + 15 years
+#       keyFile: /etc/config/certs/key.pem
 
-http:
-  middlewares:
-    cors:
-      headers:
-        accessControlAllowMethods:
-          - GET
-          - POST
-          - PUT
-          - DELETE
-          - OPTIONS
-        accessControlAllowHeaders: "*"
-        accessControlAllowCredentials: true
-        accessControlAllowOriginList: "*"
-        accessControlMaxAge: 100
-        addVaryHeader: true
+# http:
+#   middlewares:
+#     cors:
+#       headers:
+#         accessControlAllowMethods:
+#           - GET
+#           - POST
+#           - PUT
+#           - DELETE
+#           - OPTIONS
+#         accessControlAllowHeaders: "*"
+#         accessControlAllowCredentials: true
+#         accessControlAllowOriginList: "*"
+#         accessControlMaxAge: 100
+#         addVaryHeader: true
 
-    rate-limit:
-      rateLimit:
-        average: 100
-        burst: 10
-        period: 1s
+#     rate-limit:
+#       rateLimit:
+#         average: 100
+#         burst: 10
+#         period: 1s
 
-  routers:
-    client-ui:
-      rule: Host(`www.{{env "APP_DOMAIN"}}`)
-      service: client-ui
-      entrypoints: https
-      tls: {}
+#     auth:
+#       forwardAuth:
+#         address: /api/v1/auth/validate
+#         authResponseHeaders:
+#           - x-authenticated-user
+#           - x-scope
 
-    # for grpc services
-    auth-grpc:
-      rule: Host(`auth-grpc.{{env "APP_DOMAIN"}}`)
-      service: identity-grpc
-      entrypoints: https
-      middlewares:
-        - cors
-        - rate-limit
-      tls: {}
+#   routers:
+#     client-ui:
+#       rule: Host(`www.{{env "APP_DOMAIN"}}`)
+#       service: client-ui
+#       entrypoints: https
+#       tls: {}
 
-    storage-grpc:
-      rule: Host(`storage-grpc.{{env "APP_DOMAIN"}}`)
-      service: storage-grpc
-      entrypoints: https
-      middlewares:
-        - cors
-        - rate-limit
-      tls: {}
+#     # for grpc services
+#     auth-grpc:
+#       rule: Host(`auth-grpc.{{env "APP_DOMAIN"}}`)
+#       service: identity-grpc
+#       entrypoints: https
+#       middlewares:
+#         - cors
+#         - rate-limit
+#       tls: {}
 
-    # for http services
-    storage:
-      rule: Host(`api.{{env "APP_DOMAIN"}}`) && PathPrefix(`/api/storage`)
-      service: storage-http
-      entrypoints: https
-      middlewares:
-        - cors
-        - rate-limit
-      tls: {}
+#     storage-grpc:
+#       rule: Host(`storage-grpc.{{env "APP_DOMAIN"}}`)
+#       service: storage-grpc
+#       entrypoints: https
+#       middlewares:
+#         - cors
+#         - rate-limit
+#       tls: {}
 
-    auth:
-      rule: Host(`api.{{env "APP_DOMAIN"}}`) && PathPrefix(`/api/auth`)
-      service: identity-http
-      entrypoints: https
-      middlewares:
-        - cors
-        - rate-limit
-      tls: {}
+#     # for http services
+#     storage:
+#       rule: Host(`api.{{env "APP_DOMAIN"}}`) && PathPrefix(`/api/storage`)
+#       service: storage-http
+#       entrypoints: https
+#       middlewares:
+#         - cors
+#         - rate-limit
+#       tls: {}
 
-    payment:
-      rule: Host(`api.{{env "APP_DOMAIN"}}`) && PathPrefix(`/api/payment`)
-      service: payment-http
-      entrypoints: https
-      middlewares:
-        - cors
-        - rate-limit
-      tls: {}
+#     auth:
+#       rule: Host(`api.{{env "APP_DOMAIN"}}`) && PathPrefix(`/api/auth`)
+#       service: identity-http
+#       entrypoints: https
+#       middlewares:
+#         - cors
+#         - rate-limit
+#       tls: {}
 
-    wordpress:
-      rule: Host(`wordpress.{{env "APP_DOMAIN"}}`)
-      service: wordpress
-      entrypoints: https
-      tls: {}
+#     payment:
+#       rule: Host(`api.{{env "APP_DOMAIN"}}`) && PathPrefix(`/api/payment`)
+#       service: payment-http
+#       entrypoints: https
+#       middlewares:
+#         - cors
+#         - rate-limit
+#       tls: {}
 
-  services:
-    wordpress:
-      loadBalancer:
-        servers:
-          - url: http://172.17.0.1:8000
+#     wordpress:
+#       rule: Host(`wordpress.{{env "APP_DOMAIN"}}`)
+#       service: wordpress
+#       entrypoints: https
+#       tls: {}
 
-    client-ui:
-      loadBalancer:
-        servers:
-          - url: http://172.17.0.1:5173
+#   services:
+#     wordpress:
+#       loadBalancer:
+#         servers:
+#           - url: http://172.17.0.1:8000
 
-    identity-grpc:
-      loadBalancer:
-        servers:
-          - url: h2c://172.17.0.1:50051
-    storage-grpc:
-      loadBalancer:
-        servers:
-          - url: h2c://172.17.0.1:40051
+#     client-ui:
+#       loadBalancer:
+#         servers:
+#           - url: http://172.17.0.1:5173
 
-    storage-http:
-      loadBalancer:
-        servers:
-          - url: http://172.17.0.1:4000
+#     identity-grpc:
+#       loadBalancer:
+#         servers:
+#           - url: h2c://172.17.0.1:50051
+#     storage-grpc:
+#       loadBalancer:
+#         servers:
+#           - url: h2c://172.17.0.1:40051
 
-    identity-http:
-      loadBalancer:
-        servers:
-          - url: http://172.17.0.1:3000
+#     storage-http:
+#       loadBalancer:
+#         servers:
+#           - url: http://172.17.0.1:4000
 
-    payment-http:
-      loadBalancer:
-        healthCheck:
-          path: /health
-          interval: 10s
-          timeout: 2s
-        servers:
-          - url: http://172.17.0.1:5000
+#     identity-http:
+#       loadBalancer:
+#         servers:
+#           - url: http://172.17.0.1:3000
+
+#     payment-http:
+#       loadBalancer:
+#         healthCheck:
+#           path: /health
+#           interval: 10s
+#           timeout: 2s
+#         servers:
+#           - url: http://172.17.0.1:5000

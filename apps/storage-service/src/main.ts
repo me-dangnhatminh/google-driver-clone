@@ -78,8 +78,6 @@ async function bootstrap() {
   await buildRmq(app);
   await buildMicroservice(app);
 
-  // reload app per 10 minutes if vault changes
-
   if (module.hot) {
     module.hot.accept();
     module.hot.dispose(() => app.close());

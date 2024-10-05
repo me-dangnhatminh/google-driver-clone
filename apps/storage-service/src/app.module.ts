@@ -8,11 +8,7 @@ import providers from 'src/app';
 
 import { PersistencesModule } from './infa/persistence';
 import { controllers } from './infa/controllers';
-import {
-  CacheModule,
-  // ElasticsearchModule,
-  MulterModule,
-} from './infa/adapters';
+import { CacheModule, MulterModule } from './infa/adapters';
 
 import { HTTPLogger } from 'libs/common';
 import { AuthClientModule } from 'libs/auth-client';
@@ -26,7 +22,6 @@ import { PaymentClientModule } from 'libs/payment-client';
     CacheModule,
     PersistencesModule,
     MulterModule,
-    // ElasticsearchModule,
     // ===================== GRPC CLIENT MODULES =====================
     AuthClientModule,
     PaymentClientModule,

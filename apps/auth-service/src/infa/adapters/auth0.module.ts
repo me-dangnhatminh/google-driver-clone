@@ -1,7 +1,8 @@
 export * from 'auth0';
 import { Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { UserInfoClient, ManagementClient } from 'auth0';
+
+import { ConfigService } from '@nestjs/config';
 
 export const wwwAuthToJson = (wwwAuth: string) => {
   const parts = wwwAuth.split(',');

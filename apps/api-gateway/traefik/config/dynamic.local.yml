@@ -1,0 +1,70 @@
+# Traefik dynamic configuration file
+# See https://doc.traefik.io/traefik/getting-started/configuration-overview/#the-dynamic-configuration
+
+http:
+  middlewares:
+    cors:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        accessControlAllowHeaders: "*"
+        accessControlAllowCredentials: true
+        accessControlAllowOriginList: "*"
+        accessControlMaxAge: 100
+        addVaryHeader: true
+
+    rate-limit:
+      rateLimit:
+        average: 100
+        burst: 10
+        period: 1s
+
+    auth:
+      forwardAuth:
+        address: /api/v1/auth/validate
+        authResponseHeaders:
+          - x-authenticated-user
+          - x-scope
+  routers:
+    client-ui:
+      rule: PathPrefix(`/`)
+      service: client-ui
+      entrypoints: https
+      tls: {}
+
+    auth:
+      rule: PathRegexp(`^/api/v[0-9]+/auth`)
+      service: auth-service
+      entrypoints: https
+      tls: {}
+
+    storage:
+      rule: PathRegexp(`^/api/v[0-9]+/storage`)
+      service: auth-service
+      entrypoints: https
+        - auth
+      tls: {}
+
+  services:
+    client-ui:
+      loadBalancer:
+        servers:
+          - url: http://172.17.0.1:5173
+
+    auth-service:
+      healthCheck:
+        path: /health
+        interval: 10s
+        timeout: 2s
+      loadBalancer:
+        servers:
+          - url: http://172.17.0.1:3000
+
+    storage-service:
+      loadBalancer:
+        servers:
+          - url: http://172.17.0.1:4000

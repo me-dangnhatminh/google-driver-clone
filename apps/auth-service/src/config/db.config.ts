@@ -1,7 +1,5 @@
-import { ConfigType, registerAs } from '@nestjs/config';
-import { z } from 'zod';
-
-export type DbConfig = ConfigType<typeof config>;
+import { registerAs } from '@nestjs/config';
+import z from 'zod';
 
 const configSchema = z.object({
   type: z.string().default('postgresql'),
@@ -12,8 +10,7 @@ const configSchema = z.object({
   database: z.string().default('postgres'),
 });
 
-const configName = 'db';
-const config = registerAs(configName, () => {
+export default registerAs('db', () => {
   const valid = configSchema.safeParse({
     type: process.env.DB_TYPE,
     port: process.env.DB_PORT,
@@ -24,7 +21,5 @@ const config = registerAs(configName, () => {
   });
   if (valid.success) return valid.data;
   const msg = valid.error.errors.map((err) => err.message).join(', ');
-  throw new Error(`Invalid ${configName} config: ${msg}`);
+  throw new Error(`Invalid 'db' config: ${msg}`);
 });
-
-export default config;

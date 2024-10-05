@@ -1,13 +1,12 @@
-import { Controller, Get, Req } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import {
   HealthCheck,
   HealthCheckService,
   HttpHealthIndicator,
 } from '@nestjs/terminus';
-import { Request } from 'express';
 
-@Controller({ path: 'health' })
+@Controller('health')
 @ApiTags('health')
 export class HealthController {
   constructor(
@@ -18,8 +17,7 @@ export class HealthController {
   @Get()
   @HealthCheck()
   @ApiBearerAuth()
-  checks(@Req() request: Request) {
-    console.log(request.headers);
+  checks() {
     return this.health.check([
       () => this.http.pingCheck('google', 'https://google.com'),
       () => this.http.pingCheck('nestjs', 'https://nestjs.com'),

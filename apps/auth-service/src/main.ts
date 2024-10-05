@@ -1,21 +1,25 @@
 declare const module: any;
 
-import { AddressInfo } from 'net';
 import { Server } from 'http';
 import { NestFactory } from '@nestjs/core';
-import { INestApplication, Logger } from '@nestjs/common';
+import {
+  INestApplication,
+  Logger,
+  RequestMethod,
+  VersioningType,
+} from '@nestjs/common';
 import { GrpcOptions, Transport } from '@nestjs/microservices';
 import { ReflectionService } from '@grpc/reflection';
-import { ConfigService } from '@nestjs/config';
 import * as grpc from '@grpc/grpc-js';
 
-import { Configs } from './config';
 import AppModule from './app.module';
-
 import buildSwagger from './infa/docs';
+import winston from './infa/adapters/winston.module';
+import { ConfigService } from './config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
+    logger: winston,
     abortOnError: true,
     rawBody: true,
   });
@@ -24,13 +28,19 @@ async function bootstrap() {
   buildMicroservices(app);
 
   // ----- http server -----
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api', {
+    exclude: [{ path: 'health', method: RequestMethod.GET }],
+  });
+  app.enableVersioning({ type: VersioningType.URI, prefix: 'v' });
   buildSwagger(app);
   await app
     .listen(process.env.PORT || 3000, process.env.HOST || 'localhost')
     .then((server: Server) => {
-      const url: AddressInfo = server.address() as AddressInfo;
-      Logger.log(`Server is running on: ${url.address}:${url.port}`);
+      const url = server.address() as { address: string; port: number };
+      Logger.log(
+        `Server is running on: ${url.address}:${url.port}`,
+        'NestApplication',
+      );
     });
 
   if (module.hot) {
@@ -40,7 +50,7 @@ async function bootstrap() {
 }
 
 const buildMicroservices = (app: INestApplication) => {
-  const configService = app.get(ConfigService<Configs, true>);
+  const configService = app.get(ConfigService);
 
   const grpcConfig = configService.get('grpc.auth', { infer: true });
   const credentials = grpc.ServerCredentials.createInsecure();
