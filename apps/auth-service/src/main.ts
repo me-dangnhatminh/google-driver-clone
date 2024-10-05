@@ -14,15 +14,16 @@ import * as grpc from '@grpc/grpc-js';
 
 import AppModule from './app.module';
 import buildSwagger from './infa/docs';
-import winston from './infa/adapters/winston.module';
 import { ConfigService } from './config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    logger: winston,
     abortOnError: true,
     rawBody: true,
+    bufferLogs: true,
   });
+  const log = app.get(Logger);
+  if (log) app.useLogger(log);
 
   // ----- microservices -----
   buildMicroservices(app);
