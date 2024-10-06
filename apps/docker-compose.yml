@@ -1,0 +1,18 @@
+version: "3.7"
+
+networks:
+  proxy-network:
+    external: false
+    name: proxy-network
+
+services:
+  client-ui:
+    container_name: client-ui
+    restart: always
+    build:
+      context: ./client-ui
+      dockerfile: Dockerfile
+    networks:
+      - proxy-network
+    ports:
+      - 4173:4173

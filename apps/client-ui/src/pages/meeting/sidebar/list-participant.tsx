@@ -40,7 +40,7 @@ export const ParticipantAction = () => {
   );
 };
 
-const ActionPopover = () => {
+const ActionPopover = (_props: ListParticipant.PartProps) => {
   return (
     <Popover>
       <PopoverTrigger>

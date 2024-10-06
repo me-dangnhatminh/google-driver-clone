@@ -1,7 +1,3 @@
-type Tree = {
-  files: File[];
-  folders: (Tree & { name: string })[];
-};
 export const fileUtil = Object.freeze({
   formatName: (name: string = "Untitled", slash = "-") => {
     return name.replace(/[<>:"/\\|?*]/g, slash);

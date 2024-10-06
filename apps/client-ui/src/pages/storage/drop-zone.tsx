@@ -1,3 +1,4 @@
+import { useUploadFiles } from "@hooks";
 import { PropsWithChildren, useMemo } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
@@ -7,6 +8,8 @@ const uuid = () => Math.random().toString(36).slice(2);
 export default function DropZone(
   props: PropsWithChildren<{ folderId?: string }>
 ) {
+  const uploadFiles = useUploadFiles(props.folderId);
+
   const { getRootProps } = useDropzone({
     noClick: true,
     onDrop: (acceptedFiles, _, e) => {

@@ -23,7 +23,7 @@ class ErrorBoundary extends Component<Props, State> {
     this.handleRouterError(error, errorInfo);
   }
 
-  public handleRouterError(error: Error, errorInfo: ErrorInfo) {}
+  public handleRouterError(_error: Error, _errorInfo: ErrorInfo) {}
 
   public render() {
     if (this.state.hasError) {
@@ -34,18 +34,3 @@ class ErrorBoundary extends Component<Props, State> {
 }
 
 export default ErrorBoundary;
-
-const handleRouterError = (error: Error, errorInfo: ErrorInfo) => {};
-
-// export function ErrorBoundary() {
-//   const error = useRouteError();
-
-//   if (isRouteErrorResponse(error)) {
-//     const status = error.status;
-//     if (status === 404) return <Navigate to="/404" replace />;
-//     return <>Route Error: {status}</>;
-//   }
-
-//   return <>Unknown Error</>;
-// }
-// export default ErrorBoundary;

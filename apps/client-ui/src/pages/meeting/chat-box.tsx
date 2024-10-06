@@ -17,13 +17,12 @@ interface ChatBoxProps {
   onTyping?: (message: string) => void;
 }
 
-function ChatBox(props: ChatBoxProps) {
+function ChatBox(_props: ChatBoxProps) {
   const handleSend = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const input = e.currentTarget["send-message"];
     input.value = input.value.trim();
     if (!input.value) return;
-    const text = input.value;
 
     input.value = "";
   };

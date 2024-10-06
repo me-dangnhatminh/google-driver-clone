@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { ModeToggle } from "./mode-toggle";
 
 import UserMenu from "./user-menu";
-import { RoutesPath } from "@constants";
 import { MenuIcon, Settings } from "lucide-react";
 import sidebarUtil from "@utils/side-bar.util";
 import { cn } from "@/lib/utils";
@@ -24,7 +23,7 @@ function Navbar() {
 
       <div className="flex items-center space-x-2">
         <ModeToggle />
-        <Link to={RoutesPath.PROFILE}>
+        <Link to="/settings">
           <div
             className="p-2 hover:bg-secondary rounded-full transition"
             role="button"

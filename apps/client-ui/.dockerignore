@@ -1,0 +1,13 @@
+.husky
+.github
+.vscode
+node_modules
+dist
+
+.git
+.gitignore
+.editorconfig
+*.md
+Dockerfile
+
+**/.env*
