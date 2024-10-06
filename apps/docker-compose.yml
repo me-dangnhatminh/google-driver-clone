@@ -9,6 +9,7 @@ services:
   client-ui:
     container_name: client-ui
     restart: always
+    env_file: ./client-ui/.env
     build:
       context: ./client-ui
       dockerfile: Dockerfile

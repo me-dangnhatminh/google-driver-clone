@@ -7,6 +7,7 @@ import axios, {
 } from "axios";
 
 const env = import.meta.env;
+console.log("env", env);
 const baseURL: string = env.VITE_API_URL;
 const timeout: number = 100000; // 100s
 if (!baseURL) throw new Error("API URL is not defined");
