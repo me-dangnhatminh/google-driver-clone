@@ -5,14 +5,14 @@ import svgrPlugin from "vite-plugin-svgr";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command, mode }) => {
-  const env = loadEnv(mode, process.cwd());
-  Object.assign(process.env, env);
+  Object.assign(process.env, loadEnv(mode, process.cwd()));
   return {
+    mode,
     plugins: [react(), viteTsconfigPaths(), svgrPlugin()],
     server: {
       host: true,
       watch: { usePolling: true },
-      port: 4173,
+      port: 5173,
     },
   };
 });

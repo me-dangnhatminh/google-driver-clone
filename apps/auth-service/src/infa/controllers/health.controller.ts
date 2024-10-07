@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, VERSION_NEUTRAL } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import {
   HealthCheck,
@@ -6,7 +6,7 @@ import {
   HttpHealthIndicator,
 } from '@nestjs/terminus';
 
-@Controller('health')
+@Controller({ path: 'health', version: VERSION_NEUTRAL })
 @ApiTags('health')
 export class HealthController {
   constructor(
@@ -18,9 +18,6 @@ export class HealthController {
   @HealthCheck()
   @ApiBearerAuth()
   checks() {
-    return this.health.check([
-      () => this.http.pingCheck('google', 'https://google.com'),
-      () => this.http.pingCheck('nestjs', 'https://nestjs.com'),
-    ]);
+    return this.health.check([]);
   }
 }

@@ -56,15 +56,21 @@ http:
           - url: http://172.17.0.1:5173
 
     auth-service:
-      healthCheck:
-        path: /health
-        interval: 10s
-        timeout: 2s
       loadBalancer:
+        healthCheck:
+          mode: http
+          path: /api/health
+          interval: 10s
+          timeout: 2s
         servers:
           - url: http://172.17.0.1:3000
 
     storage-service:
       loadBalancer:
+        healthCheck:
+          mode: http
+          path: /api/health
+          interval: 10s
+          timeout: 2s
         servers:
           - url: http://172.17.0.1:4000

@@ -2,12 +2,7 @@ declare const module: any;
 
 import { Server } from 'http';
 import { NestFactory } from '@nestjs/core';
-import {
-  INestApplication,
-  Logger,
-  RequestMethod,
-  VersioningType,
-} from '@nestjs/common';
+import { INestApplication, Logger, VersioningType } from '@nestjs/common';
 import { GrpcOptions, Transport } from '@nestjs/microservices';
 import { ReflectionService } from '@grpc/reflection';
 import * as grpc from '@grpc/grpc-js';
@@ -29,9 +24,7 @@ async function bootstrap() {
   buildMicroservices(app);
 
   // ----- http server -----
-  app.setGlobalPrefix('api', {
-    exclude: [{ path: 'health', method: RequestMethod.GET }],
-  });
+  app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, prefix: 'v' });
   buildSwagger(app);
   await app
