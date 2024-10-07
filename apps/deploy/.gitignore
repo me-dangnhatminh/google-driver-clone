@@ -1,7 +1,7 @@
 **/.env
 
-**/postgres-data/*
-**/redis-data/*
-**/mongo-data/*
-**/rabbitmq-data/*
-**/vault-data/*
+postgres-data
+redis-data
+mongo-data
+rabbitmq-data
+vault-data
