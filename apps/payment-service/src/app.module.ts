@@ -26,8 +26,9 @@ import { HttpModule } from '@nestjs/axios';
       expandVariables: true,
       load: config,
     }),
-    TerminusModule,
     HttpModule,
+    TerminusModule,
+
     PersistencesModule,
     CacheModule,
     StripeModule,

@@ -14,6 +14,8 @@ import { HTTPLogger } from 'libs/common';
 import { AuthClientModule } from 'libs/auth-client';
 import { StorageClientModule } from 'libs/storage-client';
 import { PaymentClientModule } from 'libs/payment-client';
+import { HttpModule } from '@nestjs/axios';
+import { TerminusModule } from '@nestjs/terminus';
 
 @Module({
   imports: [
@@ -23,6 +25,9 @@ import { PaymentClientModule } from 'libs/payment-client';
     CacheModule,
     PersistencesModule,
     MulterModule,
+
+    HttpModule,
+    TerminusModule,
     // ===================== GRPC CLIENT MODULES =====================
     AuthClientModule,
     PaymentClientModule,

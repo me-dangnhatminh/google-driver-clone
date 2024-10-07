@@ -10,6 +10,10 @@ export default registerAs('app', () => {
   const valid = configSchema.safeParse({
     port: process.env.PORT,
     host: process.env.HOST,
+    headerName: {
+      user: process.env.HEADER_NAME_USER,
+      anonymous: process.env.HEADER_NAME_ANONYMOUS,
+    },
   });
   if (valid.success) return valid.data;
   const msg = valid.error.errors.map((err) => err.message).join(', ');

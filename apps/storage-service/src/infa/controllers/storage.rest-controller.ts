@@ -63,7 +63,9 @@ import {
 const RootOrKey = z.union([z.literal('root'), UUID]);
 type RootOrKey = Omit<string, 'root'> | 'root';
 
-@Controller()
+@Controller({
+  version: '1',
+})
 @UseGuards(Authenticated, StorageLoaded)
 export class StorageRestController {
   constructor(

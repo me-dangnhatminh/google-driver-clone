@@ -10,6 +10,7 @@ import appConfig from './app.config';
 import dbConfig from './db.config';
 import rmqConfig from './rmq.config';
 import grpcConfig from './grpc.config';
+import authConfig from './auth.config';
 
 const redisConfig = registerAs('redis', () => ({
   host: process.env.REDIS_HOST || 'localhost',
@@ -29,6 +30,7 @@ const swaggerConfig = registerAs('swagger', () => ({
 
 const configs = {
   app: appConfig,
+  auth: authConfig,
   db: dbConfig,
   grpc: grpcConfig,
   redis: redisConfig,

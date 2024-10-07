@@ -40,7 +40,6 @@ const config = registerAs('grpc', () => {
       loader,
       channelOptions: {
         retryPolicy,
-        hello: 'world',
       },
     },
     storage: {

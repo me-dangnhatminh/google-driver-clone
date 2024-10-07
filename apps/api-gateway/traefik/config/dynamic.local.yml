@@ -3,6 +3,10 @@
 
 http:
   middlewares:
+    latency-check:
+      circuitBreaker:
+        expression: "LatencyAtQuantileMS(50.0) > 100"
+
     cors:
       headers:
         accessControlAllowMethods:
@@ -23,12 +27,14 @@ http:
         burst: 10
         period: 1s
 
-    auth:
+    forward-auth:
       forwardAuth:
-        address: /api/v1/auth/validate
-        authResponseHeaders:
-          - x-authenticated-user
-          - x-scope
+        address: https://localhost/api/v1/auth/validate
+        trustForwardHeader: true
+        authResponseHeadersRegex: "^X-"
+        tls:
+          insecureSkipVerify: true
+
   routers:
     client-ui:
       rule: PathPrefix(`/`)
@@ -40,13 +46,17 @@ http:
       rule: PathRegexp(`^/api/v[0-9]+/auth`)
       service: auth-service
       entrypoints: https
+      middlewares:
+        - cors
       tls: {}
 
     storage:
       rule: PathRegexp(`^/api/v[0-9]+/storage`)
-      service: auth-service
+      service: storage-service
       entrypoints: https
-        - auth
+      middlewares:
+        - cors
+        - forward-auth
       tls: {}
 
   services:

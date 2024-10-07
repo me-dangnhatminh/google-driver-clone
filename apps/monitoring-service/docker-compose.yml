@@ -1,9 +1,5 @@
 version: "3.7"
 
-volumes:
-  prometheus_data: {}
-  grafana_data: {}
-
 networks:
   proxy-network:
     external: false
@@ -16,7 +12,6 @@ services:
     image: prom/prometheus:v2.36.2
     volumes:
       - ./prometheus/:/etc/prometheus/
-      - prometheus_data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
@@ -92,7 +87,7 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - grafana_data:/var/lib/grafana
+      - ./grafana_data:/var/lib/grafana
       - ./grafana/provisioning/:/etc/grafana/provisioning/
     env_file:
       - ./grafana/config.monitoring

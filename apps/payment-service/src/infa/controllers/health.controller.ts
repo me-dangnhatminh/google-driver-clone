@@ -1,27 +1,15 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, VERSION_NEUTRAL } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import {
-  HealthCheck,
-  HealthCheckService,
-  HttpHealthIndicator,
-  MemoryHealthIndicator,
-} from '@nestjs/terminus';
+import { HealthCheck, HealthCheckService } from '@nestjs/terminus';
 
-@Controller({ path: 'health' })
+@Controller({ path: 'health', version: VERSION_NEUTRAL })
 @ApiTags('health')
 export class HealthController {
-  constructor(
-    private health: HealthCheckService,
-    private memory: MemoryHealthIndicator,
-    private http: HttpHealthIndicator,
-  ) {}
+  constructor(private health: HealthCheckService) {}
 
   @Get()
   @HealthCheck()
   check() {
-    return this.health.check([
-      () => this.http.pingCheck('google', 'https://google.com'),
-      () => this.memory.checkHeap('memory_heap', 150 * 1024 * 1024),
-    ]);
+    return this.health.check([]);
   }
 }

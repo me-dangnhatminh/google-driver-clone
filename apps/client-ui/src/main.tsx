@@ -48,8 +48,7 @@ export function App() {
     new ReactQuery.QueryClient({
       defaultOptions: {
         queries: {
-          retry: 3,
-          retryDelay: 1000,
+          retry: false,
           refetchOnWindowFocus: false,
           refetchOnMount: false,
           refetchOnReconnect: false,

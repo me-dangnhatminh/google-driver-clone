@@ -10,6 +10,7 @@ import { Server } from 'http';
 import { ConfigService } from './config';
 import { AppModule } from 'src/app.module';
 import setupSwagger from './infa/docs';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 const buildMicroservice = (app: INestApplication) => {
   const configService = app.get(ConfigService);
@@ -53,7 +54,7 @@ const buildRmq = (app: INestApplication) => {
 };
 
 async function bootstrap() {
-  const app = await NestFactory.create<INestApplication>(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     abortOnError: true,
     rawBody: true,
     bufferLogs: true,
@@ -61,6 +62,7 @@ async function bootstrap() {
   const log = app.get(Logger);
   if (log) app.useLogger(log);
 
+  app.disable('x-powered-by'); // Disable x-powered-by header
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, prefix: 'v' });
   setupSwagger(app);
