@@ -8,7 +8,12 @@ import providers from 'src/app';
 
 import { PersistencesModule } from './infa/persistence';
 import { controllers } from './infa/controllers';
-import { CacheModule, MulterModule, WinstonModule } from './infa/adapters';
+import {
+  CacheModule,
+  ElasticsearchModule,
+  MulterModule,
+  WinstonModule,
+} from './infa/adapters';
 
 import { HTTPLogger } from 'libs/common';
 import { AuthClientModule } from 'libs/auth-client';
@@ -28,6 +33,8 @@ import { TerminusModule } from '@nestjs/terminus';
 
     HttpModule,
     TerminusModule,
+    ElasticsearchModule,
+
     // ===================== GRPC CLIENT MODULES =====================
     AuthClientModule,
     PaymentClientModule,
@@ -35,14 +42,14 @@ import { TerminusModule } from '@nestjs/terminus';
 
     ClientsModule.register([
       {
-        name: 'StorageServiceRmq',
+        name: 'StorageQueue',
         transport: Transport.RMQ,
         options: {
+          noAck: true,
+          persistent: true,
           urls: ['amqp://localhost:5672'],
-          queue: 'storage-service',
-          queueOptions: {
-            durable: false,
-          },
+          queue: 'storage_queue',
+          queueOptions: { durable: true },
         },
       },
     ]),

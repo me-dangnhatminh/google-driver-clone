@@ -62,8 +62,8 @@ export function App() {
     })
   );
   return (
-    <React.Suspense fallback={<Spinner.SpinnerScreen />}>
-      <Sentry.ErrorBoundary fallback={<UnknownError />}>
+    <Sentry.ErrorBoundary fallback={<UnknownError />} showDialog>
+      <React.Suspense fallback={<Spinner.SpinnerScreen />}>
         <ReactQuery.QueryClientProvider client={queryClient}>
           <ReactQueryDevtools initialIsOpen={false} />
           <Auth0Providered>
@@ -72,8 +72,8 @@ export function App() {
             </Themed>
           </Auth0Providered>
         </ReactQuery.QueryClientProvider>
-      </Sentry.ErrorBoundary>
-    </React.Suspense>
+      </React.Suspense>
+    </Sentry.ErrorBoundary>
   );
 }
 

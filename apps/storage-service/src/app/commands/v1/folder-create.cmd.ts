@@ -1,15 +1,17 @@
 import { CommandHandler, ICommand, ICommandHandler } from '@nestjs/cqrs';
-import { TransactionHost } from '@nestjs-cls/transactional';
+import { Transactional, TransactionHost } from '@nestjs-cls/transactional';
 import {
   BadRequestException,
   ForbiddenException,
+  Inject,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
 import * as z from 'zod';
 
-import { FolderInfo, PastTime, UUID } from 'src/domain';
+import { FolderInfo, PastTime, StorageEvent, UUID } from 'src/domain';
 import { AppError } from 'src/common';
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
+import { ClientProxy } from '@nestjs/microservices';
 
 export const FolderCreateDTO = z.object({
   name: z.string(),
@@ -56,11 +58,13 @@ export class FolderCreateCmd implements ICommand {
 
 @CommandHandler(FolderCreateCmd)
 export class FolderCreateHandler implements ICommandHandler<FolderCreateCmd> {
-  private readonly tx: PrismaClient;
-  constructor(private readonly txHost: TransactionHost) {
-    this.tx = this.txHost.tx as PrismaClient; // TODO: not shure this run
-  }
+  private readonly tx = this.txHost.tx;
+  constructor(
+    private readonly txHost: TransactionHost<TransactionalAdapterPrisma>,
+    @Inject('StorageQueue') private readonly storageQueue: ClientProxy,
+  ) {}
 
+  @Transactional()
   async execute(command: FolderCreateCmd) {
     const item = command.item;
     const folder = await this.tx.folder.findUnique({
@@ -115,6 +119,9 @@ export class FolderCreateHandler implements ICommandHandler<FolderCreateCmd> {
         },
       }),
     );
+
     await Promise.all(tasks);
+    const event = new StorageEvent({ type: 'folder_created', data: item });
+    await this.storageQueue.emit(`storage.${rootId}`, event);
   }
 }

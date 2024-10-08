@@ -70,7 +70,7 @@ http:
         healthCheck:
           mode: http
           path: /api/health
-          interval: 10s
+          interval: 2s
           timeout: 2s
         servers:
           - url: http://172.17.0.1:3000
@@ -80,7 +80,7 @@ http:
         healthCheck:
           mode: http
           path: /api/health
-          interval: 10s
+          interval: 2s
           timeout: 2s
         servers:
           - url: http://172.17.0.1:4000

@@ -14,7 +14,8 @@ import DocModal from "./doc-modal";
 import StoragePage from "./storage.page";
 
 export default function Index() {
-  const params = useParams<{ folderId?: string }>();
+  const params = useParams<{ label?: string; folderId?: string }>();
+
   const { isAuthenticated: isAuth } = useAuth0();
   const location = useLocation();
   const pathname = location.pathname;

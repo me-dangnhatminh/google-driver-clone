@@ -18,15 +18,15 @@ export class ElasticsearchModule {
   constructor(private readonly elasticsearchService: ElasticsearchService) {}
 
   onModuleInit() {
-    this.elasticsearchService
-      .ping()
-      .then((v) => {
-        if (v) this.logger.log('Elasticsearch is connected');
-        else this.logger.error('Elasticsearch is not connected');
-      })
-      .catch((err) => {
-        this.logger.error('Elasticsearch is not connected', err);
-        throw err;
+    // create index if not exists
+    this.elasticsearchService.indices
+      .exists({ index: ['files', 'folders', 'storages'] })
+      .then((res) => {
+        if (!res) {
+          this.elasticsearchService.indices.create({ index: 'files' });
+          this.elasticsearchService.indices.create({ index: 'folders' });
+          this.elasticsearchService.indices.create({ index: 'storages' });
+        }
       });
   }
 }

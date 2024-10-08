@@ -43,8 +43,9 @@ const buildRmq = (app: INestApplication) => {
     options: {
       urls: [rmqConfig.url],
       queue: rmqConfig.queue,
-      noAck: false,
-      queueOptions: { durable: false },
+      noAck: true,
+      persistent: true,
+      queueOptions: { durable: true },
     },
   });
 

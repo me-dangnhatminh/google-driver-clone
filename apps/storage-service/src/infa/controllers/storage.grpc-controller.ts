@@ -1,5 +1,5 @@
 import { Metadata } from '@grpc/grpc-js';
-import { Transactional, TransactionHost } from '@nestjs-cls/transactional';
+import { TransactionHost } from '@nestjs-cls/transactional';
 import { Controller, Logger } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import {
@@ -10,12 +10,13 @@ import {
 
 import {
   FileUploadCmd,
-  MyFolderContentQuery,
   FolderCreateCmd,
   FolderUpdateCmd,
   HardDeleteItemCmd,
   StorageInitialCmd,
-} from 'src/app';
+} from 'src/app/commands';
+import { MyFolderContentQuery, GetStorageQuery } from 'src/app/queries';
+
 import { AppError } from 'src/common';
 import { FileRef, MyStorage } from 'src/domain';
 import * as rx from 'rxjs';
@@ -23,8 +24,6 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import { InvalidArgumentRpcException, UnknownRpcException } from 'libs/common';
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
-import { Cache } from '@nestjs/cache-manager';
-import { GetStorageQuery } from 'src/app/queries/get-storage.query';
 
 @Controller()
 export class StorageGrpcController {
@@ -34,33 +33,29 @@ export class StorageGrpcController {
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
     private readonly txHost: TransactionHost<TransactionalAdapterPrisma>,
-    private readonly cacheManager: Cache,
   ) {}
 
   @GrpcMethod('StorageService', 'get')
   async get(request) {
-    const query = new GetStorageQuery(request);
+    let query: GetStorageQuery;
+    try {
+      query = new GetStorageQuery(request);
+    } catch (error: any) {
+      console.error(error);
+      throw new UnknownRpcException(error.message);
+    }
     return await this.queryBus.execute(query);
   }
 
   @GrpcMethod('StorageService', 'initial')
-  @Transactional()
   async initial(request) {
-    let cmd: StorageInitialCmd;
     request['ownerId'] = request['owner_id'];
-    try {
-      cmd = new StorageInitialCmd(request);
-    } catch (err) {
-      this.logger.debug({ request, error: err });
-      const msg = err instanceof AppError ? err.message : 'Invalid input';
-      throw new InvalidArgumentRpcException(msg);
-    }
+    const cmd = new StorageInitialCmd(request);
     await this.commandBus.execute(cmd);
     return cmd.input;
   }
 
   @GrpcMethod('StorageService', 'update')
-  @Transactional()
   async update(
     request: Partial<{
       name: string;
@@ -105,7 +100,6 @@ export class StorageGrpcController {
   }
 
   @GrpcMethod('StorageService', 'createFolder')
-  @Transactional()
   createFolder(request, metadata: Metadata) {
     try {
       const accessorId: string = String(metadata.get('accessorId')[0]);
@@ -125,7 +119,6 @@ export class StorageGrpcController {
   }
 
   @GrpcMethod('StorageService', 'updateFolder')
-  @Transactional()
   updateFolder(request, metadata: Metadata) {
     try {
       const accessorId: string = String(metadata.get('accessorId')[0]);
@@ -145,7 +138,6 @@ export class StorageGrpcController {
   }
 
   @GrpcMethod('StorageService', 'hardDeleteItem')
-  @Transactional()
   async deleteItem(request, metadata: Metadata) {
     try {
       const accessorId: string = String(metadata.get('accessorId')[0]);
@@ -164,7 +156,6 @@ export class StorageGrpcController {
   }
 
   @GrpcStreamMethod('StorageService', 'uploadFile')
-  @Transactional()
   uploadFile(request: rx.Observable<any>, metadata: Metadata) {
     const data = {
       rootId: String(metadata.get('rootId')[0]),

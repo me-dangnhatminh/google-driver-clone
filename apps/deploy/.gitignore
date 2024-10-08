@@ -5,3 +5,4 @@ redis-data
 mongo-data
 rabbitmq-data
 vault-data
+elasticsearch-data

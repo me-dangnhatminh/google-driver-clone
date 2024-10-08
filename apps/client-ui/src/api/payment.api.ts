@@ -3,10 +3,8 @@ import Api from "./api";
 import z from "zod";
 
 const PaymentBillingSessionResponseSchema = z.object({
-  data: z.object({
-    clientSecret: z.string(),
-    expiresAt: z.coerce.date(),
-  }),
+  clientSecret: z.string(),
+  expiresAt: z.coerce.date(),
 });
 
 const CustomerBilligPortalResponse = z.object({
@@ -27,7 +25,11 @@ export class PaymentApi extends Api {
   static createBillingSession = (options?: AxiosRequestConfig) => {
     const url = PaymentApi.END_POINT.CREATE_BILLING_SESSION;
     return Api.get(url, null, options).then(({ data }) => {
-      return PaymentBillingSessionResponseSchema.parse(data);
+      // TODO: fix
+      return {
+        clientSecret: "",
+        expiresAt: new Date(),
+      };
     });
   };
 
@@ -39,7 +41,8 @@ export class PaymentApi extends Api {
     return Api.get(url, req, options)
       .then(({ data }) => data)
       .then((data) => {
-        return CustomerBilligPortalResponse.parse(data);
+        // TODO: fix
+        return { id: "", url: "" };
       });
   };
 }

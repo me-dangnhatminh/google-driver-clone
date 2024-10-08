@@ -31,13 +31,13 @@ export class GetStorageHandler implements IQueryHandler<GetStorageQuery, any> {
     }
 
     if ('ref_if' in input && input.ref_if) {
-      return this.tx.myStorage.findUniqueOrThrow({
+      return await this.tx.myStorage.findUniqueOrThrow({
         where: { refId: input.ref_if },
       });
     }
 
     if ('owner_id' in input && input.owner_id) {
-      return this.tx.myStorage.findUniqueOrThrow({
+      return await this.tx.myStorage.findUniqueOrThrow({
         where: { ownerId: input.owner_id },
       });
     }

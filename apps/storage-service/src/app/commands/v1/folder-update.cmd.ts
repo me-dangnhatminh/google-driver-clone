@@ -2,14 +2,16 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  Inject,
 } from '@nestjs/common';
 import { CommandHandler, ICommand, ICommandHandler } from '@nestjs/cqrs';
-import { PrismaClient } from '@prisma/client';
-import { TransactionHost } from '@nestjs-cls/transactional';
+import { Transactional, TransactionHost } from '@nestjs-cls/transactional';
 
-import { Folder, UUID } from 'src/domain';
+import { Folder, StorageEvent, UUID } from 'src/domain';
 
 import { UpdateItemDTO } from './file-update.cmd';
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
+import { ClientProxy } from '@nestjs/microservices';
 
 export class FolderUpdateCmd implements ICommand {
   constructor(
@@ -31,11 +33,13 @@ export class FolderUpdateCmd implements ICommand {
 }
 @CommandHandler(FolderUpdateCmd)
 export class FolderUpdateHandler implements ICommandHandler<FolderUpdateCmd> {
-  private readonly tx: PrismaClient;
-  constructor(private readonly txHost: TransactionHost) {
-    this.tx = this.txHost.tx as PrismaClient; // TODO: not shure this run
-  }
+  private readonly tx = this.txHost.tx;
+  constructor(
+    private readonly txHost: TransactionHost<TransactionalAdapterPrisma>,
+    @Inject('StorageQueue') private readonly storageQueue: ClientProxy,
+  ) {}
 
+  @Transactional()
   async execute({ method, folderId, accessorId }: FolderUpdateCmd) {
     const folder = await this.tx.folder.findUnique({ where: { id: folderId } });
     if (!folder) throw new BadRequestException('Folder not found');
@@ -46,64 +50,76 @@ export class FolderUpdateHandler implements ICommandHandler<FolderUpdateCmd> {
     const item = folder as unknown as Folder; // TODO: fix this
     switch (method.label) {
       case 'rename':
-        return this.rename(item, method.name);
+        await this.rename(item, method.name);
+        break;
       case 'archive':
-        return this.archive(item);
+        await this.archive(item);
+        break;
       case 'unarchive':
-        return this.unarchive(item);
+        await this.unarchive(item);
+        break;
       case 'pin':
-        return this.pin(item);
+        await this.pin(item);
+        break;
       case 'unpin':
-        return this.unpin(item);
+        await this.unpin(item);
+        break;
       default:
         throw new Error('Invalid update label');
     }
+    const event = new StorageEvent({ type: 'folder_updated', data: item });
+    const rootId = item.rootId ?? item.id;
+    await this.storageQueue.emit(`storage.${rootId}`, event);
   }
   async rename(item: Folder, name: string) {
-    return this.tx.folder.update({ where: { id: item.id }, data: { name } });
+    const data = { name, updatedAt: new Date() };
+    await this.tx.folder.update({ where: { id: item.id }, data });
+    Object.assign(item, data);
   }
 
   async archive(item: Folder) {
     if (item.archivedAt) throw new ConflictException('Folder already archived');
     if (!item.rootId) throw new BadRequestException('Root cannot be archived');
+    const data = { archivedAt: new Date() };
     await this.tx.folder.updateMany({
       where: {
         rootId: item.rootId,
         lft: { gte: item.lft },
         rgt: { lte: item.rgt },
       },
-      data: { archivedAt: new Date() },
+      data,
     });
+    Object.assign(item, data);
   }
 
   async unarchive(item: Folder) {
     if (!item.archivedAt) throw new BadRequestException('Folder not archived');
     if (!item.rootId) throw new BadRequestException('Root cannot be archived');
+    const data = { archivedAt: null };
     await this.tx.folder.updateMany({
       where: {
         rootId: item.rootId,
         lft: { gte: item.lft },
         rgt: { lte: item.rgt },
       },
-      data: { archivedAt: null },
+      data,
     });
+    Object.assign(item, data);
   }
 
   async pin(item: Folder) {
     if (item.pinnedAt) throw new BadRequestException('Folder already pinned');
     if (!item.rootId) throw new BadRequestException('Root cannot be archived');
-    await this.tx.folder.update({
-      where: { id: item.id },
-      data: { pinnedAt: new Date() },
-    });
+    const data = { pinnedAt: new Date(), updatedAt: new Date() };
+    await this.tx.folder.update({ where: { id: item.id }, data });
+    Object.assign(item, data);
   }
 
   async unpin(item: Folder) {
     if (!item.pinnedAt) throw new BadRequestException('Folder not pinned');
     if (!item.rootId) throw new BadRequestException('Root cannot be archived');
-    await this.tx.folder.update({
-      where: { id: item.id },
-      data: { pinnedAt: null },
-    });
+    const data = { pinnedAt: null, updatedAt: new Date() };
+    await this.tx.folder.update({ where: { id: item.id }, data });
+    Object.assign(item, data);
   }
 }

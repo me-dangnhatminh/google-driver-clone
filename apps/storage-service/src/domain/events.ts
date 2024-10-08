@@ -1,35 +1,85 @@
-// export type BaseEvent<T extends string, D = unknown> = {
-//   type: T;
-//   data: D;
-// };
+import { FileRef, Folder, FolderInfo, MyStorage } from './models';
 
-// export type FileAddedEvent = BaseEvent<
-//   'file_added',
-//   {
-//     folderId: string;
-//     file: {
-//       id: string;
-//       name: string;
-//       size: number;
-//       mimeType: string;
-//       createdAt: Date;
-//     };
-//   }
-// >;
+export type BaseEvent<T extends string, D = unknown> = {
+  type: T;
+  data: D;
+};
 
-// export type FileRemovedEvent = BaseEvent<
-//   'file_removed',
-//   {
-//     folderId: string;
-//     fileId: string;
-//   }
-// >;
+export const EventTypes = {
+  storage_initialised: 'storage_initialised',
+  file_added: 'file_added',
+  file_created: 'file_created',
+  file_updated: 'file_updated',
+  file_deleted: 'file_deleted',
 
-// export type FileMovedEvent = BaseEvent<
-//   'file_moved',
-//   {
-//     fromFolderId: string;
-//     toFolderId: string;
-//     fileId: string;
-//   }
-// >;
+  folder_added: 'folder_added',
+  folder_created: 'folder_created',
+  folder_updated: 'folder_updated',
+  folder_deleted: 'folder_deleted',
+} as const;
+
+export type TStorageInitialisedEvent = BaseEvent<
+  typeof EventTypes.storage_initialised,
+  MyStorage
+>;
+export type TFileAddedEvent = BaseEvent<typeof EventTypes.file_added, FileRef>;
+export type TFileCreatedEvent = BaseEvent<
+  typeof EventTypes.file_created,
+  FileRef
+>;
+export type TFileUpdatedEvent = BaseEvent<
+  typeof EventTypes.file_updated,
+  FileRef
+>;
+
+export type TFileDeletedEvent = BaseEvent<
+  typeof EventTypes.file_deleted,
+  string[]
+>;
+
+export type TFolderAddedEvent = BaseEvent<
+  typeof EventTypes.folder_added,
+  Folder
+>;
+
+export type TFolderCreatedEvent = BaseEvent<
+  typeof EventTypes.folder_created,
+  FolderInfo
+>;
+
+export type TFolderUpdatedEvent = BaseEvent<
+  typeof EventTypes.folder_updated,
+  FolderInfo
+>;
+
+export type TFolderDeletedEvent = BaseEvent<
+  typeof EventTypes.folder_deleted,
+  { files: string[]; folders: string[] }
+>;
+
+export type TStorageEvent =
+  | TStorageInitialisedEvent
+  | TFileAddedEvent
+  | TFileCreatedEvent
+  | TFileUpdatedEvent
+  | TFileDeletedEvent
+  | TFolderAddedEvent
+  | TFolderCreatedEvent
+  | TFolderUpdatedEvent
+  | TFolderDeletedEvent;
+export class StorageEvent<T extends TStorageEvent> {
+  public readonly type: T['type'];
+  public readonly data: T['data'];
+  constructor(event: T) {
+    this.type = event.type;
+    this.data = event.data;
+  }
+
+  static fromEvent(event: TStorageEvent) {
+    return new StorageEvent(event);
+  }
+
+  tuple() {
+    return [this.type, this] as const;
+  }
+}

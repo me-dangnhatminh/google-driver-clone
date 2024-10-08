@@ -1,9 +1,11 @@
 import z from 'zod';
-import { FileRef, Folder, FolderContent } from 'src/domain';
+import { FileRef, Folder, FolderContent, StorageEvent } from 'src/domain';
 import { CommandHandler, ICommand, ICommandHandler } from '@nestjs/cqrs';
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
-import { TransactionHost } from '@nestjs-cls/transactional';
+import { Transactional, TransactionHost } from '@nestjs-cls/transactional';
 import Decimal from 'decimal.js';
+import { Inject } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 
 export const FolderAddContentInput = z.object({
   accessorId: z.string(),
@@ -38,8 +40,10 @@ export class FolderAddContentHandler
   private readonly tx = this.txHost.tx;
   constructor(
     private readonly txHost: TransactionHost<TransactionalAdapterPrisma>,
+    @Inject('StorageQueue') private readonly storageQueue: ClientProxy,
   ) {}
 
+  @Transactional()
   async execute(cmd: FolderAddContentCmd) {
     const { files, folders } = cmd.content;
     const folder: Folder = await this.tx.folder
@@ -109,6 +113,10 @@ export class FolderAddContentHandler
     });
 
     await Promise.all(tasks);
+
+    // =================== Event =================== //
+    const event = new StorageEvent({ type: 'folder_added', data: folder });
+    await this.storageQueue.emit(`storage.${rootId}`, event);
   }
 }
 

@@ -3,8 +3,8 @@ import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-pr
 import { Logger } from '@nestjs/common';
 import { CommandHandler, ICommand, ICommandHandler } from '@nestjs/cqrs';
 import { MyStorage, RootFolder } from 'src/domain';
-import z from 'zod';
 import { randomUUID as uuid } from 'crypto';
+import z from 'zod';
 
 export const InitialStorageInput = MyStorage.omit({ refId: true });
 export type InitialStorageInput = z.infer<typeof InitialStorageInput>;
@@ -35,9 +35,9 @@ export class StorageInitialHandler
       ownerId: input.ownerId,
       name: 'My Storage',
     });
+
     await this.tx.myStorage.create({
       data: { ...storage, ref: { create: root } },
     });
-    this.logger.debug(`Storage created: ${input.id}`);
   }
 }

@@ -16,19 +16,15 @@ export class StorageLoaded implements CanActivate {
   constructor(@Inject('StorageService') private readonly storageService) {}
 
   canActivate(context: ExecutionContext) {
+    if (context.getType() !== 'http') return true;
+
     const req = context.switchToHttp().getRequest();
-    const owner_id: string = req.auth.user.id;
-    if (!owner_id) {
-      this.logger.error('No owner_id found in request');
-      throw new InternalServerErrorException();
-    }
-    const meta = new grpc.Metadata();
-    meta.add('accessorId', owner_id);
-    const get: rx.Observable<any> = this.storageService.get({ owner_id }, meta);
-    return rx.from(get).pipe(
-      rx.catchError((err) => {
-        this.logger.error(err);
-        throw new InternalServerErrorException();
+    const owner_id: string = req.auth.userId;
+
+    if (!owner_id) throw new InternalServerErrorException();
+    return rx.from(this.storageService.get({ owner_id })).pipe(
+      rx.catchError(() => {
+        return this.storageService.initial({ owner_id });
       }),
       rx.map((storage) => {
         req.storage = storage;

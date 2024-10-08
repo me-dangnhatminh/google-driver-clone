@@ -19,7 +19,6 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { Transactional } from '@nestjs-cls/transactional';
 import {
   FileFieldsInterceptor as FileFields,
   FileInterceptor as FileField,
@@ -59,20 +58,23 @@ import {
   structureToDoamin,
   totalSize,
 } from '../adapters';
+import { ElasticsearchService } from '@nestjs/elasticsearch';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 const RootOrKey = z.union([z.literal('root'), UUID]);
 type RootOrKey = Omit<string, 'root'> | 'root';
 
-@Controller({
-  version: '1',
-})
+@Controller({ version: '1' })
 @UseGuards(Authenticated, StorageLoaded)
+@ApiTags('storage')
+@ApiBearerAuth()
 export class StorageRestController {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
     private readonly diskStorageService: DiskStorageService,
     @Inject('StorageService') private readonly storageService,
+    private readonly elasticsearchService: ElasticsearchService,
   ) {}
 
   @Get(StorageRoutes.STORAGE_DETAIL)
@@ -85,7 +87,7 @@ export class StorageRestController {
   getFolder(
     @HttpUser('id') userId: string,
     @HttpStorage('refId') rootId: string,
-    @Query('label', useZodPipe(ItemLabel)) label: ItemLabel,
+    @Query('label', useZodPipe(ItemLabel.default('my'))) label: ItemLabel,
     @Param('key', useZodPipe(RootOrKey)) key: RootOrKey,
     @Query(useZodPipe(Pagination)) pagination: Pagination,
   ) {
@@ -102,7 +104,7 @@ export class StorageRestController {
   }
 
   @Post(StorageRoutes.FOLDER_CREATE)
-  createFolder(
+  async createFolder(
     @HttpUser('id') userId: string,
     @HttpStorage('refId') rootId: string,
     @Body(useZodPipe(FolderCreateDTO)) dto: FolderCreateDTO,
@@ -113,7 +115,18 @@ export class StorageRestController {
     meta.add('accessorId', userId);
     const item = { id: uuid(), ownerId: userId, ...dto };
     const fetch = this.storageService.createFolder({ folderId, item }, meta);
-    return rx.lastValueFrom(fetch);
+    const res = await rx.lastValueFrom(fetch);
+
+    await this.elasticsearchService.index({
+      index: 'storage',
+      id: item.id,
+      body: {
+        name: item.name,
+        ownerId: item.ownerId,
+        folderId: folderId,
+      },
+    });
+    return res;
   }
 
   @Patch(StorageRoutes.FOLDER_UPDATE)
@@ -146,6 +159,24 @@ export class StorageRestController {
     );
   }
 
+  // search
+  @Get('storage/search')
+  @ApiQuery({ name: 'q', required: true })
+  async search(@Query('q') query: string) {
+    const res = await this.elasticsearchService.search({
+      index: 'folders',
+      body: {
+        query: {
+          match: {
+            name: query,
+          },
+        },
+      },
+    });
+
+    return res;
+  }
+
   // ========================== OTHER ========================== //
 
   // ================================================== //
@@ -153,7 +184,6 @@ export class StorageRestController {
   // ================================================== //
   @Post(StorageRoutes.FILE_UPLOAD)
   @UseInterceptors(FileField('file'))
-  @Transactional()
   async fileUpload(
     @Req() req,
     @HttpUser('id') userId: string,
@@ -170,7 +200,6 @@ export class StorageRestController {
 
   @Post(StorageRoutes.FILE_UPLOADS)
   @UseInterceptors(FileFields([{ name: 'files' }], { preservePath: true }))
-  @Transactional()
   async fileUploads(
     @Req() req,
     @HttpUser('id') userId: string,
@@ -198,7 +227,6 @@ export class StorageRestController {
   }
 
   @Get(StorageRoutes.FILE_DOWNLOAD)
-  @Transactional()
   async fileDownload(
     @HttpUser('id') userId: string,
     @Param('key', useZodPipe(UUID)) fileKey: string,
@@ -229,7 +257,6 @@ export class StorageRestController {
   }
 
   @Patch(StorageRoutes.FILE_UPDATE)
-  @Transactional()
   async fileUpdate(
     @HttpUser('id') userId: string,
     @Param('key', useZodPipe(UUID)) key: string,
@@ -241,7 +268,6 @@ export class StorageRestController {
   }
 
   @Get(StorageRoutes.FOLDER_DOWNLOAD)
-  @Transactional()
   async downloadFolder(
     @Param('key', useZodPipe(UUID)) folderId: string,
     @Res() res: Response,
@@ -266,7 +292,6 @@ export class StorageRestController {
 
   @Post(StorageRoutes.FOLDER_UPLOAD)
   @UseInterceptors(FileFields([{ name: 'files' }], { preservePath: true }))
-  @Transactional()
   async folderUpload(
     @Req() req,
     @HttpUser('id') userId: string,

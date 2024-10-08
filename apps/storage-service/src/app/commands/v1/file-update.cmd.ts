@@ -1,9 +1,14 @@
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+} from '@nestjs/common';
 import { CommandHandler, ICommand } from '@nestjs/cqrs';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
-import { TransactionHost } from '@nestjs-cls/transactional';
-import { UUID } from 'src/domain';
+import { Transactional, TransactionHost } from '@nestjs-cls/transactional';
+import { FileRef, StorageEvent, UUID } from 'src/domain';
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
+import { ClientProxy } from '@nestjs/microservices';
 
 export const Rename = z.object({
   label: z.literal('rename'),
@@ -43,62 +48,81 @@ export class FileUpdateCmd implements ICommand {
 }
 @CommandHandler(FileUpdateCmd)
 export class FileUpdateHandler {
-  private readonly tx: PrismaClient;
-  constructor(private readonly txHost: TransactionHost) {
-    this.tx = this.txHost.tx as PrismaClient; // TODO: not shure this run
-  }
+  private readonly tx = this.txHost.tx;
+  constructor(
+    private readonly txHost: TransactionHost<TransactionalAdapterPrisma>,
+    @Inject('StorageQueue') private readonly storageQueue: ClientProxy,
+  ) {}
 
+  @Transactional()
   async execute({ method, accessorId, fileId }: FileUpdateCmd) {
-    const file = await this.tx.fileRef.findUnique({ where: { id: fileId } });
+    const file = await this.tx.fileRef.findUnique({
+      where: { id: fileId },
+      include: { folder: true },
+    });
     if (!file) throw new BadRequestException("File doesn't exist");
     if (file.ownerId !== accessorId)
       throw new ForbiddenException('Permission denied');
 
     switch (method.label) {
       case 'rename':
-        return this.rename(file, method.name);
+        await this.rename(file, method.name);
+        break;
       case 'archive':
-        return this.archive(file);
+        await this.archive(file);
+        break;
       case 'unarchive':
-        return this.unarchive(file);
+        await this.unarchive(file);
+        break;
       case 'pin':
-        return this.pin(file);
+        await this.pin(file);
+        break;
       case 'unpin':
-        return this.unpin(file);
+        await this.unpin(file);
+        break;
       default:
         throw new Error('Invalid update label');
     }
+
+    const folder = await this.tx.folder.findUniqueOrThrow({
+      where: { id: file.folder?.folderId },
+    });
+    const rootId = folder.rootId ?? folder.id;
+
+    const event = new StorageEvent({
+      type: 'file_updated',
+      data: FileRef.parse(file),
+    });
+    await this.storageQueue.emit(`storage.${rootId}`, event);
   }
 
   async rename(file: { id: string }, name: string) {
-    return this.tx.fileRef.update({ where: { id: file.id }, data: { name } });
+    const data = { name, updatedAt: new Date() };
+    await this.tx.fileRef.update({ where: { id: file.id }, data });
+    Object.assign(file, data);
   }
 
   async archive(file: { id: string }) {
-    await this.tx.fileRef.update({
-      where: { id: file.id },
-      data: { archivedAt: new Date() },
-    });
+    const data = { archivedAt: new Date(), updatedAt: new Date() };
+    await this.tx.fileRef.update({ where: { id: file.id }, data });
+    Object.assign(file, data);
   }
 
   async unarchive(file: { id: string }) {
-    await this.tx.fileRef.update({
-      where: { id: file.id },
-      data: { archivedAt: null },
-    });
+    const data = { archivedAt: null, updatedAt: new Date() };
+    await this.tx.fileRef.update({ where: { id: file.id }, data });
+    Object.assign(file, data);
   }
 
   async pin(file: { id: string }) {
-    await this.tx.fileRef.update({
-      where: { id: file.id },
-      data: { pinnedAt: new Date() },
-    });
+    const data = { pinnedAt: new Date(), updatedAt: new Date() };
+    await this.tx.fileRef.update({ where: { id: file.id }, data });
+    Object.assign(file, data);
   }
 
   async unpin(file: { id: string }) {
-    await this.tx.fileRef.update({
-      where: { id: file.id },
-      data: { pinnedAt: null },
-    });
+    const data = { pinnedAt: null, updatedAt: new Date() };
+    await this.tx.fileRef.update({ where: { id: file.id }, data });
+    Object.assign(file, data);
   }
 }

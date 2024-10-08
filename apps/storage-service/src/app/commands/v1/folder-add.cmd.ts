@@ -1,11 +1,18 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { CommandHandler, ICommand, ICommandHandler } from '@nestjs/cqrs';
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
-import { TransactionHost } from '@nestjs-cls/transactional';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+} from '@nestjs/common';
+import { Transactional, TransactionHost } from '@nestjs-cls/transactional';
 import Decimal from 'decimal.js';
 import { randomUUID as uuid } from 'crypto';
-import { FileRef, Folder, UUID } from 'src/domain';
+import { FileRef, Folder, StorageEvent, UUID } from 'src/domain';
 import { PrismaClient } from '@prisma/client';
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
+import { ElasticsearchService } from '@nestjs/elasticsearch';
+import { ClientProxy } from '@nestjs/microservices';
 
 export class AddFolderCmd implements ICommand {
   public readonly folderId: string;
@@ -32,12 +39,13 @@ export class AddFolderCmd implements ICommand {
 
 @CommandHandler(AddFolderCmd)
 export class FolderAddHandler implements ICommandHandler<AddFolderCmd> {
-  private readonly tx: PrismaClient;
+  private readonly tx = this.txHost.tx;
+  constructor(
+    private readonly txHost: TransactionHost<TransactionalAdapterPrisma>,
+    @Inject('StorageQueue') private readonly storageQueue: ClientProxy,
+  ) {}
 
-  constructor(private readonly txHost: TransactionHost) {
-    this.tx = txHost.tx;
-  }
-
+  @Transactional()
   async execute(cmd: AddFolderCmd) {
     const { folderId, accssorId, flatFiles } = cmd;
     // FIXME: fix 'any' type
@@ -116,6 +124,9 @@ export class FolderAddHandler implements ICommandHandler<AddFolderCmd> {
     });
 
     await Promise.all(tasks);
+
+    const event = new StorageEvent({ type: 'folder_added', data: folder });
+    await this.storageQueue.emit(`storage.${rootId}`, event);
   }
 }
 

@@ -1,4 +1,5 @@
-import { TransactionHost } from '@nestjs-cls/transactional';
+import { Transactional, TransactionHost } from '@nestjs-cls/transactional';
+import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
 import {
   BadRequestException,
   ForbiddenException,
@@ -7,9 +8,8 @@ import {
 } from '@nestjs/common';
 import { CommandHandler, ICommand, ICommandHandler } from '@nestjs/cqrs';
 import { ClientProxy } from '@nestjs/microservices';
-import { PrismaClient } from '@prisma/client';
 import Decimal from 'decimal.js';
-import { UUID } from 'src/domain';
+import { StorageEvent, UUID } from 'src/domain';
 import { z } from 'zod';
 
 export const ItemHardDelete = z.object({
@@ -41,24 +41,23 @@ export class HardDeleteItemCmd implements ICommand {
 export class HardDeleteItemHandler
   implements ICommandHandler<HardDeleteItemCmd>
 {
-  private readonly tx: PrismaClient;
-
+  private readonly tx = this.txHost.tx;
   constructor(
-    private readonly txHost: TransactionHost,
-    @Inject('StorageServiceRmq')
-    private readonly storageServiceRmq: ClientProxy,
-  ) {
-    this.tx = this.txHost.tx as PrismaClient; // TODO: not shure this run
-  }
+    private readonly txHost: TransactionHost<TransactionalAdapterPrisma>,
+    @Inject('StorageQueue') private readonly storageQueue: ClientProxy,
+  ) {}
 
+  @Transactional()
   async execute(command: HardDeleteItemCmd) {
     const item = command.item;
 
     switch (item.type) {
       case 'folder':
-        return this.deleteFolder(item.id);
+        await this.deleteFolder(item.id);
+        break;
       case 'file':
-        return this.deleteFile(command.rootId, item.id);
+        await this.deleteFile(command.rootId, item.id);
+        break;
       default:
         throw new Error('Unknown item type');
     }
@@ -156,9 +155,12 @@ export class HardDeleteItemHandler
       }),
     );
     await Promise.all(tasks);
-    await this.storageServiceRmq.emit('storage.files_removed', {
-      ids: fileIds,
+
+    const event = new StorageEvent({
+      type: 'folder_deleted',
+      data: { files: fileIds, folders: flatFolders.map((f) => f.id) },
     });
+    await this.storageQueue.emit(`storage.${rootId}`, event);
   }
 
   private async deleteFile(rootId: string, fileId: string) {
@@ -169,6 +171,8 @@ export class HardDeleteItemHandler
       where: { id: rootId },
       data: { size: { decrement: file.size } },
     });
-    await this.storageServiceRmq.emit('storage.file_removed', { id: fileId });
+
+    const event = new StorageEvent({ type: 'file_deleted', data: [file.id] });
+    await this.storageQueue.emit(`storage.${rootId}`, event);
   }
 }
