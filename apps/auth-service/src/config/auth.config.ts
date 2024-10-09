@@ -8,6 +8,8 @@ const configSchema = z.object({
       userId: z.string().default('x-user-id'),
       anonymous: z.string().default('x-anonymous'),
       strict: z.string().default('x-strict'),
+      roles: z.string().default('x-user-roles'),
+      permissions: z.string().default('x-user-permissions'),
     })
     .default({}),
 });

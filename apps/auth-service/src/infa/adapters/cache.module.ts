@@ -7,7 +7,7 @@ import {
   Cache,
 } from '@nestjs/cache-manager';
 
-import { ConfigService } from '@nestjs/config';
+import { ConfigService } from 'src/config';
 
 @Module({
   imports: [

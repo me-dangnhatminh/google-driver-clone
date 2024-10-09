@@ -6,18 +6,18 @@ import {
 } from '@nestjs/swagger';
 import { Server } from 'http';
 import { AddressInfo } from 'net';
+import { ConfigService } from 'src/config';
 
 export function buildSwagger(app: INestApplication) {
   const logger = new Logger('Swagger');
-  const docPrefix = 'api/docs';
-  const docName = 'Identity Service';
-  const docDesc = 'API Documentation';
-  const docVersion = '1.0';
+  const configService = app.get(ConfigService);
+  const swaggerConfig = configService.infer('swagger');
 
   const documentBuild = new DocumentBuilder()
-    .setTitle(docName)
-    .setDescription(docDesc)
-    .setVersion(docVersion)
+    .setTitle(swaggerConfig.title)
+    .setDescription(swaggerConfig.description)
+    .setVersion(swaggerConfig.version)
+    .addServer(swaggerConfig.gateway, 'Gateway')
     .addBearerAuth()
     .build();
 
@@ -27,7 +27,9 @@ export function buildSwagger(app: INestApplication) {
 
   const customOptions: SwaggerCustomOptions = {
     explorer: true,
-    customSiteTitle: docName,
+    customSiteTitle: swaggerConfig.title,
+    url: swaggerConfig.gateway,
+    useGlobalPrefix: false,
     swaggerOptions: {
       docExpansion: 'none',
       persistAuthorization: true,
@@ -39,15 +41,17 @@ export function buildSwagger(app: INestApplication) {
     },
   };
 
-  SwaggerModule.setup(docPrefix, app, document, customOptions);
-  const server: Server = app.getHttpServer();
-  server.on('listening', () => {
-    const address = server.address() as AddressInfo;
-    const host = address.address === '::' ? 'localhost' : address.address;
-    const port = address.port;
-    logger.log(`Swagger UI is running on http://${host}:${port}/${docPrefix}`);
-  });
-  return document;
+  SwaggerModule.setup(swaggerConfig.prefix, app, document, customOptions);
+  if (swaggerConfig.enabled) {
+    const server: Server = app.getHttpServer();
+    server.on('listening', () => {
+      const address = server.address() as AddressInfo;
+      const host = address.address === '::' ? 'localhost' : address.address;
+      const port = address.port;
+      const msg = `Swagger UI is running on http://${host}:${port}/${swaggerConfig.prefix}`;
+      logger.log(msg);
+    });
+  }
 }
 
 export default buildSwagger;

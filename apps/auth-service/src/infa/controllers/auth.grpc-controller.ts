@@ -20,8 +20,6 @@ export class AuthGrpcController {
     private readonly cache: Cache,
   ) {}
 
-  verifyTokenv2(request) {}
-
   @GrpcMethod('AuthService', 'verifyToken')
   async verifyToken(request) {
     const cached: any = await this.cache.get(request.token).catch(() => null);
@@ -32,7 +30,7 @@ export class AuthGrpcController {
       .getUserInfo(request.token)
       .then((res) => res.data)
       .then(({ sub, email, email_verified, name, permissions, auth, pay }) => {
-        // TODO: not good to have this here
+        const _auth = auth as any;
         return {
           id: sub,
           email,
@@ -40,6 +38,7 @@ export class AuthGrpcController {
           permissions,
           email_verified,
           metadata: Object.assign({}, auth, pay),
+          ..._auth,
         };
       })
       .catch((err: ResponseError) => {

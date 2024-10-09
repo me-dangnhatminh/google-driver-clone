@@ -1,5 +1,4 @@
 import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
-
 import { Request, Response, NextFunction } from 'express';
 
 @Injectable()
@@ -23,7 +22,7 @@ export class HTTPLogger implements NestMiddleware {
       } else if (statusCode >= 400) {
         this.logger.warn(msg);
       } else {
-        this.logger.log(msg);
+        this.logger.debug(msg);
       }
     });
 

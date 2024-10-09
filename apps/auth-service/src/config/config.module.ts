@@ -1,8 +1,9 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import {
   ConfigType,
   ConfigModule as NestConfig,
   ConfigService as NestConfigService,
+  Path,
   registerAs,
 } from '@nestjs/config';
 
@@ -21,11 +22,12 @@ const redisConfig = registerAs('redis', () => ({
 }));
 
 const swaggerConfig = registerAs('swagger', () => ({
-  enabled: process.env.SWAGGER_ENABLED,
-  title: process.env.SWAGGER_TITLE,
-  description: process.env.SWAGGER_DESCRIPTION,
-  prefix: process.env.SWAGGER_PREFIX,
-  version: process.env.SWAGGER_VERSION,
+  enabled: Boolean(process.env.SWAGGER_ENABLED || true),
+  title: process.env.SWAGGER_TITLE || 'NestJS API',
+  description: process.env.SWAGGER_DESCRIPTION || 'API Documentation',
+  prefix: process.env.SWAGGER_PREFIX || 'docs',
+  version: process.env.SWAGGER_VERSION || '1.0',
+  gateway: process.env.SWAGGER_GATEWAY || 'http://localhost',
 }));
 
 const configs = {
@@ -42,21 +44,25 @@ export type Config = {
   [K in keyof typeof configs]: ConfigType<(typeof configs)[K]>;
 };
 
-export class ConfigService extends NestConfigService<Config, true> {}
+export class ConfigService extends NestConfigService<Config, true> {
+  infer<P extends Path<Config> = any>(path: P) {
+    return this.get(path, { infer: true });
+  }
+}
 
+@Global()
 @Module({
   imports: [
     NestConfig.forRoot({
       envFilePath: ['.env', '.env.local'],
       load: Object.values(configs),
       expandVariables: true,
-      isGlobal: true,
       cache: true,
       validate: (config) => config,
     }),
   ],
-  providers: [{ provide: ConfigService, useExisting: NestConfigService }],
-  exports: [ConfigService],
+  providers: [NestConfigService, ConfigService],
+  exports: [NestConfigService, ConfigService],
 })
 export class ConfigModule {}
 export default ConfigModule;

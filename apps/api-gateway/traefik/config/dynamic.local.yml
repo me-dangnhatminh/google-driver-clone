@@ -29,7 +29,7 @@ http:
 
     forward-auth:
       forwardAuth:
-        address: https://localhost/api/v1/auth/validate
+        address: http://localhost/api/v1/auth/validate
         trustForwardHeader: true
         authResponseHeadersRegex: "^X-"
         tls:
@@ -39,25 +39,30 @@ http:
     client-ui:
       rule: PathPrefix(`/`)
       service: client-ui
-      entrypoints: https
-      tls: {}
+      entrypoints: http
 
     auth:
       rule: PathRegexp(`^/api/v[0-9]+/auth`)
       service: auth-service
-      entrypoints: https
+      entrypoints: http
       middlewares:
         - cors
-      tls: {}
+
+    user:
+      rule: PathRegexp(`^/api/v[0-9]+/users`)
+      service: auth-service
+      entrypoints: http
+      middlewares:
+        - cors
+        - forward-auth
 
     storage:
       rule: PathRegexp(`^/api/v[0-9]+/storage`)
       service: storage-service
-      entrypoints: https
+      entrypoints: http
       middlewares:
         - cors
         - forward-auth
-      tls: {}
 
   services:
     client-ui:

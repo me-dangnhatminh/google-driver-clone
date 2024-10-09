@@ -3,32 +3,39 @@ import {
   ExecutionContext,
   Inject,
   Injectable,
-  UnauthorizedException,
 } from '@nestjs/common';
-import * as rx from 'rxjs';
+import { Reflector } from '@nestjs/core';
+import { AUTH_REQUIRED_METADATA_KEY } from '../constants';
 
 @Injectable()
 export class Authenticated implements CanActivate {
-  constructor(@Inject('AuthService') private readonly authService: any) {}
+  constructor(
+    @Inject('AuthService') private readonly authService,
+    private readonly reflector: Reflector,
+  ) {}
 
   canActivate(context: ExecutionContext) {
     if (context.getType() !== 'http') return true;
-    const [request] = context.getArgs();
-    let token = request.headers.authorization;
-    if (!token) return false;
-    token = token.replace('Bearer ', '');
-    return rx.from(this.authService.verifyToken({ token })).pipe(
-      rx.map((user: any) => {
-        request.auth = { user };
-        return true;
-      }),
-      rx.catchError((err) => {
-        const msg = err.details;
-        const msgJson = JSON.parse(msg);
-        if (msgJson.code === 'invalid_token')
-          throw new UnauthorizedException(msgJson.message);
-        throw err;
-      }),
+
+    const required = this.reflector.getAllAndOverride<boolean>(
+      AUTH_REQUIRED_METADATA_KEY,
+      [context.getHandler(), context.getClass()],
     );
+
+    const request = context.switchToHttp().getRequest();
+    const userId = request.headers['x-user-id'];
+    const anonymous = request.headers['x-anonymous'];
+    const roles = request.headers['x-user-roles'];
+    const permissions = request.headers['x-user-permissions'];
+    if (required && !userId) return false;
+
+    request.auth = {
+      required,
+      userId,
+      anonymous,
+      roles: roles && JSON.parse(roles),
+      permissions: permissions && JSON.parse(permissions),
+    };
+    return true;
   }
 }

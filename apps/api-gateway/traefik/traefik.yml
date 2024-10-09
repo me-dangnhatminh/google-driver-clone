@@ -26,12 +26,12 @@ serversTransport:
 entryPoints:
   http:
     address: :80
-    http:
-      redirections:
-        entryPoint:
-          to: https
-          scheme: https
-          permanent: false # if false, redirect use 302 status
+    # http:
+    #   redirections:
+    #     entryPoint:
+    #       to: https
+    #       scheme: https
+    #       permanent: false # if false, redirect use 302 status
   https:
     address: :443
 

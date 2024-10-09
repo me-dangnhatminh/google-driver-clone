@@ -13,9 +13,9 @@ import { ConfigService } from './config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
     abortOnError: true,
     rawBody: true,
-    bufferLogs: true,
   });
   const log = app.get(Logger);
   if (log) app.useLogger(log);
@@ -46,14 +46,13 @@ async function bootstrap() {
 const buildMicroservices = (app: INestApplication) => {
   const configService = app.get(ConfigService);
 
-  const grpcConfig = configService.get('grpc.auth', { infer: true });
-  const credentials = grpc.ServerCredentials.createInsecure();
+  const grpcConfig = configService.infer('grpc.auth');
 
   const service = app.connectMicroservice<GrpcOptions>({
     transport: Transport.GRPC,
     options: {
       ...grpcConfig,
-      credentials,
+      credentials: grpc.ServerCredentials.createInsecure(),
       onLoadPackageDefinition: (pkg, server: grpc.Server) => {
         new ReflectionService(pkg).addToServer(server);
       },

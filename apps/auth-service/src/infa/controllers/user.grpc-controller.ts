@@ -7,6 +7,33 @@ import * as rx from 'rxjs';
 export class UserGrpcController {
   constructor(private readonly userManagement: ManagementClient) {}
 
+  @GrpcMethod('UserService', 'get')
+  async get(request) {
+    // TODO: cache this, or update app_metadata on user update
+    const id = request.id;
+    return await Promise.all([
+      this.userManagement.users
+        .getRoles({ id })
+        .then((rs) => rs.data)
+        .then((rs) => rs.map((r) => r.name)),
+      this.userManagement.users
+        .getPermissions({ id })
+        .then((rs) => rs.data)
+        .then((rs) => rs.map((r) => r.permission_name)),
+      this.userManagement.users.get({ id }).then((rs) => {
+        const data = rs.data;
+        return {
+          id: data.user_id,
+          name: data.name,
+          email: data.email,
+          metadata: data.app_metadata,
+        };
+      }),
+    ]).then(([roles, permissions, user]) => {
+      return { ...user, roles, permissions };
+    });
+  }
+
   @GrpcMethod('UserService', 'list')
   list(request: any) {
     const subject = new rx.Subject();
