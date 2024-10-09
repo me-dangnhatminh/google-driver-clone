@@ -1,15 +1,29 @@
 import { Controller, Get, VERSION_NEUTRAL } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
-import { HealthCheck, HealthCheckService } from '@nestjs/terminus';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import {
+  HealthCheck,
+  HealthCheckService,
+  PrismaHealthIndicator,
+} from '@nestjs/terminus';
 
 @Controller({ path: 'health', version: VERSION_NEUTRAL })
 @ApiTags('health')
 export class HealthController {
-  constructor(private health: HealthCheckService) {}
+  constructor(
+    private health: HealthCheckService,
+    private prisma: PrismaHealthIndicator,
+  ) {}
 
   @Get()
   @HealthCheck()
-  check() {
-    return this.health.check([]);
+  @ApiBearerAuth()
+  checks() {
+    return this.health.check([
+      () =>
+        this.prisma.pingCheck('database', {
+          $queryRawUnsafe: (query) => query,
+          $runCommandRaw: (command) => command,
+        }),
+    ]);
   }
 }

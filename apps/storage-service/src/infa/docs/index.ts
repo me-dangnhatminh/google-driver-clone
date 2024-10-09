@@ -1,21 +1,23 @@
-import { Logger } from '@nestjs/common';
+import { INestApplication, Logger } from '@nestjs/common';
 import {
   DocumentBuilder,
   SwaggerCustomOptions,
   SwaggerModule,
 } from '@nestjs/swagger';
 import { Server } from 'http';
+import { AddressInfo } from 'net';
+import { ConfigService } from 'src/config';
 
-export function setupSwagger(app) {
-  const docPrefix = 'api/docs';
-  const docName = 'Identity Service';
-  const docDesc = 'API Documentation';
-  const docVersion = '1.0';
+export function buildSwagger(app: INestApplication) {
+  const logger = new Logger('Swagger');
+  const configService = app.get(ConfigService);
+  const swaggerConfig = configService.infer('swagger');
 
   const documentBuild = new DocumentBuilder()
-    .setTitle(docName)
-    .setDescription(docDesc)
-    .setVersion(docVersion)
+    .setTitle(swaggerConfig.title)
+    .setDescription(swaggerConfig.description)
+    .setVersion(swaggerConfig.version)
+    .addServer(swaggerConfig.gateway, 'Gateway')
     .addBearerAuth()
     .build();
 
@@ -25,7 +27,9 @@ export function setupSwagger(app) {
 
   const customOptions: SwaggerCustomOptions = {
     explorer: true,
-    customSiteTitle: docName,
+    customSiteTitle: swaggerConfig.title,
+    url: swaggerConfig.gateway,
+    useGlobalPrefix: false,
     swaggerOptions: {
       docExpansion: 'none',
       persistAuthorization: true,
@@ -37,18 +41,17 @@ export function setupSwagger(app) {
     },
   };
 
-  SwaggerModule.setup(docPrefix, app, document, customOptions);
-
-  const http: Server = app.getHttpServer();
-  http.on('listening', () => {
-    const address = http.address() as { address: string; port: number };
-    Logger.log(
-      `Swagger UI is available on: http://${address.address}:${address.port}/${docPrefix}`,
-      'NestApplication',
-    );
-  });
-
-  return document;
+  SwaggerModule.setup(swaggerConfig.prefix, app, document, customOptions);
+  if (swaggerConfig.enabled) {
+    const server: Server = app.getHttpServer();
+    server.on('listening', () => {
+      const address = server.address() as AddressInfo;
+      const host = address.address === '::' ? 'localhost' : address.address;
+      const port = address.port;
+      const msg = `Swagger UI is running on http://${host}:${port}/${swaggerConfig.prefix}`;
+      logger.log(msg);
+    });
+  }
 }
 
-export default setupSwagger;
+export default buildSwagger;

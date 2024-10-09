@@ -63,7 +63,12 @@ async function bootstrap() {
   const log = app.get(Logger);
   if (log) app.useLogger(log);
 
-  app.disable('x-powered-by'); // Disable x-powered-by header
+  // ----- microservices -----
+  await buildRmq(app);
+  await buildMicroservice(app);
+
+  // ----- http server -----
+  app.disable('x-powered-by');
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, prefix: 'v' });
   setupSwagger(app);
@@ -75,9 +80,6 @@ async function bootstrap() {
       const msg = `Application is running on: ${address.address}:${address.port}`;
       Logger.log(msg, 'NestApplication');
     });
-
-  await buildRmq(app);
-  await buildMicroservice(app);
 
   if (module.hot) {
     module.hot.accept();

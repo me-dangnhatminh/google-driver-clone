@@ -1,5 +1,5 @@
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 
 import { ConfigModule } from './config';
@@ -9,13 +9,12 @@ import providers from 'src/app';
 import { PersistencesModule } from './infa/persistence';
 import { controllers } from './infa/controllers';
 import {
+  LoggerModule,
   CacheModule,
   ElasticsearchModule,
   MulterModule,
-  WinstonModule,
 } from './infa/adapters';
 
-import { HTTPLogger } from 'libs/common';
 import { AuthClientModule } from 'libs/auth-client';
 import { StorageClientModule } from 'libs/storage-client';
 import { PaymentClientModule } from 'libs/payment-client';
@@ -25,7 +24,7 @@ import { TerminusModule } from '@nestjs/terminus';
 @Module({
   imports: [
     ConfigModule,
-    WinstonModule,
+    LoggerModule,
     CqrsModule,
     CacheModule,
     PersistencesModule,
@@ -57,10 +56,4 @@ import { TerminusModule } from '@nestjs/terminus';
   controllers,
   providers,
 })
-export class AppModule implements NestModule {
-  constructor() {}
-
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(HTTPLogger).forRoutes('*');
-  }
-}
+export class AppModule {}

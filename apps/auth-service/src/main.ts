@@ -10,9 +10,10 @@ import * as grpc from '@grpc/grpc-js';
 import AppModule from './app.module';
 import buildSwagger from './infa/docs';
 import { ConfigService } from './config';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
     abortOnError: true,
     rawBody: true,
@@ -24,6 +25,7 @@ async function bootstrap() {
   buildMicroservices(app);
 
   // ----- http server -----
+  app.disable('x-powered-by');
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, prefix: 'v' });
   buildSwagger(app);

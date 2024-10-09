@@ -3,13 +3,13 @@ import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import * as grpc from '@grpc/grpc-js';
 
-import { AUTH_SERVICE } from './constants';
+import { AUTH_CLIENT_TOKEN } from './constants';
 
 @Module({
   imports: [
     ClientsModule.registerAsync([
       {
-        name: AUTH_SERVICE,
+        name: AUTH_CLIENT_TOKEN,
         inject: [ConfigService],
         useFactory: (configService: ConfigService) => {
           const grpcConfig = configService.get('grpc.auth');
@@ -36,15 +36,15 @@ import { AUTH_SERVICE } from './constants';
   providers: [
     {
       provide: 'AuthService',
-      inject: [AUTH_SERVICE],
+      inject: [AUTH_CLIENT_TOKEN],
       useFactory: (client) => client.getService('AuthService'),
     },
     {
       provide: 'UserService',
-      inject: [AUTH_SERVICE],
+      inject: [AUTH_CLIENT_TOKEN],
       useFactory: (client) => client.getService('UserService'),
     },
   ],
-  exports: ['AuthService', 'UserService'],
+  exports: [ClientsModule, 'AuthService', 'UserService'],
 })
 export class AuthClientModule {}

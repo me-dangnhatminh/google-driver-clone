@@ -2,11 +2,13 @@ import {
   CanActivate,
   ExecutionContext,
   ForbiddenException,
+  Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
 import { ROLES_METADATA_KEY } from '../constants';
 
+@Injectable()
 export class AllowedRoles implements CanActivate {
   constructor(private reflector: Reflector) {}
   canActivate(context: ExecutionContext) {

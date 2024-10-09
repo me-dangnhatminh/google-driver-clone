@@ -6,7 +6,7 @@ import { GrpcOptions } from '@nestjs/microservices';
 import { Logger } from '@nestjs/common';
 
 const config = registerAs('grpc', () => {
-  const logger = new Logger('grpc.config');
+  const logger = new Logger('GRPC Config');
   const includeDir = path.resolve(__dirname, '../../../protos');
   if (!fs.existsSync(includeDir)) {
     throw new Error(`Protos directory not found: ${includeDir}`);
