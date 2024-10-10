@@ -1,11 +1,12 @@
-import { registerAs } from '@nestjs/config';
+import { ConfigType, registerAs } from '@nestjs/config';
 import * as path from 'path';
 import * as fs from 'fs-extra';
 import * as glob from 'glob';
 import { GrpcOptions } from '@nestjs/microservices';
 
-const config = registerAs('grpc', () => {
-  const includeDir = path.resolve(__dirname, '../../../protos');
+const grpcConfig = registerAs('grpc', () => {
+  const protosDir = process.env.PROTOS_DIR || 'protos';
+  const includeDir = path.resolve(__dirname, '..', protosDir);
   if (!fs.existsSync(includeDir)) {
     throw new Error(`Protos directory not found: ${includeDir}`);
   }
@@ -54,4 +55,5 @@ const config = registerAs('grpc', () => {
   } satisfies Record<string, GrpcOptions['options']>;
 });
 
-export default config;
+export type GrpcConfig = ConfigType<typeof grpcConfig>;
+export default grpcConfig;

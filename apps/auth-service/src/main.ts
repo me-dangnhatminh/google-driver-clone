@@ -11,15 +11,15 @@ import AppModule from './app.module';
 import buildSwagger from './infa/docs';
 import { ConfigService } from './config';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import defaultLogger from './logger';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger: defaultLogger,
     bufferLogs: true,
     abortOnError: true,
     rawBody: true,
   });
-  const log = app.get(Logger);
-  if (log) app.useLogger(log);
 
   // ----- microservices -----
   buildMicroservices(app);

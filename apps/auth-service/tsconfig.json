@@ -17,6 +17,26 @@
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
-    "strict": true
+    "strict": true,
+    "paths": {
+      "@app/auth-client": [
+        "libs/auth-client/src"
+      ],
+      "@app/auth-client/*": [
+        "libs/auth-client/src/*"
+      ],
+      "@app/common": [
+        "libs/common/src"
+      ],
+      "@app/common/*": [
+        "libs/common/src/*"
+      ],
+      "@app/payment-client": [
+        "libs/payment-client/src"
+      ],
+      "@app/payment-client/*": [
+        "libs/payment-client/src/*"
+      ]
+    }
   }
 }

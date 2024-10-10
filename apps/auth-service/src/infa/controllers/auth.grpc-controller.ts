@@ -7,7 +7,7 @@ import {
   UserInfoClient,
   wwwAuthToJson,
 } from '../adapters/auth0.module';
-import { UnauthenticatedRpcException, UnknownRpcException } from 'libs/common';
+import { UnauthenticatedRpcException, UnknownRpcException } from '@app/common';
 import { ErrorType } from 'src/common';
 import { Cache } from '../adapters';
 import * as rx from 'rxjs';

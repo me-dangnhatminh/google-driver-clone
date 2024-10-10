@@ -1,0 +1,20 @@
+version: "3.7"
+
+networks:
+  proxy-network:
+    external: false
+    name: proxy-network
+
+services:
+  auth-service:
+    container_name: auth-service
+    restart: always
+    env_file: ./apps/auth-service/.env
+    build:
+      context: ./apps/auth-service
+      dockerfile: Dockerfile
+    networks:
+      - proxy-network
+    volumes:
+      - ./demo-config:/app/config
+      - ./protos:/app/protos

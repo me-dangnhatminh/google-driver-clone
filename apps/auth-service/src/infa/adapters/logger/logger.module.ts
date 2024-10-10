@@ -1,70 +1,76 @@
 import 'winston-daily-rotate-file';
-import { createLogger, format, transports } from 'winston';
+import { format, transports } from 'winston';
+import { WINSTON_MODULE_NEST_PROVIDER, WinstonModule } from 'nest-winston';
 import {
-  WinstonModule as NestWinston,
-  WinstonModuleOptions,
-} from 'nest-winston';
-import { Logger, MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { HTTPLogger } from './http-logger.middleware';
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  Logger,
+  Inject,
+} from '@nestjs/common';
 
 import { ConfigService } from 'src/config';
+import { HttpLogging } from './http-logging.middleware';
 
 @Module({
-  providers: [
-    {
+  imports: [
+    WinstonModule.forRootAsync({
       inject: [ConfigService],
-      provide: Logger,
       useFactory: (configService: ConfigService) => {
-        const logConfig = configService.infer('app.log');
-        if (logConfig.enabled === false) return NestWinston.createLogger({});
+        const logConfig = configService.infer('log');
 
-        const transportsArr: WinstonModuleOptions['transports'] = [];
-
-        const consoleLog = new transports.Console({ level: logConfig.level });
-        transportsArr.push(consoleLog);
-
-        if (logConfig.accessFile) {
-          const fileLog = new transports.DailyRotateFile({
-            filename: logConfig.filePath,
-            level: 'error',
-            datePattern: 'YYYY-MM-DD',
-            zippedArchive: false,
-            maxFiles: '14d',
-          });
-          transportsArr.push(fileLog);
-        }
-
-        return NestWinston.createLogger({
-          instance: createLogger({
-            format: format.combine(
-              format.timestamp(),
-              format.errors({ stack: true }),
-              format.colorize({
-                all: true,
-                level: true,
-                message: true,
-                colors: {
-                  info: 'green',
-                  error: 'red',
-                  debug: 'blue',
-                  warn: 'yellow',
-                  verbose: 'cyan',
-                },
-              }),
-              format.printf(({ context, level, timestamp, message, stack }) => {
-                return `${timestamp} [${level}] ${context} - ${message} ${stack ? `\n${stack}` : ''}`;
-              }),
-            ),
-            transports: transportsArr,
-          }),
-        });
+        return {
+          level: logConfig.level,
+          format: format.combine(
+            format.timestamp(),
+            format.errors({ stack: true }),
+          ),
+          transports: [
+            new transports.Console({
+              level: process.env.LOG_LEVEL ?? 'info',
+              format: format.combine(
+                format.colorize({
+                  all: true,
+                  colors: {
+                    error: 'red',
+                    warn: 'yellow',
+                    info: 'green',
+                    verbose: 'cyan',
+                    debug: 'blue',
+                    silly: 'magenta',
+                  },
+                }),
+                format.splat(),
+                format.printf(
+                  ({ context, level, timestamp, message, stack }) => {
+                    return `${timestamp} [${level}] ${context} - ${message} ${stack ? `\n${stack}` : ''}`;
+                  },
+                ),
+              ),
+            }),
+            new transports.DailyRotateFile({
+              filename: logConfig.filePath,
+              level: 'error',
+              datePattern: 'YYYY-MM-DD',
+              zippedArchive: false,
+              maxFiles: '14d',
+              format: format.combine(format.timestamp(), format.json()),
+            }),
+          ],
+        };
       },
-    },
+    }),
   ],
+  exports: [WinstonModule],
 })
 export class LoggerModule implements NestModule {
+  constructor(@Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger) {
+    Logger.overrideLogger(this.logger);
+    Logger.log('Overroded default logger', LoggerModule.name);
+  }
+
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(HTTPLogger).forRoutes('*');
+    consumer.apply(HttpLogging).forRoutes('*');
   }
 }
 export default LoggerModule;

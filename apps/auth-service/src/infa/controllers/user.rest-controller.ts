@@ -1,7 +1,7 @@
 import { Controller, Get, Inject, Param, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { AllowedRoles, Authenticated, Roles } from 'libs/auth-client';
+import { AllowedRoles, Authenticated, Roles } from '@app/auth-client';
 
 @Controller({ path: 'users', version: '1' })
 @UseGuards(Authenticated, AllowedRoles)

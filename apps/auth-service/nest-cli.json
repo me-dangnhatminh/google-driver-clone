@@ -4,6 +4,36 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "deleteOutDir": true,
-    "watchAssets": true
+    "webpack": true,
+    "assets": []
+  },
+  "projects": {
+    "auth-client": {
+      "type": "library",
+      "root": "libs/auth-client",
+      "entryFile": "index",
+      "sourceRoot": "libs/auth-client/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/auth-client/tsconfig.lib.json"
+      }
+    },
+    "common": {
+      "type": "library",
+      "root": "libs/common",
+      "entryFile": "index",
+      "sourceRoot": "libs/common/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/common/tsconfig.lib.json"
+      }
+    },
+    "payment-client": {
+      "type": "library",
+      "root": "libs/payment-client",
+      "entryFile": "index",
+      "sourceRoot": "libs/payment-client/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/payment-client/tsconfig.lib.json"
+      }
+    }
   }
 }

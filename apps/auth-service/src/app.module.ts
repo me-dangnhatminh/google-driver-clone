@@ -3,7 +3,7 @@ import { TerminusModule } from '@nestjs/terminus';
 import { HttpModule } from '@nestjs/axios';
 
 import { ConfigModule } from './config';
-import { AuthClientModule } from 'libs/auth-client';
+import { AuthClientModule } from '@app/auth-client';
 import { controllers, Auth0Module, CacheModule, LoggerModule } from 'src/infa';
 
 @Module({
