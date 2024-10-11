@@ -115,7 +115,10 @@ export default () => {
     config = yaml.load(template.replaced);
   }
 
-  const valid = configSchema.default({}).safeParse(config);
+  const valid = configSchema.default({}).safeParse({
+    cache: { use: 'redis' },
+    ...config,
+  });
   if (valid.success) {
     Logger.log(
       { message: 'Configuration loaded', config: valid.data },

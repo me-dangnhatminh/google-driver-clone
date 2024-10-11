@@ -3,12 +3,18 @@ import {
   Get,
   Inject,
   Req,
-  Res,
   UnauthorizedException,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { ConfigService } from 'src/config';
+
+import { CacheKey, CacheTTL } from '../adapters';
+import {
+  BearerTokenCacheInterceptor,
+  AuthResponseInterceptor,
+} from '../interceptors';
 
 @Controller({ path: 'auth', version: '1' })
 @ApiTags('auth')
@@ -20,10 +26,10 @@ export class AuthRestController {
   ) {}
 
   @Get('validate')
-  async validate(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  @CacheKey('auth')
+  @CacheTTL(60 * 60 * 1000)
+  @UseInterceptors(AuthResponseInterceptor, BearerTokenCacheInterceptor)
+  async validate(@Req() req: Request) {
     const headerName = this.configService.infer('auth.headers');
     const strictConfig = this.configService.infer('auth.strict');
 
@@ -38,10 +44,6 @@ export class AuthRestController {
     const authHeader = req.headers.authorization;
 
     const token = authHeader?.split('Bearer ')[1];
-    if (!token && !strictMode) {
-      res.setHeader(headerName.anonymous, 'true');
-      return;
-    }
 
     if (!token && strictMode) {
       throw new UnauthorizedException('Authorization header is required');
@@ -54,10 +56,6 @@ export class AuthRestController {
         throw new UnauthorizedException('Invalid token');
       });
 
-    res.setHeader(headerName.userId, user.id);
-    res.setHeader(headerName.anonymous, 'false');
-    res.setHeader(headerName.roles, JSON.stringify(user.roles));
-    res.setHeader(headerName.permissions, JSON.stringify(user.permissions));
     return user;
   }
 }

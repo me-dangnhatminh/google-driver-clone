@@ -3,13 +3,19 @@ import { GrpcMethod } from '@nestjs/microservices';
 import { ManagementClient } from 'auth0';
 import * as rx from 'rxjs';
 
+const SERVICE_NAME = 'UserService';
+
 @Controller()
 export class UserGrpcController {
   constructor(private readonly userManagement: ManagementClient) {}
 
-  @GrpcMethod('UserService', 'get')
+  @GrpcMethod(SERVICE_NAME, 'ping')
+  ping() {
+    return { message: 'pong' };
+  }
+
+  @GrpcMethod(SERVICE_NAME, 'get')
   async get(request) {
-    // TODO: cache this, or update app_metadata on user update
     const id = request.id;
     return await Promise.all([
       this.userManagement.users
@@ -34,7 +40,7 @@ export class UserGrpcController {
     });
   }
 
-  @GrpcMethod('UserService', 'list')
+  @GrpcMethod(SERVICE_NAME, 'list')
   list(request: any) {
     const subject = new rx.Subject();
 
@@ -71,7 +77,7 @@ export class UserGrpcController {
     return rx.from(subject);
   }
 
-  @GrpcMethod('UserService', 'getById')
+  @GrpcMethod(SERVICE_NAME, 'getById')
   getById(messages: any) {
     const fetch = this.userManagement.users.get({ id: messages.id });
     return rx.from(fetch).pipe(
@@ -85,7 +91,7 @@ export class UserGrpcController {
     );
   }
 
-  @GrpcMethod('UserService', 'create')
+  @GrpcMethod(SERVICE_NAME, 'create')
   create(messages: any) {
     return rx.of(messages);
   }

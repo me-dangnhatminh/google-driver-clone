@@ -30,62 +30,54 @@ import "google/protobuf/any.proto";
 
 // =========== AUTH ===========
 service AuthService {
+  rpc ping(PingRequest) returns (PingResponse);
   rpc verifyToken(VerifyTokenReq) returns (UserModel);
+  // rpc login(LoginRequest) returns (UserModel);
+  // rpc logout(LogoutRequest) returns (google.protobuf.Empty);
+  // rpc register(RegisterRequest) returns (UserModel);
+  // rpc forgotPassword(ForgotPasswordRequest) returns (google.protobuf.Empty);
+  // rpc resetPassword(ResetPasswordRequest) returns (google.protobuf.Empty);
+  // rpc changePassword(ChangePasswordRequest) returns (google.protobuf.Empty);
 }
 
 service UserService {
+  rpc ping(PingRequest) returns (PingResponse);
   rpc create(CreateUserRequest) returns (UserModel);
-  rpc get(GetUserRequest) returns (UserModel);
-  rpc list(ListUserRequest) returns (ListUserResponse);
   rpc update(UpdateUserRequest) returns (UserModel);
   rpc delete(DeleteUserRequest) returns (UserModel);
   rpc deleteMany(DeleteManyRequest) returns (DeleteManyResponse);
+
+  rpc get(GetUserRequest) returns (UserModel);
+  rpc list(ListUserRequest) returns (ListUserResponse);
 }
 
-message VerifyTokenReq {
-  string token = 1;
+message PingRequest {
+  optional string message = 1;
 }
+
+message PingResponse {
+  string message = 1;
+}
+
+// =================== Write =================== //
 
 message UserModel {
   string id = 1;
-  string email = 2;
-  bool email_verified = 3;
-  string name = 4; 
-  optional string picture = 5; 
-  repeated string roles = 6;
-  repeated string permissions = 7;
-  google.protobuf.Timestamp created_at = 8;
-  google.protobuf.Timestamp updated_at = 9;
-  optional google.protobuf.Timestamp deleted_at = 10;
+
+  optional string email = 2;
+  optional bool email_verified = 3;
+  optional string name = 4; 
+  optional string picture = 5;
   
-  // google.protobuf.Struct metadata = 11; // additional metadata
-  map<string, string> metadata = 11; // additional metadata
-}
+  optional bool deleted = 6;
+  repeated string roles = 7;
+  repeated string permissions = 8;
 
-message GetUserRequest {
-  optional string id = 1;
-}
-
-message ListUserRequest {
-  optional string email = 1;
-  optional string name = 2;
-  optional string role = 3;
-  optional string permission = 4;
-  optional bool email_verified = 5;
-  optional bool is_deleted = 6;
-
-  optional google.protobuf.Timestamp created_at = 7;
-  optional google.protobuf.Timestamp updated_at = 8;
-
-  optional int32 limit = 9; // default 10
-  optional int32 offset = 10; // default 0
-}
-
-message ListUserResponse {
-  repeated UserModel items = 1;
-  optional int32 total = 2;
-  optional int32 limit = 3;
-  optional int32 offset = 4;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
+  optional google.protobuf.Timestamp deleted_at = 11;
+  
+  map<string, string> metadata = 12;
 }
 
 message CreateUserRequest {
@@ -99,7 +91,8 @@ message CreateUserRequest {
 }
 
 message UpdateUserRequest {
-  optional string id = 1;
+  string id = 1;
+  
   optional string email = 2;
   optional string name = 3;
   optional string picture = 4;
@@ -114,10 +107,40 @@ message DeleteUserRequest {
 
 message DeleteManyRequest {
   repeated string ids = 1;
+
+  repeated string roles = 5;
+  repeated string permissions = 6;
+  optional google.protobuf.Struct metadata = 7;
 }
 
 message DeleteManyResponse {
   repeated UserModel items = 1;
   int32 total = 2;
   int32 deleted = 3;
+}
+
+// =================== Read =================== //
+
+message VerifyTokenReq {
+  string token = 1;
+}
+
+message GetUserRequest {
+  optional string id = 1;
+}
+
+message ListUserRequest {
+  optional string expand = 3;
+  optional string filter = 1; // ex: filter[status]=active, filter[created_at]=2020-01-01, filter[updated_at]=2020-01-01, filter[plan]=free
+  optional string sort = 2; // ex: sort=created_at, sort=-updated_at
+
+  optional int32 limit = 10;
+  optional string offset = 11;
+}
+
+message ListUserResponse {
+  repeated UserModel items = 1;
+
+  optional int32 total = 2;
+  optional string offset = 4;
 }

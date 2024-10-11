@@ -1,5 +1,5 @@
 import { Controller } from '@nestjs/common';
-import { GrpcMethod, RpcException } from '@nestjs/microservices';
+import { GrpcMethod } from '@nestjs/microservices';
 
 import {
   ManagementClient,
@@ -9,23 +9,23 @@ import {
 } from '../adapters/auth0.module';
 import { UnauthenticatedRpcException, UnknownRpcException } from '@app/common';
 import { ErrorType } from 'src/common';
-import { Cache } from '../adapters';
-import * as rx from 'rxjs';
+
+const SERVICE_NAME = 'AuthService';
 
 @Controller()
 export class AuthGrpcController {
   constructor(
     private readonly userInfo: UserInfoClient,
     private readonly manager: ManagementClient,
-    private readonly cache: Cache,
   ) {}
 
-  @GrpcMethod('AuthService', 'verifyToken')
-  async verifyToken(request) {
-    const cached: any = await this.cache.get(request.token).catch(() => null);
-    if (cached && cached.value) return rx.of(cached.value);
-    if (cached && cached.error) throw new RpcException(cached.error);
+  @GrpcMethod(SERVICE_NAME, 'ping')
+  ping() {
+    return { message: 'pong' };
+  }
 
+  @GrpcMethod(SERVICE_NAME, 'verifyToken')
+  verifyToken(request) {
     const get = this.userInfo
       .getUserInfo(request.token)
       .then((res) => res.data)
@@ -63,20 +63,6 @@ export class AuthGrpcController {
         });
       });
 
-    // == cache the result
-    return await rx.from(get).pipe(
-      rx.map(async (value) => {
-        await this.cache
-          .set(request.token, { value }, 60 * 60 * 1000) // 1 hour
-          .catch(() => null);
-        return value;
-      }),
-      rx.catchError(async (error) => {
-        await this.cache
-          .set(request.token, { error }, 60 * 60 * 1000) // 1 hour
-          .catch(() => null);
-        throw error;
-      }),
-    );
+    return get;
   }
 }
