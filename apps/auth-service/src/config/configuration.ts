@@ -38,6 +38,16 @@ export const dbConfigSchema = z.object({
   database: z.string().default('postgres'),
 });
 
+export const grpcConfigSchema = z.object({
+  services: z
+    .record(
+      z.object({
+        version: z.string().optional(),
+      }),
+    )
+    .optional(),
+});
+
 export const authConfigSchema = z.object({
   strict: z.boolean().default(false),
   headers: z
