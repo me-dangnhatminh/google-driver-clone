@@ -11,7 +11,7 @@ export class BearerTokenCacheInterceptor extends CacheInterceptor {
     const token = authHeader?.split('Bearer ')[1];
 
     const oldTrack = super.trackBy(context);
-    const cachekey = oldTrack ? `${oldTrack}-${token}` : token;
+    const cachekey = oldTrack && token ? `${oldTrack}-${token}` : oldTrack;
     if (cachekey) response.setHeader('x-cache-key', cachekey);
     return cachekey;
   }

@@ -1,8 +1,7 @@
 export * from 'auth0';
 import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { UserInfoClient, ManagementClient } from 'auth0';
-
-import { ConfigService } from 'src/config';
 
 export const wwwAuthToJson = (wwwAuth: string) => {
   const parts = wwwAuth.split(',');
@@ -19,19 +18,19 @@ export const wwwAuthToJson = (wwwAuth: string) => {
     {
       provide: UserInfoClient,
       inject: [ConfigService],
-      useFactory: () => {
-        return new UserInfoClient({ domain: process.env.AUTH0_DOMAIN ?? '' });
+      useFactory: (configService: ConfigService) => {
+        const domain = configService.getOrThrow('AUTH0_DOMAIN');
+        return new UserInfoClient({ domain });
       },
     },
     {
       provide: ManagementClient,
       inject: [ConfigService],
-      useFactory: () => {
-        return new ManagementClient({
-          domain: process.env.AUTH0_DOMAIN ?? '',
-          clientId: process.env.AUTH0_CLIENT_ID ?? '',
-          clientSecret: process.env.AUTH0_CLIENT_SECRET ?? '',
-        });
+      useFactory: (configService: ConfigService) => {
+        const domain = configService.getOrThrow('AUTH0_DOMAIN');
+        const clientId = configService.getOrThrow('AUTH0_CLIENT_ID');
+        const clientSecret = configService.getOrThrow('AUTH0_CLIENT_SECRET');
+        return new ManagementClient({ domain, clientId, clientSecret });
       },
     },
   ],

@@ -1,13 +1,14 @@
 import {
   Controller,
   Get,
+  Headers,
   Inject,
-  Req,
+  Res,
   UnauthorizedException,
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Request } from 'express';
+import { Response } from 'express';
 import { ConfigService } from 'src/config';
 
 import { CacheKey, CacheTTL } from '../adapters';
@@ -26,36 +27,58 @@ export class AuthRestController {
   ) {}
 
   @Get('validate')
-  @CacheKey('auth')
-  @CacheTTL(60 * 60 * 1000)
   @UseInterceptors(AuthResponseInterceptor, BearerTokenCacheInterceptor)
-  async validate(@Req() req: Request) {
-    const headerName = this.configService.infer('auth.headers');
-    const strictConfig = this.configService.infer('auth.strict');
+  @CacheKey('auth:validate')
+  @CacheTTL(60 * 60 * 1000) // 1 hour
+  async validate(
+    @Res({ passthrough: true }) res: Response,
+    @Headers('authorization') authorization?: string,
+    @Headers('x-auth-strict') strict?: string,
+  ) {
+    try {
+      if (!authorization && strict === 'true') {
+        const message = `Missing 'Authorization' header`;
+        throw new UnauthorizedException({ type: 'invalid_request', message });
+      }
 
-    const strictHeader = req.headers[headerName.strict];
-    const strictMode =
-      strictHeader == undefined
-        ? strictConfig
-        : strictHeader == 'true'
-          ? true
-          : false;
+      if (!authorization) {
+        const message = `Missing 'Authorization' header`;
+        throw new UnauthorizedException({ type: 'invalid_request', message });
+      }
 
-    const authHeader = req.headers.authorization;
+      const [type, token] = authorization.split(' ');
 
-    const token = authHeader?.split('Bearer ')[1];
+      if (type !== 'Bearer') {
+        const message = 'Invalid token type';
+        throw new UnauthorizedException({ type: 'invalid_request', message });
+      }
 
-    if (!token && strictMode) {
-      throw new UnauthorizedException('Authorization header is required');
+      // handle 'Bearer' token
+      if (!token) {
+        const message = 'Missing token';
+        throw new UnauthorizedException({ type: 'invalid_request', message });
+      }
+
+      const user = await this.authService
+        .verifyToken({ token })
+        .toPromise()
+        .catch((err) => {
+          const message = err.message;
+          throw new UnauthorizedException({ type: 'unknown', message });
+        });
+
+      return user;
+    } catch (err) {
+      // TODO: move to ExceptionFilter
+      if (err instanceof UnauthorizedException) {
+        const msg = err.message;
+        res.setHeader('Access-Control-Expose-Headers', 'WWW-Authenticate');
+        res.setHeader(
+          'WWW-Authenticate',
+          `Bearer realm="auth", error_description="${msg}"`,
+        );
+      }
+      throw err;
     }
-
-    const user = await this.authService
-      .verifyToken({ token })
-      .toPromise()
-      .catch(() => {
-        throw new UnauthorizedException('Invalid token');
-      });
-
-    return user;
   }
 }
