@@ -1,24 +1,33 @@
 import { z } from "zod";
-import Api from "./api";
+import Api, { RequestOptions, Response } from "./api";
 import { AxiosRequestConfig } from "axios";
 import FileUtils from "@/lib/file.utils";
 
 // ============================ DTOs ============================ //
-const UUID = z.string();
-const Bytes = z.coerce.number().int().min(0);
-const PastTime = z.coerce.date();
-
-export const MyStorage = z.object({
-  name: z.string().default("My Storage"),
-  total: Bytes,
-  used: Bytes,
-});
+export const UUID = z.string();
+export const Bytes = z.coerce.number().int().min(0);
+export const PastTime = z.coerce.date();
 export const Owner = z.object({
   id: UUID,
   fullName: z.string(),
   email: z.string(),
   avatarURI: z.string().nullish(),
 });
+
+export const Storage = z.object({
+  id: UUID,
+  owner: z.union([UUID, Owner]).optional(),
+  name: z.string(),
+  used: Bytes,
+  limit: Bytes,
+});
+
+export const MyStorage = z.object({
+  name: z.string().default("My Storage"),
+  total: Bytes,
+  used: Bytes,
+});
+
 export const ItemLabel = z.enum(["pinned", "archived", "my"]).default("my");
 export const FileRef = z.object({
   id: UUID,
@@ -97,37 +106,52 @@ export type UpdateItemDTO = (Rename | Archive | Pin | Unpin | Unarchive) & {
   id: string;
 };
 
-// ============================ APIs ============================ //
+// ======================= API METHODS ======================= //
+
+const API_PATHS = {
+  GET_STORAGE: `storage/:key`,
+  MY_STORAGE: `storage`,
+  UPLOAD_FILE: `storage/folders/:key/files/upload`,
+  UPLOAD_FILES: `storage/folders/:key/files/uploads`,
+  UPLOAD_FOLDER: `storage/folders/:key/upload`,
+  DOWNLOAD_FILE: `storage/files/:key/download`,
+  DOWNLOAD_FOLDER: `storage/folders/:key/download`,
+  UPDATE_FILE: `storage/files/:key`,
+  UPDATE_FOLDER: `storage/folders/:key`,
+  FOLDER_CONTENT: `storage/folders/:key`,
+  CREATE_FOLDER: `storage/folders/:key`,
+  HARD_DELETE: `storage/items/:key`,
+} as const;
 
 export class StorageApi extends Api {
-  static readonly ROOT_ID = "root";
-  static readonly URL = {
-    MY_STORAGE: `${Api.baseURL}/storage`,
-    UPLOAD_FILE: `${Api.baseURL}/storage/folders/:key/files/upload`,
-    UPLOAD_FILES: `${Api.baseURL}/storage/folders/:key/files/uploads`,
-    UPLOAD_FOLDER: `${Api.baseURL}/storage/folders/:key/upload`,
-    DOWNLOAD_FILE: `${Api.baseURL}/storage/files/:key/download`,
-    DOWNLOAD_FOLDER: `${Api.baseURL}/storage/folders/:key/download`,
-    UPDATE_FILE: `${Api.baseURL}/storage/files/:key`,
-    UPDATE_FOLDER: `${Api.baseURL}/storage/folders/:key`,
-    FOLDER_CONTENT: `${Api.baseURL}/storage/folders/:key`,
-    CREATE_FOLDER: `${Api.baseURL}/storage/folders/:key`,
-    HARD_DELETE: `${Api.baseURL}/storage/items/:key`,
-  } as const;
-
-  static myStorage(config?: AxiosRequestConfig) {
-    return Api.get(StorageApi.URL.MY_STORAGE, null, config).then((r) =>
-      MyStorage.parse(r.data)
+  getStorage(params: { id: string }, options?: RequestOptions) {
+    const path = API_PATHS.GET_STORAGE.replace(":key", params.id);
+    return this.get<Response<Storage>>(path, options).then(({ data }) =>
+      Storage.parse(data)
     );
+  }
+
+  static version: string | undefined = "v1";
+
+  static readonly ROOT_ID = "root";
+
+  static getStorage(req: { id: string }, options?: RequestOptions) {
+    const user = API_PATHS.GET_STORAGE.replace(":key", req.id);
+    return Api.get(user, undefined, options).then((r) => Storage.parse(r));
+  }
+
+  static myStorage(options?: RequestOptions) {
+    const url = API_PATHS.MY_STORAGE;
+    return super.get(url, null, options).then((r) => MyStorage.parse(r.data));
   }
 
   static createFolder(
     req: CreateFolderDTO & { parentId?: string },
-    config?: AxiosRequestConfig
+    options?: RequestOptions
   ) {
-    const parentId = req.parentId ?? StorageApi.ROOT_ID;
-    const url = StorageApi.URL.CREATE_FOLDER.replace(":key", parentId);
-    return Api.post(url, req, null, config).then(() => {});
+    const key = req.parentId ?? StorageApi.ROOT_ID;
+    const url = API_PATHS.CREATE_FOLDER.replace(":key", key);
+    return Api.post(url, req, null, options).then(() => {});
   }
 
   static getFolder(
@@ -137,7 +161,7 @@ export class StorageApi extends Api {
     const pagination = req?.pagination;
     const id = req?.id ?? StorageApi.ROOT_ID;
     const label = req?.label ?? "my";
-    const url = StorageApi.URL.FOLDER_CONTENT.replace(":key", id);
+    const url = API_PATHS.FOLDER_CONTENT.replace(":key", id);
     return Api.get(url, { label, ...pagination }, config).then((r) => {
       const res = GetFolderResponse.safeParse(r.data);
       if (res.success) return res.data;
@@ -147,7 +171,7 @@ export class StorageApi extends Api {
   }
 
   static updateFolder(req: UpdateItemDTO, config?: AxiosRequestConfig) {
-    const url = StorageApi.URL.UPDATE_FOLDER.replace(":key", req.id);
+    const url = API_PATHS.UPDATE_FOLDER.replace(":key", req.id);
     return Api.patch(url, req, null, config).then(() => {});
   }
 
@@ -164,7 +188,7 @@ export class StorageApi extends Api {
       const pathEncoded = encodeURIComponent(file.webkitRelativePath);
       formData.append("files", file, pathEncoded);
     });
-    const url = StorageApi.URL.UPLOAD_FOLDER.replace(":key", parentId);
+    const url = API_PATHS.UPLOAD_FOLDER.replace(":key", parentId);
     const headers = { "Content-Type": "multipart/form-data" };
     return Api.post(url, formData, null, { headers, ...config }).then(() => {});
   }
@@ -181,7 +205,7 @@ export class StorageApi extends Api {
       "Cache-Control": "max-age=86400",
       "Content-Encoding": "gzip",
     };
-    const url = StorageApi.URL.UPLOAD_FILE.replace(":key", parentId);
+    const url = API_PATHS.UPLOAD_FILE.replace(":key", parentId);
     return Api.post(url, formData, undefined, { headers, ...config });
   }
 
@@ -195,18 +219,18 @@ export class StorageApi extends Api {
     files.forEach((file) => {
       formData.append("files", file, encodeURIComponent(file.name));
     });
-    const url = StorageApi.URL.UPLOAD_FILES.replace(":key", parentId);
+    const url = API_PATHS.UPLOAD_FILES.replace(":key", parentId);
     const headers = { "Content-Type": "multipart/form-data" };
     return Api.post(url, formData, null, { headers, ...config });
   }
 
   static updateFile(req: UpdateItemDTO, config?: AxiosRequestConfig) {
-    const url = StorageApi.URL.UPDATE_FILE.replace(":key", req.id);
+    const url = API_PATHS.UPDATE_FILE.replace(":key", req.id);
     return Api.patch(url, req, null, config).then(() => {});
   }
 
   static downloadFile(req: { id: string }, config?: AxiosRequestConfig) {
-    const url = StorageApi.URL.DOWNLOAD_FILE.replace(":key", req.id);
+    const url = API_PATHS.DOWNLOAD_FILE.replace(":key", req.id);
     return Api.get(url, null, { responseType: "blob", ...config }).then(
       (res) => {
         const disposition = `${res.headers["content-disposition"]}`;
@@ -231,7 +255,7 @@ export class StorageApi extends Api {
     config?: AxiosRequestConfig
   ) {
     // FIXME: dowload folder not work: zip file is corrupted
-    const url = StorageApi.URL.DOWNLOAD_FOLDER.replace(":key", req.id);
+    const url = API_PATHS.DOWNLOAD_FOLDER.replace(":key", req.id);
     return Api.get(url, null, {
       responseType: "blob",
       headers: { "Content-Type": "application/json; application/octet-stream" },
@@ -246,12 +270,12 @@ export class StorageApi extends Api {
   }
 
   static urlDownloadFile(id: string) {
-    const url = StorageApi.URL.DOWNLOAD_FILE.replace(":key", id);
+    const url = API_PATHS.DOWNLOAD_FILE.replace(":key", id);
     return Api.baseURL + url;
   }
 
   static urlDownloadFolder(id: string) {
-    const url = StorageApi.URL.DOWNLOAD_FOLDER.replace(":key", id);
+    const url = API_PATHS.DOWNLOAD_FOLDER.replace(":key", id);
     return Api.baseURL + url;
   }
 
@@ -262,20 +286,20 @@ export class StorageApi extends Api {
   }
 
   static hardDelete(req: { id: string; type: "file" | "folder" }) {
-    const url = StorageApi.URL.HARD_DELETE.replace(":key", req.id);
+    const url = API_PATHS.HARD_DELETE.replace(":key", req.id);
     return Api.delete(url, { type: req.type }).then(() => {});
   }
 
   static getFolderURL(id: string) {
-    return StorageApi.URL.FOLDER_CONTENT.replace(":key", id);
+    return API_PATHS.FOLDER_CONTENT.replace(":key", id);
   }
 
   static fileUploadURL(id: string = StorageApi.ROOT_ID) {
-    return StorageApi.URL.UPLOAD_FILE.replace(":key", id);
+    return API_PATHS.UPLOAD_FILE.replace(":key", id);
   }
 
   static folderUploadURL(id: string = StorageApi.ROOT_ID) {
-    return StorageApi.URL.UPLOAD_FOLDER.replace(":key", id);
+    return API_PATHS.UPLOAD_FOLDER.replace(":key", id);
   }
 }
 

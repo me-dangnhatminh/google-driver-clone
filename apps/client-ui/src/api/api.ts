@@ -1,87 +1,167 @@
-/* eslint-disable @typescript-eslint/no-namespace */
-import axios, {
-  AxiosError,
-  AxiosResponse,
-  type AxiosInstance,
-  type AxiosRequestConfig,
-} from "axios";
+import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios";
 
-const env = import.meta.env;
-console.log("API URL", import.meta);
-const baseURL: string = env.VITE_API_URL;
-const timeout: number = 100000; // 100s
-if (!baseURL) throw new Error("API URL is not defined");
+export type ApiConfig = {
+  host?: string;
+  port?: number;
+  protocol?: string;
+  apiVersion?: string;
+  timeout?: number;
+  prefix?: string;
+  maxNetworkRetries?: number;
+};
+export type ApiConfigRequired = Required<ApiConfig>;
+export type RequestOptions = Omit<ApiConfig, "host" | "port" | "protocol">;
 
-export const apiInstance: AxiosInstance = axios.create({
-  baseURL: baseURL,
-  timeout: timeout,
-});
+export type Response<T> = {
+  data: T;
+  headers: { [key: string]: string };
+  requestId: string;
+  statusCode: number;
+  apiVersion?: string;
+};
 
-export async function responseSuccess(res: AxiosResponse) {
-  return res;
-}
+export const DEFAULT_API_CONFIG: ApiConfigRequired = {
+  host: "localhost",
+  port: 3000,
+  protocol: "http",
+  apiVersion: "v1",
+  timeout: 5000,
+  prefix: "api",
+  maxNetworkRetries: 3,
+};
 
-export async function responseFailure(axiosErr: AxiosError) {
-  const res = axiosErr?.response;
-  const status = res?.status;
-
-  if (status === 401) {
-    window.location.reload();
-  }
-
-  throw axiosErr;
-}
-
-apiInstance.interceptors.response.use(responseSuccess, responseFailure);
-
-export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 export class Api {
-  static get baseURL() {
-    return apiInstance.defaults.baseURL;
+  protected readonly config: ApiConfigRequired;
+  protected readonly instance: AxiosInstance;
+
+  constructor(config?: ApiConfig, axiosInstance?: AxiosInstance) {
+    const raw = structuredClone(Object.assign({}, DEFAULT_API_CONFIG, config));
+    raw.prefix = raw.prefix?.replace(/\/$/, ""); // remove trailing slash
+    raw.prefix = raw.prefix ? `/${raw.prefix}` : "";
+    this.config = raw;
+
+    // == setup axios instance
+    this.instance = axiosInstance || axios.create();
+    this.instance.defaults.baseURL = this.baseURL;
+    this.instance.defaults.timeout = this.config.timeout;
   }
 
-  static get<T = unknown>(
+  private makeURL(options?: ApiConfig) {
+    const overrides = structuredClone(Object.assign({}, this.config, options));
+    return `${overrides.protocol}://${overrides.host}:${overrides.port}${overrides.prefix}/${overrides.apiVersion}`;
+  }
+
+  get baseURL() {
+    return this.makeURL();
+  }
+
+  getInstance() {
+    return this.instance;
+  }
+
+  get interceptors() {
+    return this.instance.interceptors;
+  }
+
+  get defaults() {
+    return this.instance.defaults;
+  }
+
+  // ======= RAW HTTP REQUESTS =======
+  get<T = unknown>(
     url: string,
-    queryParams?: unknown,
-    config: AxiosRequestConfig = {}
+    params?: unknown,
+    config?: Omit<AxiosRequestConfig, "params" | "url">
   ) {
-    return apiInstance.get<T>(url, { ...config, params: queryParams });
+    return this.instance.get<T>(url, { ...config, params });
   }
 
-  static post<T>(
+  post<T>(
     url: string,
     body?: unknown,
-    queryParams?: unknown,
-    config: AxiosRequestConfig = {}
+    query?: unknown,
+    config?: AxiosRequestConfig
   ) {
-    return apiInstance.post<T>(url, body, { ...config, params: queryParams });
+    return this.instance
+      .post<T>(url, body, { ...config, params: query })
+      .then((response): Response<T> => {
+        const rawHeaders = response.headers;
+        return {
+          data: response.data,
+          headers: Object.assign({}, rawHeaders as unknown),
+          requestId: rawHeaders["x-request-id"],
+          statusCode: response.status,
+          apiVersion: this.config.apiVersion,
+        };
+      });
   }
 
-  static async put<T>(
+  put<T>(
     url: string,
     body?: unknown,
-    queryParams?: unknown,
-    config: AxiosRequestConfig = {}
+    query?: unknown,
+    config?: AxiosRequestConfig
   ) {
-    return apiInstance.put<T>(url, body, { ...config, params: queryParams });
+    return this.instance
+      .put<T>(url, body, { ...config, params: query })
+      .then((response): Response<T> => {
+        const rawHeaders = response.headers;
+        return {
+          data: response.data,
+          headers: Object.assign({}, rawHeaders as unknown),
+          requestId: rawHeaders["x-request-id"],
+          statusCode: response.status,
+          apiVersion: this.config.apiVersion,
+        };
+      });
   }
 
-  static async patch<T>(
+  patch<T>(
     url: string,
     body?: unknown,
-    queryParams?: unknown,
-    config: AxiosRequestConfig = {}
+    query?: unknown,
+    config?: AxiosRequestConfig
   ) {
-    return apiInstance.patch<T>(url, body, { ...config, params: queryParams });
+    return this.instance
+      .patch<T>(url, body, { ...config, params: query })
+      .then((response): Response<T> => {
+        const rawHeaders = response.headers;
+        return {
+          data: response.data,
+          headers: Object.assign({}, rawHeaders as unknown),
+          requestId: rawHeaders["x-request-id"],
+          statusCode: response.status,
+          apiVersion: this.config.apiVersion,
+        };
+      });
   }
 
-  static async delete<T>(
-    url: string,
-    queryParams?: unknown,
-    config: AxiosRequestConfig = {}
-  ) {
-    return apiInstance.delete<T>(url, { ...config, params: queryParams });
+  delete<T>(url: string, query?: unknown, config?: AxiosRequestConfig) {
+    return this.instance
+      .delete<T>(url, { ...config, params: query })
+      .then((response): Response<T> => {
+        const rawHeaders = response.headers;
+        return {
+          data: response.data,
+          headers: Object.assign({}, rawHeaders as unknown),
+          requestId: rawHeaders["x-request-id"],
+          statusCode: response.status,
+          apiVersion: this.config.apiVersion,
+        };
+      });
   }
+
+  // ======================= STATIC =======================
+  private static staticAPI: Api = new Api({ port: 80 });
+  static interceptors = Api.staticAPI.instance.interceptors;
+  static defaults = Api.staticAPI.instance.defaults;
+  static baseURL = Api.staticAPI.baseURL;
+  static getInstance = Api.staticAPI.getInstance.bind(Api.staticAPI);
+  static get = Api.staticAPI.get.bind(Api.staticAPI);
+  static post = Api.staticAPI.post.bind(Api.staticAPI);
+  static put = Api.staticAPI.put.bind(Api.staticAPI);
+  static patch = Api.staticAPI.patch.bind(Api.staticAPI);
+  static delete = Api.staticAPI.delete.bind(Api.staticAPI);
 }
 
 export default Api;

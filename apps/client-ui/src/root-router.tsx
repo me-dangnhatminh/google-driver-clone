@@ -10,7 +10,7 @@ import {
 import * as Sentry from "@sentry/react";
 import { useAuth0 } from "@auth0/auth0-react";
 
-import { apiInstance } from "@api/api";
+import { Api } from "@api/api";
 import NotFoundPage from "@pages/errors/page-not-found";
 
 const sentryCreateBrowserRouter =
@@ -48,8 +48,8 @@ const Authenticated = () => {
 
   let interceptorNum: number | undefined;
   if (isAuth) {
-    if (interceptorNum) apiInstance.interceptors.request.eject(interceptorNum);
-    interceptorNum = apiInstance.interceptors.request.use((config) => {
+    if (interceptorNum) Api.interceptors.request.eject(interceptorNum);
+    interceptorNum = Api.interceptors.request.use((config) => {
       return getToken().then((token) => {
         config.headers.Authorization = `Bearer ${token}`;
         return config;
