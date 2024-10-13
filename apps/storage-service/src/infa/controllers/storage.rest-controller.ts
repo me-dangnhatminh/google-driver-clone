@@ -45,8 +45,8 @@ import * as fs from 'fs-extra';
 import * as rx from 'rxjs';
 import * as z from 'zod';
 
-import { Authenticated, HttpUser } from 'libs/auth-client';
-import { HttpStorage, StorageLoaded } from 'libs/storage-client';
+import { Authenticated, HttpUser } from '@app/auth-client';
+import { HttpStorage, StorageLoaded } from '@app/storage-client';
 
 import { FileRef, UUID } from 'src/domain';
 import { fileUtil, StorageRoutes } from 'src/common';

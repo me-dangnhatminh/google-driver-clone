@@ -1,92 +1,33 @@
 declare const module: any;
 
 import { NestFactory } from '@nestjs/core';
-import { INestApplication, Logger, VersioningType } from '@nestjs/common';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { ReflectionService } from '@grpc/reflection';
-import * as grpc from '@grpc/grpc-js';
-import { Server } from 'http';
-
-import { ConfigService } from './config';
-import { AppModule } from 'src/app.module';
-import setupSwagger from './infa/docs';
 import { NestExpressApplication } from '@nestjs/platform-express';
 
-const buildMicroservice = (app: INestApplication) => {
-  const configService = app.get(ConfigService);
+import defaultLogger from './logger';
+import buildGrpcServer from './grpc.server';
+import buildHttpServer from './http.server';
 
-  const grpcConfig = configService.get('grpc.storage', { infer: true });
-
-  const service = app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.GRPC,
-    options: {
-      ...grpcConfig,
-      credentials: grpc.ServerCredentials.createInsecure(),
-      onLoadPackageDefinition: (pkg, server: grpc.Server) => {
-        const reflection = new ReflectionService(pkg);
-        return reflection.addToServer(server);
-      },
-    },
-  });
-  service.listen().then(() => {
-    Logger.log(`gRPC connected: ${grpcConfig.url}`, 'NestMicroservice');
-  });
-  return service;
-};
-
-const buildRmq = (app: INestApplication) => {
-  const configService = app.get(ConfigService);
-  const rmqConfig = configService.get('rmq', { infer: true });
-
-  const service = app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.RMQ,
-    options: {
-      urls: [rmqConfig.url],
-      queue: rmqConfig.queue,
-      noAck: true,
-      persistent: true,
-      queueOptions: { durable: true },
-    },
-  });
-
-  service.listen().then(() => {
-    Logger.log(`RMQ connected: ${rmqConfig.url}`, 'NestMicroservice');
-  });
-};
+import AppModule from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger: defaultLogger,
+    bufferLogs: true,
     abortOnError: true,
     rawBody: true,
-    bufferLogs: true,
+    cors: false, // use cors in the api-gateway
   });
-  const log = app.get(Logger);
-  if (log) app.useLogger(log);
 
   // ----- microservices -----
-  await buildRmq(app);
-  await buildMicroservice(app);
+  await buildGrpcServer(app);
 
   // ----- http server -----
-  app.disable('x-powered-by');
-  app.setGlobalPrefix('api');
-  app.enableVersioning({ type: VersioningType.URI, prefix: 'v' });
-  setupSwagger(app);
-
-  await app
-    .listen(process.env.PORT || 3000, process.env.HOST || 'localhost')
-    .then((server: Server) => {
-      const address = server.address() as { address: string; port: number };
-      const msg = `Application is running on: ${address.address}:${address.port}`;
-      Logger.log(msg, 'NestApplication');
-    });
+  await buildHttpServer(app);
 
   if (module.hot) {
     module.hot.accept();
     module.hot.dispose(() => app.close());
   }
-
-  return app;
 }
 
 bootstrap();

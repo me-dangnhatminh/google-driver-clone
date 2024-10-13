@@ -1,3 +1,4 @@
+import { ReflectionService } from '@grpc/reflection';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
@@ -20,6 +21,7 @@ import { AUTH_CLIENT_TOKEN } from './constants';
           return {
             transport: Transport.GRPC,
             options: {
+              // how auto load from server
               url: grpcConfig.url,
               package: grpcConfig.package,
               protoPath: grpcConfig.protoPath,

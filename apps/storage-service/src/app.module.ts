@@ -15,9 +15,9 @@ import {
   MulterModule,
 } from './infa/adapters';
 
-import { AuthClientModule } from 'libs/auth-client';
-import { StorageClientModule } from 'libs/storage-client';
-import { PaymentClientModule } from 'libs/payment-client';
+import { AuthClientModule } from '@app/auth-client';
+import { StorageClientModule } from '@app/storage-client';
+import { PaymentClientModule } from '@app/payment-client';
 import { HttpModule } from '@nestjs/axios';
 import { TerminusModule } from '@nestjs/terminus';
 
@@ -57,3 +57,4 @@ import { TerminusModule } from '@nestjs/terminus';
   providers,
 })
 export class AppModule {}
+export default AppModule;

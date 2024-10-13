@@ -7,7 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"libs/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest build --webpack --webpackPath webpack-hmr.config.js --watch",
     "start:debug": "nest start --debug --watch",
@@ -50,6 +50,7 @@
     "express": "^4.21.0",
     "fs-extra": "^11.2.0",
     "glob": "^11.0.0",
+    "js-yaml": "^4.1.0",
     "jszip": "^3.10.1",
     "multer": "1.4.5-lts.1",
     "nest-winston": "^1.9.7",
@@ -97,7 +98,7 @@
       "json",
       "ts"
     ],
-    "rootDir": "src",
+    "rootDir": ".",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
@@ -105,8 +106,15 @@
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "coverageDirectory": "./coverage",
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/src/",
+      "<rootDir>/libs/"
+    ],
+    "moduleNameMapper": {
+      "^@app/storage-client(|/.*)$": "<rootDir>/libs/storage-client/src/$1"
+    }
   },
   "prisma": {
     "schema": "src/infa/persistence/schema.prisma"

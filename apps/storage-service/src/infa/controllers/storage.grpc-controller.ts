@@ -22,7 +22,7 @@ import { FileRef, MyStorage } from 'src/domain';
 import * as rx from 'rxjs';
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import { InvalidArgumentRpcException, UnknownRpcException } from 'libs/common';
+import { InvalidArgumentRpcException, UnknownRpcException } from '@app/common';
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
 
 @Controller()

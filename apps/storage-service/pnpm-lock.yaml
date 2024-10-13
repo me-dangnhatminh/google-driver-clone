@@ -95,6 +95,9 @@ importers:
       glob:
         specifier: ^11.0.0
         version: 11.0.0
+      js-yaml:
+        specifier: ^4.1.0
+        version: 4.1.0
       jszip:
         specifier: ^3.10.1
         version: 3.10.1
