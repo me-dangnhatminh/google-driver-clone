@@ -34,7 +34,13 @@ export class ConfigService extends NestConfigService<Config, true> {
 @Module({
   imports: [
     NestConfig.forRoot({
-      envFilePath: ['.env', '.env.local'],
+      envFilePath: [
+        `.env`,
+        `.env.local`,
+        `.env.${process.env.NODE_ENV}`,
+        `.env.${process.env.NODE_ENV}.local`,
+        `.env.example`,
+      ],
       load: Object.values(configs),
       expandVariables: true,
       cache: true,

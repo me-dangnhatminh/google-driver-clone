@@ -46,7 +46,7 @@ export function buildSwagger(app: INestApplication) {
     const server: Server = app.getHttpServer();
     server.on('listening', () => {
       const address = server.address() as AddressInfo;
-      const host = address.address === '::' ? 'localhost' : address.address;
+      const host = 'localhost';
       const port = address.port;
       const msg = `Swagger UI is running on http://${host}:${port}/${swaggerConfig.prefix}`;
       logger.log(msg);

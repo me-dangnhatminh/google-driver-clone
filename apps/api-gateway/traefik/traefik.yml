@@ -1,3 +1,8 @@
+# ================================= NOTE [Warning] ================================= #
+# Command line notes:
+# docker -H npipe:////./pipe/docker_engine ps -> List all containers (Windows)
+# =================================================================================== #
+
 global:
   checkNewVersion: true
   sendAnonymousUsage: true
@@ -37,13 +42,14 @@ entryPoints:
 
 providers:
   docker:
-    endpoint: "unix:///var/run/docker.sock" # Listen to the UNIX Docker socket
+    endpoint: "unix:///var/run/docker.sock" # Listen to the UNIX Docker socket [Linux]
     exposedByDefault: false # Only expose container that are explicitly enabled (using label traefik.enabled)
     network: "proxy-network" # Default network to use for connections to all containers.
     # swarmMode: false # Activates the Swarm Mode (instead of standalone Docker). [v3 not support standalone mode]
     # swarmModeRefreshSeconds: "15" # Defines the polling interval (in seconds) in Swarm Mode. [v3 not support standalone mode]
     watch: true # Watch Docker Swarm events
   file:
+    debugLogGeneratedTemplate: true # Log the generated configuration template
     directory: "/etc/config" # Load files from the dynamic configuration directory
     watch: true # Watch for modifications
   providersThrottleDuration: "2s" # Configuration reload frequency.

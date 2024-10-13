@@ -1,5 +1,14 @@
+# ======================================== NOTE [Warning] ======================================== #
 # Traefik dynamic configuration file
 # See https://doc.traefik.io/traefik/getting-started/configuration-overview/#the-dynamic-configuration
+
+# -- For config network -- #
+# "host.docker.internal" is not a valid hostname for [Windows]
+# in linux use: docker gateway: "172.17.0.1" [Linux]
+
+# -- Dynamic Configuration -- #
+# FIXME: not working with windows (not reload config)
+# =============================================================================================== #
 
 http:
   middlewares:
@@ -68,7 +77,7 @@ http:
     client-ui:
       loadBalancer:
         servers:
-          - url: http://172.17.0.1:5173
+          - url: http://host.docker.internal:5173
 
     auth-service:
       loadBalancer:
@@ -78,7 +87,7 @@ http:
           interval: 2s
           timeout: 2s
         servers:
-          - url: http://172.17.0.1:3000
+          - url: http://host.docker.internal:3000
 
     storage-service:
       loadBalancer:
@@ -88,4 +97,4 @@ http:
           interval: 2s
           timeout: 2s
         servers:
-          - url: http://172.17.0.1:4000
+          - url: http://host.docker.internal:4000

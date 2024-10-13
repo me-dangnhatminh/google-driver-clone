@@ -17,10 +17,14 @@ services:
       - 443:443/tcp # TCP for HTTPS
       - 443:443/udp # TCP and UDP for QUIC
       - 8080:8080/tcp
-    env_file: ../.env
-    environment:
-      - BASE_DOMAIN=${BASE_DOMAIN}
     volumes:
+      # # Mount the Docker socket [Windows: old versions]
+      # - type: npipe
+      #   source: \\.\pipe\docker_engine\
+      #   target: \\.\pipe\docker_engine\
+
+      # Mount the Docker socket [Linux], [Windows: some versions support this]
       - /var/run/docker.sock:/var/run/docker.sock:ro
+
       - ./traefik.yml:/etc/traefik/traefik.yml:ro
       - ./config:/etc/config:ro

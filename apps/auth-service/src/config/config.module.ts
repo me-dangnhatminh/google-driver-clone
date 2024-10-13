@@ -4,9 +4,13 @@ import {
   ConfigService as NestConfigService,
   Path,
 } from '@nestjs/config';
-import configuration, { Config } from './configuration';
+
+import configuration from './configuration';
 import grpcConfig from './grpc.config';
 
+type Config = ReturnType<typeof configuration> & {
+  grpc: ReturnType<typeof grpcConfig>;
+};
 export class ConfigService extends NestConfigService<Config, true> {
   infer<P extends Path<Config> = any>(path: P) {
     return this.get(path, { infer: true });
@@ -17,7 +21,13 @@ export class ConfigService extends NestConfigService<Config, true> {
 @Module({
   imports: [
     NestConfig.forRoot({
-      envFilePath: ['.env', '.env.local', '.env.development'],
+      envFilePath: [
+        `.env`,
+        `.env.local`,
+        `.env.${process.env.NODE_ENV}`,
+        `.env.${process.env.NODE_ENV}.local`,
+        `.env.example`,
+      ],
       load: [configuration, grpcConfig],
       expandVariables: true,
       cache: true,

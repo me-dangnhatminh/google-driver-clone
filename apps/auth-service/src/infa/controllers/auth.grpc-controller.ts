@@ -42,6 +42,7 @@ export class AuthGrpcController {
         };
       })
       .catch((err: ResponseError) => {
+        console.error(err);
         const status = err.statusCode;
         if (status === 401) {
           const headers = err.headers;
