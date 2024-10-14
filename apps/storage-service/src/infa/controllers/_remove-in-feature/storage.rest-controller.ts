@@ -47,13 +47,13 @@ import { HttpStorage, StorageLoaded } from '@app/storage-client';
 import { FileRef, UUID } from 'src/domain';
 import { fileUtil, StorageRoutes } from 'src/common';
 
-import { useZodPipe } from '../pipes';
+import { useZodPipe } from '../../pipes';
 import {
   buildStructure,
   DiskStorageService,
   structureToDoamin,
   totalSize,
-} from '../adapters';
+} from '../../adapters';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import {

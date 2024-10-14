@@ -4,7 +4,9 @@ import {
   Payload,
   RmqContext,
 } from '@nestjs/microservices';
-import { DiskStorageService } from '../adapters';
+
+import { DiskStorageService } from 'src/infa/adapters';
+
 import { Controller } from '@nestjs/common';
 
 @Controller()

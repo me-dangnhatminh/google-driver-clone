@@ -17,7 +17,7 @@ import { Response } from 'express';
 import { fileUtil } from 'src/common';
 
 import { useZodPipe } from 'src/infa/pipes';
-import { DiskStorageService } from '../adapters';
+import { DiskStorageService } from '../../adapters';
 import { Authenticated } from '@app/auth-client';
 
 const SizeFormat = z.string().regex(/^[1-9]\d{2,3}x[1-9]\d{2,3}$/, {

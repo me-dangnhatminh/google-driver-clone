@@ -1,19 +1,17 @@
-import { StorageGrpcController } from './storage.grpc-controller';
-import { ContentRestController } from './content.rest-controller';
-import { StorageRestController } from './storage.rest-controller';
-import { StorageRmqController } from './storage.rmq-controller';
 import { HealthController } from './health.controller';
 
-import { FolderGrpcController } from './grpc';
-
-import { FolderRestController } from './restfull';
+import { FolderGrpcController, StorageGrpcController } from './grpc';
+import { FolderRestController, StorageRestController } from './restfull';
+import { StorageRmqController } from './rmq';
 
 export const controllers = [
-  FolderRestController,
-  FolderGrpcController,
   HealthController,
-  StorageGrpcController,
-  ContentRestController,
+  // -- restfull
+  FolderRestController,
   StorageRestController,
+  // -- grpc
+  FolderGrpcController,
+  StorageGrpcController,
+  // -- rmq
   StorageRmqController,
 ];

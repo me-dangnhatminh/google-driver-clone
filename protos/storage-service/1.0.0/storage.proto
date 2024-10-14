@@ -5,14 +5,121 @@ package nest.microservices;
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 
-// service StorageService {
-//   rpc get(GetStorageRequest) returns (StorageModel);
-//   rpc list(ListStorageRequest) returns (ListStorageResponse);
-//   rpc create(CreateStorageRequest) returns (StorageModel);
-//   rpc update(UpdateStorageRequest) returns (StorageModel);
-//   rpc delete(DeleteStorageRequest) returns (StorageModel);
-// }
+// ============== Storage Service ============== //
+service StorageService {
+  rpc get(GetStorageRequest) returns (StorageModel);
+  rpc list(ListStorageRequest) returns (ListStorageResponse);
+  rpc create(CreateStorageRequest) returns (StorageModel);
+  rpc update(UpdateStorageRequest) returns (StorageModel);
+  rpc delete(DeleteStorageRequest) returns (StorageModel);
+}
 
+message GetStorageRequest {
+  string id = 1;
+}
+
+message ListStorageRequest {
+  map<string, string> filter = 1;
+  map<string, string> sort = 2;
+  optional int32 limit = 3;
+  optional string cursor = 4;
+  optional int32 offset = 5;
+}
+
+message CreateStorageRequest {
+  string ownerId = 1;
+  optional string id = 2;
+  optional int64 used = 3;
+  optional int64 limit = 4;
+  optional string name = 5; 
+}
+
+message UpdateStorageRequest {
+  string id = 1;
+  optional int64 used = 3;
+  optional int64 limit = 4;
+  optional string name = 5;
+}
+
+message DeleteStorageRequest {
+  string id = 1;
+}
+
+// -- Response
+
+message StorageModel {
+  string id = 1;
+  optional string ownerId = 2;
+  optional int64 used = 3;
+  optional int64 limit = 4;
+  optional string name = 5;
+
+  optional google.protobuf.Timestamp createdAt = 6;
+  optional google.protobuf.Timestamp updatedAt = 7;
+  optional google.protobuf.Timestamp deletedAt = 8;
+}
+
+message GetStorageResponse {
+  string id = 1;
+  optional string ownerId = 2;
+  optional int64 used = 3;
+  optional int64 limit = 4;
+  optional string name = 5;
+
+  optional google.protobuf.Timestamp createdAt = 6;
+  optional google.protobuf.Timestamp updatedAt = 7;
+  optional google.protobuf.Timestamp deletedAt = 8;
+}
+
+message ListStorageResponse {
+  message Item {
+    string id = 1;
+    optional string ownerId = 2;
+    optional int64 used = 3;
+    optional int64 limit = 4;
+    optional string name = 5;
+
+    optional google.protobuf.Timestamp createdAt = 6;
+    optional google.protobuf.Timestamp updatedAt = 7;
+    optional google.protobuf.Timestamp deletedAt = 8;
+  }
+
+  repeated Item items = 1;
+  int32 total = 2;
+  int32 limit = 3;
+  optional string prevCursor = 4;
+  optional string nextCursor = 5;
+}
+
+message CreateStorageResponse {
+  string id = 1;
+  optional string ownerId = 2;
+  optional int64 used = 3;
+  optional int64 limit = 4;
+  optional string name = 5;
+
+  optional google.protobuf.Timestamp createdAt = 6;
+  optional google.protobuf.Timestamp updatedAt = 7;
+  optional google.protobuf.Timestamp deletedAt = 8;
+}
+
+message UpdateStorageResponse {
+  string id = 1;
+  optional string ownerId = 2;
+  optional int64 used = 3;
+  optional int64 limit = 4;
+  optional string name = 5;
+
+  optional google.protobuf.Timestamp createdAt = 6;
+  optional google.protobuf.Timestamp updatedAt = 7;
+  optional google.protobuf.Timestamp deletedAt = 8;
+}
+
+message DeleteStorageResponse {
+  string id = 1;
+}
+
+// ============== Folder Service ============== //
 service FolderService {
   rpc get(GetFolderRequest) returns (GetFolderResponse);
   rpc list(ListFolderRequest) returns (ListFolderResponse);
@@ -22,86 +129,6 @@ service FolderService {
   rpc getContent(GetFolderContentRequest) returns (GetFolderContentResponse);
 }
 
-// service FileRefService {
-//   rpc get(GetFileRefRequest) returns (FileRef);
-//   rpc list(ListFileRefRequest) returns (ListFileRefResponse);
-//   rpc create(CreateFileRefRequest) returns (FileRef);
-//   rpc update(UpdateFileRefRequest) returns (FileRef);
-//   rpc delete(DeleteFileRefRequest) returns (FileRef);
-// }
-
-service StorageService {
-  rpc get(GetStorageRequest) returns (StorageInfo);
-  rpc list(ListStorageRequest) returns (ListStorageResponse);
-  rpc initial(InitialStorageRequest) returns (google.protobuf.Empty);
-  rpc myStorage(google.protobuf.Empty) returns (StorageInfo);
-
-  rpc listFolder(ListFolderRequest) returns (ListFolderResponse);
-  rpc createFolder(CreateFolderRequest) returns (FolderModel);
-  rpc getFolder(GetFolderRequest) returns (GetFolderResponse);
-  rpc getFolderContent(GetFolderContentRequest) returns (GetFolderContentResponse);
-  rpc updateFolder(UpdateFolderRequest) returns (FolderModel);
-  rpc deleteFolder(DeleteFolderRequest) returns (FolderModel);
-}
-
-message GetStorageRequest {
-  optional string id = 1;
-  optional string ref_id = 2;
-  optional string owner_id =3 ;
-}
-
-message ListStorageRequest {
-  map<string, string> filter = 1;
-  optional int32 limit = 2;
-  optional string offset = 3;
-  map<string, string> sort = 4;
-}
-
-message ListStorageResponse {
-  repeated StorageInfo items = 1;
-}
-
-message InitialStorageRequest {
-  string owner_id = 6;
-  optional string name = 1;
-  optional string description = 2;
-  optional string ref_id = 5;
-  
-  optional int64 used = 3; // init 0
-  optional int64 total = 4; // init -1 for unlimited
-}
-
-message Owner {
-  optional string id = 1;
-  optional string name = 2;
-  optional string email = 3;
-  optional string avatarURI = 4;
-}
-
-message FileRef {
-  optional string id = 1;
-  optional string name = 2;
-  optional int64 size = 3;
-  optional string createdAt = 4;
-  optional string pinnedAt = 5;
-  optional string modifiedAt = 6;
-  optional string archivedAt = 7;
-  optional string ownerId = 8;
-  optional string contentType = 9;
-  optional string thumbnail = 10;
-  optional string description = 11;
-}
-
-message StorageInfo {
-  optional string id = 1;
-  optional string name = 2;
-  optional int64 used = 3;
-  optional int64 total = 4;
-  map<string, string> metadata = 6;
-  optional string refId = 5;
-}
-
-// ============== Folder Service ============== //
 message GetFolderRequest {
   string id = 1;
 }
