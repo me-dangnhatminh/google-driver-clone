@@ -75,14 +75,66 @@ export class FolderRestController {
 
   @Get(':id')
   async get(@Query('id') id: string) {
-    const result = await this.storageService.getFolder({ id });
+    const result = await this.storageService.getFolder({ id }).toPromise();
     return result;
   }
 
   @Get(':id/content')
-  async getContent(@Param('id') id: string) {
+  @ApiQuery({
+    name: 'filter',
+    required: false,
+    type: 'object',
+    style: 'deepObject',
+    explode: false,
+    allowReserved: true,
+    description: `Filter conditions as an object (e.g., filter[name]=minh&filter[age]=gt:12)`,
+    examples: {
+      default: { value: {} },
+      example_1: { value: { name: 'minh' } },
+      example_2: { value: { age: 'gt:12', meta: { key: 'gt:12' } } },
+    },
+  })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    isArray: true,
+    type: String,
+    style: 'form',
+    explode: false,
+    allowReserved: true,
+    description: `Sorting conditions (e.g., sort=name:asc,age:desc)`,
+    examples: {
+      default: { value: [] },
+      example_1: { value: ['name:asc'] },
+    },
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Limit for pagination (e.g., limit=10)',
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    type: Number,
+    description: 'Offset for pagination (e.g., offset=10)',
+  })
+  async getContent(
+    @Param('id') id: string,
+    @Query('filter') filter?: Record<string, any>,
+    @Query('sort') sort?: Record<string, string>,
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+  ) {
     const result = await this.storageService
-      .getFolderContent({ id })
+      .getFolderContent({
+        id,
+        filter,
+        sort,
+        limit,
+        offset,
+      })
       .toPromise();
     return result;
   }
@@ -91,12 +143,34 @@ export class FolderRestController {
   @ApiBody({
     schema: {
       type: 'object',
-      properties: { name: { type: 'string' }, parentId: { type: 'string' } },
+      properties: {
+        name: { type: 'string' },
+        ownerId: { type: 'string' },
+        parentId: { type: 'string' },
+      },
       required: ['name'],
     },
   })
   async create(@Body() body) {
     const result = await this.storageService.createFolder(body).toPromise();
+    return result;
+  }
+
+  @Post(':id')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        ownerId: { type: 'string' },
+        parentId: { type: 'string' },
+      },
+    },
+  })
+  async update(@Param('id') id: string, @Body() body) {
+    const result = await this.storageService
+      .updateFolder({ id, ...body })
+      .toPromise();
     return result;
   }
 }

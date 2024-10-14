@@ -38,7 +38,7 @@ export const FolderInfo = z.object({
   ownerId: OnwerId,
   createdAt: PastTime.default(() => new Date()),
   modifiedAt: PastTime.default(() => new Date()),
-
+  parentId: UUID.nullable().default(null),
   pinnedAt: PastTime.nullable().default(null),
   archivedAt: PastTime.nullable().default(null),
 });

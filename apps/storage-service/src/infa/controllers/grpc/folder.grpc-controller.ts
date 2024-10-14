@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Controller } from '@nestjs/common';
-import { QueryBus } from '@nestjs/cqrs';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { GrpcMethod } from '@nestjs/microservices';
 
 import {
@@ -19,7 +19,10 @@ const SERVICE_NAME = 'StorageService';
 
 @Controller()
 export class FolderGrpcController {
-  constructor(private readonly queryBus: QueryBus) {}
+  constructor(
+    private readonly queryBus: QueryBus,
+    private readonly commandBus: CommandBus,
+  ) {}
 
   @GrpcMethod(SERVICE_NAME, 'getFolder')
   async get(request, metadata) {
@@ -42,8 +45,7 @@ export class FolderGrpcController {
   @GrpcMethod(SERVICE_NAME, 'createFolder')
   async createFolder(request, metadata) {
     const command = new CreateFolderCommand(request, metadata);
-    await this.queryBus.execute(command);
-    return command.input;
+    return await this.commandBus.execute(command);
   }
 
   @GrpcMethod(SERVICE_NAME, 'updateFolder')

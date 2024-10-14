@@ -300,6 +300,7 @@ export const structureToDoamin = (
       id: uuid(),
       name: folderName,
       ownerId: ownerId ?? parent.ownerId,
+      parentId: parent.id,
       createdAt: createdAt,
       modifiedAt: createdAt,
       archivedAt: null,

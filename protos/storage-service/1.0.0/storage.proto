@@ -136,6 +136,7 @@ message GetFolderContentRequest {
   map<string, string> sort = 3;
   optional string limit = 4;
   optional string cursor = 5;
+  optional string offset = 6;
 }
 
 message GetFolderContentResponse {
@@ -157,8 +158,9 @@ message GetFolderContentResponse {
 
   repeated Item items = 1;
   int32 total = 2;
-  optional string prevCursor = 3;
-  optional string nextCursor = 4;
+  int32 limit = 3;
+  optional string prevCursor = 4;
+  optional string nextCursor = 5;
 }
 
 message ListFolderRequest {
@@ -166,11 +168,13 @@ message ListFolderRequest {
   map<string, string> filter = 2;
   map<string, string> sort = 3;
   optional int32 limit = 4;
+
   optional string cursor = 5;
+  optional int32 offset = 6;
 }
 
 message ListFolderResponse {
-  message Folder {
+  message Item {
     string id = 1;
     optional  string name = 2;
     optional int64 size = 3;
@@ -181,15 +185,17 @@ message ListFolderResponse {
     optional string archivedAt = 8;
   }
 
-  repeated Folder items = 1;
+  repeated Item items = 1;
   int32 total = 2;
-  optional string prevCursor = 3;
-  optional string nextCursor = 4;
+  int32 limit = 3;
+  optional string prevCursor = 4;
+  optional string nextCursor = 5;
 }
 
 message CreateFolderRequest {
-  string folderId = 1;
-  FolderInfo item = 2;
+  optional string name = 1;
+  optional string parentId = 2;
+  string ownerId = 3;
 }
 
 message UpdateFolderMethod {

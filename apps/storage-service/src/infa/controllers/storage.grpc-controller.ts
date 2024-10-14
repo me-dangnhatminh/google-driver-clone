@@ -14,7 +14,7 @@ import {
   FolderUpdateCmd,
   HardDeleteItemCmd,
   StorageInitialCmd,
-} from 'src/app/commands';
+} from 'src/app/commands/v1';
 import { MyFolderContentQuery, GetStorageQuery } from 'src/app/queries';
 
 import { AppError } from 'src/common';
@@ -99,7 +99,7 @@ export class StorageGrpcController {
     return this.queryBus.execute(query);
   }
 
-  @GrpcMethod('StorageService', 'createFolder')
+  // @GrpcMethod('StorageService', 'createFolder')
   createFolder(request, metadata: Metadata) {
     try {
       const accessorId: string = String(metadata.get('accessorId')[0]);

@@ -79,6 +79,6 @@ export class ListFolderHandler implements IQueryHandler<ListFolderQuery> {
     });
 
     const totalCount = await this.tx.folder.count({ where });
-    return { items: folders, total: totalCount };
+    return { items: folders, total: totalCount, limit };
   }
 }

@@ -29,16 +29,12 @@ import { Response } from 'express';
 import {
   FileUpdateCmd,
   FileUploadCmd,
-  FileContentQuery,
-  FolderDownloadQuery,
   FolderAddContentCmd,
   AddFolderCmd,
-  ItemLabel,
   UpdateItemDTO,
   ItemHardDelete,
   FolderCreateDTO,
-  Pagination,
-} from 'src/app';
+} from 'src/app/commands/v1';
 
 import * as grpc from '@grpc/grpc-js';
 import * as fs from 'fs-extra';
@@ -60,6 +56,12 @@ import {
 } from '../adapters';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  FileContentQuery,
+  FolderDownloadQuery,
+  ItemLabel,
+  Pagination,
+} from 'src/app';
 
 const RootOrKey = z.union([z.literal('root'), UUID]);
 type RootOrKey = Omit<string, 'root'> | 'root';
