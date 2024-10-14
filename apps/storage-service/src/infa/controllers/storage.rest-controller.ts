@@ -131,7 +131,7 @@ export class StorageRestController {
     return res;
   }
 
-  @Patch(StorageRoutes.FOLDER_UPDATE)
+  // @Patch(StorageRoutes.FOLDER_UPDATE)
   updateFolder(
     @HttpUser('userId') userId: string,
     @Body(useZodPipe(UpdateItemDTO)) dto: UpdateItemDTO,

@@ -118,7 +118,7 @@ export class StorageGrpcController {
     }
   }
 
-  @GrpcMethod('StorageService', 'updateFolder')
+  // @GrpcMethod('StorageService', 'updateFolder')
   updateFolder(request, metadata: Metadata) {
     try {
       const accessorId: string = String(metadata.get('accessorId')[0]);

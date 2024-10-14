@@ -51,14 +51,14 @@ export class FolderGrpcController {
   @GrpcMethod(SERVICE_NAME, 'updateFolder')
   async updateFolder(request, metadata) {
     const command = new UpdateFolderCommand(request, metadata);
-    await this.queryBus.execute(command);
+    await this.commandBus.execute(command);
     return command.input;
   }
 
   @GrpcMethod(SERVICE_NAME, 'deleteFolder')
   async deleteFolder(request, metadata) {
     const command = new DeleteFolderCommand(request, metadata);
-    await this.queryBus.execute(command);
+    await this.commandBus.execute(command);
     return command.input;
   }
 

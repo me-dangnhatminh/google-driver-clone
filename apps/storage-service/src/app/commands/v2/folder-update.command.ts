@@ -5,15 +5,12 @@ import { CommandHandler, ICommand, ICommandHandler } from '@nestjs/cqrs';
 export class UpdateFolderCommand implements ICommand {
   constructor(
     public input: {
-      name: string;
-      parentId: string;
-      createdAt?: Date;
-      pinnedAt?: Date;
-      modifiedAt?: Date;
-      archivedAt?: Date;
-      thumbnail?: string;
-      description?: string;
-      metadata?: Record<string, unknown>;
+      id: string;
+      name?: string;
+      ownerId?: string;
+      // thumbnail?: string;
+      // description?: string;
+      // metadata?: unknown;
     },
     public metadata: unknown,
   ) {}
@@ -26,7 +23,21 @@ export class UpdateFolderHandler
   private readonly tx = this.txHost.tx;
   constructor(private txHost: TransactionHost<TransactionalAdapterPrisma>) {}
 
-  async execute() {
-    // Implementation here
+  async execute({ input }: UpdateFolderCommand) {
+    const folder = await this.tx.folder.findUniqueOrThrow({
+      where: { id: input.id },
+    });
+
+    const updateData = { ...folder, ...input };
+    const isDiff = JSON.stringify(folder) !== JSON.stringify(updateData);
+    if (!isDiff) return folder;
+    return await this.tx.folder.update({
+      where: { id: input.id },
+      data: {
+        name: input.name,
+        ownerId: input.ownerId,
+        modifiedAt: new Date(),
+      },
+    });
   }
 }

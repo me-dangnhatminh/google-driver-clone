@@ -1,11 +1,16 @@
 import {
+  BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
+  Patch,
   Post,
+  Put,
   Query,
+  Res,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiQuery, ApiTags } from '@nestjs/swagger';
 
@@ -15,7 +20,6 @@ import { ApiBearerAuth, ApiBody, ApiQuery, ApiTags } from '@nestjs/swagger';
 export class FolderRestController {
   constructor(@Inject('StorageService') private readonly storageService) {}
 
-  @Get()
   @ApiQuery({
     name: 'filter',
     required: false,
@@ -56,6 +60,7 @@ export class FolderRestController {
     type: Number,
     description: 'Offset for pagination (e.g., offset=10)',
   })
+  @Get()
   async list(
     @Query('filter') filter?: Record<string, any>,
     @Query('sort') sort?: Record<string, string>,
@@ -74,12 +79,17 @@ export class FolderRestController {
   }
 
   @Get(':id')
-  async get(@Query('id') id: string) {
-    const result = await this.storageService.getFolder({ id }).toPromise();
-    return result;
+  async get(@Param('id') id: string) {
+    const { items } = await this.storageService
+      .listFolder({ filter: { id } })
+      .toPromise();
+    const folder = items[0];
+    if (!folder) {
+      throw new BadRequestException(`Folder with id ${id} not found`);
+    }
+    return folder;
   }
 
-  @Get(':id/content')
   @ApiQuery({
     name: 'filter',
     required: false,
@@ -120,6 +130,7 @@ export class FolderRestController {
     type: Number,
     description: 'Offset for pagination (e.g., offset=10)',
   })
+  @Get(':id/content')
   async getContent(
     @Param('id') id: string,
     @Query('filter') filter?: Record<string, any>,
@@ -139,7 +150,11 @@ export class FolderRestController {
     return result;
   }
 
-  @Post()
+  @Post(':id/content\\:\\upload')
+  async upload() {
+    throw new Error('Not implemented');
+  }
+
   @ApiBody({
     schema: {
       type: 'object',
@@ -151,12 +166,13 @@ export class FolderRestController {
       required: ['name'],
     },
   })
-  async create(@Body() body) {
+  @Post()
+  async create(@Body() body, @Res({ passthrough: true }) res) {
     const result = await this.storageService.createFolder(body).toPromise();
+    res.status(201);
     return result;
   }
 
-  @Post(':id')
   @ApiBody({
     schema: {
       type: 'object',
@@ -167,13 +183,71 @@ export class FolderRestController {
       },
     },
   })
-  async update(@Param('id') id: string, @Body() body) {
+  @Patch(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() body,
+    @Res({ passthrough: true }) res,
+  ) {
+    const { items } = await this.storageService
+      .listFolder({ filter: { id }, limit: 1 })
+      .toPromise();
+    const folder = items[0];
+
+    if (!folder) {
+      throw new BadRequestException(`Folder with id ${id} not found`);
+    }
     const result = await this.storageService
       .updateFolder({ id, ...body })
       .toPromise();
+
+    if (folder.modifiedAt !== result.modifiedAt) res.status(200);
+    else res.status(204);
     return result;
   }
+
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        ownerId: { type: 'string' },
+        parentId: { type: 'string' },
+      },
+    },
+  })
+  @Put(':id')
+  async upsert(
+    @Param('id') id: string,
+    @Body() body,
+    @Res({ passthrough: true }) res,
+  ) {
+    const { items } = await this.storageService
+      .listFolder({ filter: { id }, limit: 1 })
+      .toPromise();
+    const folder = items[0];
+    if (folder) return this.update(id, body, res);
+    return this.create(body, res);
+  }
+
+  @Delete(':id')
+  async delete(@Param('id') id: string, @Res({ passthrough: true }) res) {
+    const { items } = await this.storageService
+      .listFolder({ filter: { id }, limit: 1 })
+      .toPromise();
+    if (items.length === 0) {
+      res.status(204);
+      return;
+    }
+    const result = await this.storageService.deleteFolder({ id }).toPromise();
+    res.status(200);
+    return result;
+  }
+
+  // @Post(':id/action:copy')
+  // @Post(':id/action:move')
 }
+
 // @Get(':id/children')
 // async getChildren(@Query('id') id: string) {
 //   return { id };

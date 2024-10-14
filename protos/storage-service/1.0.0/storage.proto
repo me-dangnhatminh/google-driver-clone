@@ -12,14 +12,11 @@ service StorageService {
   rpc myStorage(google.protobuf.Empty) returns (StorageInfo);
 
   rpc listFolder(ListFolderRequest) returns (ListFolderResponse);
-  rpc createFolder(CreateFolderRequest) returns (FolderInfo);
+  rpc createFolder(CreateFolderRequest) returns (FolderModel);
   rpc getFolder(GetFolderRequest) returns (GetFolderResponse);
   rpc getFolderContent(GetFolderContentRequest) returns (GetFolderContentResponse);
-  rpc getFolderInfo(GetFolderInfoRequest) returns (FolderInfo);
-  rpc updateFolder(UpdateFolderRequest) returns (google.protobuf.Empty);
-  rpc hardDeleteItem(DeleteItemRequest) returns (google.protobuf.Empty);
-
-  rpc uploadFile(stream UploadFileRequest) returns (FileRef);
+  rpc updateFolder(UpdateFolderRequest) returns (FolderModel);
+  rpc deleteFolder(DeleteFolderRequest) returns (FolderModel);
 }
 
 message GetStorageRequest {
@@ -70,17 +67,6 @@ message FileRef {
   optional string description = 11;
 }
 
-message FolderInfo {
-  optional string id = 1;
-  optional string name = 2;
-  optional int64 size = 3;
-  optional string ownerId = 4;
-  optional string createdAt = 5;
-  optional string pinnedAt = 6;
-  optional string modifiedAt = 7;
-  optional string archivedAt = 8;
-}
-
 message StorageInfo {
   optional string id = 1;
   optional string name = 2;
@@ -90,70 +76,112 @@ message StorageInfo {
   optional string refId = 5;
 }
 
-message Pagination {
-  optional int32 limit = 1;
-  optional string fileCursor = 2;
-  optional string folderCursor = 3;
-}
-
+// ============== Folder Service ============== //
 message GetFolderRequest {
   string id = 1;
 }
 
-message GetFolderInfoRequest {
-  string folderId = 1;
-}
-
-message ContentResult {
-  repeated FileRef files = 1;
-  repeated FolderInfo folders = 2;
-}
-
-message NextCursor {
-  optional string fileCursor = 1;
-  optional string folderCursor = 2;
-}
-
-
-message GetFolderResponse {
-  optional string id = 1;
-  optional string name = 2;
-  optional int64 size = 3;
-  optional string ownerId = 4;
-  optional string createdAt = 5;
-  optional string pinnedAt = 6;
-  optional string modifiedAt = 7;
-  optional string archivedAt = 8;
-
-  optional ContentResult content = 9;
-  optional NextCursor nextCursor = 10;
+message ListFolderRequest {
+  map<string, string> filter = 1;
+  map<string, string> sort = 2;
+  optional int32 limit = 3;
+  optional string cursor = 4;
+  optional int32 offset = 5;
 }
 
 message GetFolderContentRequest {
   string id = 1;
-
   map<string, string> filter = 2;
   map<string, string> sort = 3;
-  optional string limit = 4;
+
+  optional int32 limit = 4;
   optional string cursor = 5;
-  optional string offset = 6;
+  optional int32 offset = 6;
+}
+
+message CreateFolderRequest {
+  string ownerId = 1;
+  optional string name = 2;
+  optional string parentId = 3;
+  optional string thumbnail = 4;
+  optional string description = 5;
+  optional string pinnedAt = 6;
+  optional string archivedAt = 7;
+}
+
+message UpdateFolderRequest {
+  string id = 1;
+  optional string name = 3;
+  optional string ownerId = 2;
+  optional string thumbnail = 5;
+  optional string description = 6;
+}
+
+message DeleteFolderRequest {
+  string id = 1;
+}
+
+// -- Response
+message FolderModel {
+  string id = 1;
+  optional string name = 2;
+  optional int64 size = 3;
+  optional string ownerId = 4;
+  optional string parentId = 5;
+  optional string createdAt = 6;
+  optional string pinnedAt = 7;
+  optional string modifiedAt = 8;
+  optional string archivedAt = 9;
+}
+
+message GetFolderResponse {
+  string id = 1;
+  optional string name = 2;
+  optional int64 size = 3;
+  optional string ownerId = 4;
+  optional string parentId = 5;
+  optional string createdAt = 6;
+  optional string pinnedAt = 7;
+  optional string modifiedAt = 8;
+  optional string archivedAt = 9;
+}
+
+message ListFolderResponse {
+  message Item {
+    string id = 1;
+    optional string name = 2;
+    optional int64 size = 3;
+    optional string parentId = 4;
+    optional string ownerId = 5;
+    optional string createdAt = 6;
+    optional string pinnedAt = 7;
+    optional string modifiedAt = 8;
+    optional string archivedAt = 9;
+  }
+
+  repeated Item items = 1;
+  int32 total = 2;
+  int32 limit = 3;
+  optional string prevCursor = 4;
+  optional string nextCursor = 5;
 }
 
 message GetFolderContentResponse {
   message Item {
     string id = 1;
     string kind = 2;
-    optional string name = 3;
-    optional string contentType = 4;
-    optional string ownerId = 5;
-    optional string createdAt = 6;
-    optional string pinnedAt = 7;
-    optional string modifiedAt = 8;
-    optional string archivedAt = 9;
+    optional string parentId = 3;
+    optional string name = 4;
+    optional string contentType = 5;
+    optional string ownerId = 6;
+    optional string createdAt = 7;
+    optional string pinnedAt = 8;
+    optional string modifiedAt = 9;
+    optional string archivedAt = 10;
 
-    optional int64 size = 10;
-    optional string thumbnail = 11;
-    optional string description = 12;
+    optional int64 size = 11;
+    optional string thumbnail = 12;
+    optional string description = 13;
   }
 
   repeated Item items = 1;
@@ -163,59 +191,30 @@ message GetFolderContentResponse {
   optional string nextCursor = 5;
 }
 
-message ListFolderRequest {
-  string rootId = 1;
-  map<string, string> filter = 2;
-  map<string, string> sort = 3;
-  optional int32 limit = 4;
-
-  optional string cursor = 5;
-  optional int32 offset = 6;
-}
-
-message ListFolderResponse {
-  message Item {
-    string id = 1;
-    optional  string name = 2;
-    optional int64 size = 3;
-    optional string ownerId = 4;
-    optional string createdAt = 5;
-    optional string pinnedAt = 6;
-    optional string modifiedAt = 7;
-    optional string archivedAt = 8;
-  }
-
-  repeated Item items = 1;
-  int32 total = 2;
-  int32 limit = 3;
-  optional string prevCursor = 4;
-  optional string nextCursor = 5;
-}
-
-message CreateFolderRequest {
-  optional string name = 1;
-  optional string parentId = 2;
-  string ownerId = 3;
-}
-
-message UpdateFolderMethod {
-  string label = 1;
+message CreateFolderResponse {
+  optional string id = 1;
   optional string name = 2;
+  optional int64 size = 3;
+  optional string ownerId = 4;
+  optional string parentId = 5;
+  optional string createdAt = 6;
+  optional string pinnedAt = 7;
+  optional string modifiedAt = 8;
+  optional string archivedAt = 9;
 }
 
-message UpdateFolderRequest {
-  UpdateFolderMethod method = 1;
-  string folderId = 2;
+message UpdateFolderResponse {
+  string id = 1;
+  optional string name = 2;
+  optional int64 size = 3;
+  optional string ownerId = 4;
+  optional string parentId = 5;
+  optional string createdAt = 6;
+  optional string pinnedAt = 7;
+  optional string modifiedAt = 8;
+  optional string archivedAt = 9;
 }
 
-message DeleteItemRequest {
-  string rootId = 1;
-  string type = 2;
-  string id = 3;
-}
-
-// content and offset
-message UploadFileRequest {
-  bytes content = 1;
-  int64 offset = 2;
+message DeleteFolderResponse {
+  string id = 1;
 }
