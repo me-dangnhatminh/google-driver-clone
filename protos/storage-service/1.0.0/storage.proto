@@ -5,6 +5,31 @@ package nest.microservices;
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 
+// service StorageService {
+//   rpc get(GetStorageRequest) returns (StorageModel);
+//   rpc list(ListStorageRequest) returns (ListStorageResponse);
+//   rpc create(CreateStorageRequest) returns (StorageModel);
+//   rpc update(UpdateStorageRequest) returns (StorageModel);
+//   rpc delete(DeleteStorageRequest) returns (StorageModel);
+// }
+
+service FolderService {
+  rpc get(GetFolderRequest) returns (GetFolderResponse);
+  rpc list(ListFolderRequest) returns (ListFolderResponse);
+  rpc create(CreateFolderRequest) returns (FolderModel);
+  rpc update(UpdateFolderRequest) returns (FolderModel);
+  rpc delete(DeleteFolderRequest) returns (FolderModel);
+  rpc getContent(GetFolderContentRequest) returns (GetFolderContentResponse);
+}
+
+// service FileRefService {
+//   rpc get(GetFileRefRequest) returns (FileRef);
+//   rpc list(ListFileRefRequest) returns (ListFileRefResponse);
+//   rpc create(CreateFileRefRequest) returns (FileRef);
+//   rpc update(UpdateFileRefRequest) returns (FileRef);
+//   rpc delete(DeleteFileRefRequest) returns (FileRef);
+// }
+
 service StorageService {
   rpc get(GetStorageRequest) returns (StorageInfo);
   rpc list(ListStorageRequest) returns (ListStorageResponse);

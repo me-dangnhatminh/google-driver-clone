@@ -15,7 +15,7 @@ import {
   UpdateFolderCommand,
 } from 'src/app/commands/v2';
 
-const SERVICE_NAME = 'StorageService';
+const SERVICE_NAME = 'FolderService';
 
 @Controller()
 export class FolderGrpcController {
@@ -24,38 +24,38 @@ export class FolderGrpcController {
     private readonly commandBus: CommandBus,
   ) {}
 
-  @GrpcMethod(SERVICE_NAME, 'getFolder')
+  @GrpcMethod(SERVICE_NAME, 'get')
   async get(request, metadata) {
     const query = new GetFolderQuery(request, metadata);
     return await this.queryBus.execute(query);
   }
 
-  @GrpcMethod(SERVICE_NAME, 'getFolderContent')
+  @GrpcMethod(SERVICE_NAME, 'getContent')
   async getContent(request, metadata) {
     const query = new ContentFolderQuery(request, metadata);
     return await this.queryBus.execute(query);
   }
 
-  @GrpcMethod(SERVICE_NAME, 'listFolder')
+  @GrpcMethod(SERVICE_NAME, 'list')
   async list(request, metadata) {
     const query = new ListFolderQuery(request, metadata);
     return await this.queryBus.execute(query);
   }
 
-  @GrpcMethod(SERVICE_NAME, 'createFolder')
+  @GrpcMethod(SERVICE_NAME, 'create')
   async createFolder(request, metadata) {
     const command = new CreateFolderCommand(request, metadata);
     return await this.commandBus.execute(command);
   }
 
-  @GrpcMethod(SERVICE_NAME, 'updateFolder')
+  @GrpcMethod(SERVICE_NAME, 'update')
   async updateFolder(request, metadata) {
     const command = new UpdateFolderCommand(request, metadata);
     await this.commandBus.execute(command);
     return command.input;
   }
 
-  @GrpcMethod(SERVICE_NAME, 'deleteFolder')
+  @GrpcMethod(SERVICE_NAME, 'delete')
   async deleteFolder(request, metadata) {
     const command = new DeleteFolderCommand(request, metadata);
     await this.commandBus.execute(command);

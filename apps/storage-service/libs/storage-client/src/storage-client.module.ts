@@ -38,7 +38,12 @@ import * as grpc from '@grpc/grpc-js';
       inject: [STORAGE_SERVICE_NAME],
       useFactory: (client) => client.getService('StorageService'),
     },
+    {
+      provide: 'FolderService',
+      inject: [STORAGE_SERVICE_NAME],
+      useFactory: (client) => client.getService('FolderService'),
+    },
   ],
-  exports: ['StorageService'],
+  exports: ['StorageService', 'FolderService'],
 })
 export class StorageClientModule {}

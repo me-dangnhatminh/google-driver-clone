@@ -18,7 +18,7 @@ import { ApiBearerAuth, ApiBody, ApiQuery, ApiTags } from '@nestjs/swagger';
 @ApiBearerAuth()
 @Controller({ path: 'storage/folder', version: '1' })
 export class FolderRestController {
-  constructor(@Inject('StorageService') private readonly storageService) {}
+  constructor(@Inject('FolderService') private readonly folderService) {}
 
   @ApiQuery({
     name: 'filter',
@@ -67,8 +67,8 @@ export class FolderRestController {
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
   ) {
-    const result = await this.storageService
-      .listFolder({
+    const result = await this.folderService
+      .list({
         filter,
         sort,
         limit,
@@ -80,8 +80,8 @@ export class FolderRestController {
 
   @Get(':id')
   async get(@Param('id') id: string) {
-    const { items } = await this.storageService
-      .listFolder({ filter: { id } })
+    const { items } = await this.folderService
+      .list({ filter: { id } })
       .toPromise();
     const folder = items[0];
     if (!folder) {
@@ -138,8 +138,8 @@ export class FolderRestController {
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
   ) {
-    const result = await this.storageService
-      .getFolderContent({
+    const result = await this.folderService
+      .getContent({
         id,
         filter,
         sort,
@@ -168,7 +168,7 @@ export class FolderRestController {
   })
   @Post()
   async create(@Body() body, @Res({ passthrough: true }) res) {
-    const result = await this.storageService.createFolder(body).toPromise();
+    const result = await this.folderService.create(body).toPromise();
     res.status(201);
     return result;
   }
@@ -189,17 +189,15 @@ export class FolderRestController {
     @Body() body,
     @Res({ passthrough: true }) res,
   ) {
-    const { items } = await this.storageService
-      .listFolder({ filter: { id }, limit: 1 })
+    const { items } = await this.folderService
+      .list({ filter: { id }, limit: 1 })
       .toPromise();
     const folder = items[0];
 
     if (!folder) {
       throw new BadRequestException(`Folder with id ${id} not found`);
     }
-    const result = await this.storageService
-      .updateFolder({ id, ...body })
-      .toPromise();
+    const result = await this.folderService.update({ id, ...body }).toPromise();
 
     if (folder.modifiedAt !== result.modifiedAt) res.status(200);
     else res.status(204);
@@ -222,8 +220,8 @@ export class FolderRestController {
     @Body() body,
     @Res({ passthrough: true }) res,
   ) {
-    const { items } = await this.storageService
-      .listFolder({ filter: { id }, limit: 1 })
+    const { items } = await this.folderService
+      .list({ filter: { id }, limit: 1 })
       .toPromise();
     const folder = items[0];
     if (folder) return this.update(id, body, res);
@@ -232,14 +230,14 @@ export class FolderRestController {
 
   @Delete(':id')
   async delete(@Param('id') id: string, @Res({ passthrough: true }) res) {
-    const { items } = await this.storageService
-      .listFolder({ filter: { id }, limit: 1 })
+    const { items } = await this.folderService
+      .list({ filter: { id }, limit: 1 })
       .toPromise();
     if (items.length === 0) {
       res.status(204);
       return;
     }
-    const result = await this.storageService.deleteFolder({ id }).toPromise();
+    const result = await this.folderService.delete({ id }).toPromise();
     res.status(200);
     return result;
   }
