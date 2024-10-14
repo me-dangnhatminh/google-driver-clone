@@ -7,10 +7,14 @@ import "google/protobuf/empty.proto";
 
 service StorageService {
   rpc get(GetStorageRequest) returns (StorageInfo);
+  rpc list(ListStorageRequest) returns (ListStorageResponse);
   rpc initial(InitialStorageRequest) returns (google.protobuf.Empty);
   rpc myStorage(google.protobuf.Empty) returns (StorageInfo);
+
+  rpc listFolder(ListFolderRequest) returns (ListFolderResponse);
   rpc createFolder(CreateFolderRequest) returns (FolderInfo);
   rpc getFolder(GetFolderRequest) returns (GetFolderResponse);
+  rpc getFolderContent(GetFolderContentRequest) returns (GetFolderContentResponse);
   rpc getFolderInfo(GetFolderInfoRequest) returns (FolderInfo);
   rpc updateFolder(UpdateFolderRequest) returns (google.protobuf.Empty);
   rpc hardDeleteItem(DeleteItemRequest) returns (google.protobuf.Empty);
@@ -22,6 +26,17 @@ message GetStorageRequest {
   optional string id = 1;
   optional string ref_id = 2;
   optional string owner_id =3 ;
+}
+
+message ListStorageRequest {
+  map<string, string> filter = 1;
+  optional int32 limit = 2;
+  optional string offset = 3;
+  map<string, string> sort = 4;
+}
+
+message ListStorageResponse {
+  repeated StorageInfo items = 1;
 }
 
 message InitialStorageRequest {
@@ -82,10 +97,7 @@ message Pagination {
 }
 
 message GetFolderRequest {
-  string rootId = 1;
-  string folderId = 2;
-  string label = 3;
-  optional Pagination pagination = 4;
+  string id = 1;
 }
 
 message GetFolderInfoRequest {
@@ -115,6 +127,64 @@ message GetFolderResponse {
 
   optional ContentResult content = 9;
   optional NextCursor nextCursor = 10;
+}
+
+message GetFolderContentRequest {
+  string id = 1;
+
+  map<string, string> filter = 2;
+  map<string, string> sort = 3;
+  optional string limit = 4;
+  optional string cursor = 5;
+}
+
+message GetFolderContentResponse {
+  message Item {
+    string id = 1;
+    string kind = 2;
+    optional string name = 3;
+    optional string contentType = 4;
+    optional string ownerId = 5;
+    optional string createdAt = 6;
+    optional string pinnedAt = 7;
+    optional string modifiedAt = 8;
+    optional string archivedAt = 9;
+
+    optional int64 size = 10;
+    optional string thumbnail = 11;
+    optional string description = 12;
+  }
+
+  repeated Item items = 1;
+  int32 total = 2;
+  optional string prevCursor = 3;
+  optional string nextCursor = 4;
+}
+
+message ListFolderRequest {
+  string rootId = 1;
+  map<string, string> filter = 2;
+  map<string, string> sort = 3;
+  optional int32 limit = 4;
+  optional string cursor = 5;
+}
+
+message ListFolderResponse {
+  message Folder {
+    string id = 1;
+    optional  string name = 2;
+    optional int64 size = 3;
+    optional string ownerId = 4;
+    optional string createdAt = 5;
+    optional string pinnedAt = 6;
+    optional string modifiedAt = 7;
+    optional string archivedAt = 8;
+  }
+
+  repeated Folder items = 1;
+  int32 total = 2;
+  optional string prevCursor = 3;
+  optional string nextCursor = 4;
 }
 
 message CreateFolderRequest {

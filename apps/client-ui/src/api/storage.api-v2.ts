@@ -27,9 +27,16 @@ const storageMethods = {
   file: fileMethods,
 };
 
-const buildFilter = (filter: Record<string, string | number>) => {
-  const parts = [];
-  for (const key in filter) parts.push(`filter[${key}]=${filter[key]}`);
+const buildFilter = (filter: Record<string, unknown>) => {
+  const parts: string[] = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const build = (obj: Record<string, any>, prefix = "") => {
+    for (const key in obj) {
+      if (typeof obj[key] === "object") build(obj[key], `${prefix}[${key}]`);
+      else parts.push(`filter${prefix}[${key}]=${obj[key]}`);
+    }
+  };
+  build(filter);
   if (parts.length) return parts.join("&");
   return "";
 };
@@ -52,7 +59,7 @@ const buildSort = (sort: Record<string, string>) => {
 const buildQuery = (query: {
   limit?: number;
   offset?: string;
-  filter?: Record<string, string>;
+  filter?: Record<string, unknown>;
   sort?: Record<string, string>;
 }) => {
   const parts = [];

@@ -35,7 +35,7 @@ const GetContentQuery = z.object({
 });
 type GetContentQuery = z.infer<typeof GetContentQuery>;
 
-@Controller('storage/content')
+@Controller({ path: 'storage/content', version: '1' })
 @UseGuards(Authenticated)
 export class ContentRestController {
   constructor(
