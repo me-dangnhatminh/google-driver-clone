@@ -21,7 +21,7 @@ export class AuthGrpcController {
     private readonly authService: AuthService,
   ) {}
 
-  @GrpcMethod(SERVICE_NAME, 'verifyToken')
+  @GrpcMethod(SERVICE_NAME, 'verify')
   async verifyToken(request) {
     return await this.authService.verifyToken(request.token);
   }

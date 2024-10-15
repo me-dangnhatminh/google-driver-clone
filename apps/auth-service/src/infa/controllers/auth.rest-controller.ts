@@ -81,6 +81,6 @@ export class AuthRestController {
 
   @Get('verify')
   verify(@Query('token') token: string) {
-    return this.authService.verifyToken({ token });
+    return this.authService.verify({ token });
   }
 }

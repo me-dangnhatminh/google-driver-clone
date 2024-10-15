@@ -31,8 +31,8 @@ import "google/protobuf/any.proto";
 // =========== AUTH ===========
 service AuthService {
   rpc ping(PingRequest) returns (PingResponse);
-  rpc validateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
-  rpc verifyToken(VerifyTokenRequest) returns (VerifyTokenResponse);
+  rpc validate(ValidateRequest) returns (ValidateResponse);
+  rpc verify(VerifyRequest) returns (VerifyResponse);
   // rpc login(LoginRequest) returns (UserModel);
   // rpc logout(LogoutRequest) returns (google.protobuf.Empty);
   // rpc register(RegisterRequest) returns (UserModel);
@@ -41,15 +41,15 @@ service AuthService {
   // rpc changePassword(ChangePasswordRequest) returns (google.protobuf.Empty);
 }
 
-message ValidateTokenRequest {
+message ValidateRequest {
   string token = 1;
 }
 
-message VerifyTokenRequest {
+message VerifyRequest {
   string token = 1;
 }
 
-message ValidateTokenResponse {
+message ValidateResponse {
   string id = 1;
   string email = 2;
   string name = 3;
@@ -62,7 +62,7 @@ message ValidateTokenResponse {
   map<string, string> metadata = 10;
 }
 
-message VerifyTokenResponse {
+message VerifyResponse {
   optional string iss = 1;
   repeated string aud = 2;
   optional string sub = 3;
@@ -157,7 +157,7 @@ message DeleteManyResponse {
 
 // =================== Read =================== //
 
-message VerifyTokenReq {
+message VerifyReq {
   string token = 1;
 }
 
