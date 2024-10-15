@@ -2,10 +2,6 @@
 # Traefik dynamic configuration file
 # See https://doc.traefik.io/traefik/getting-started/configuration-overview/#the-dynamic-configuration
 
-# -- For config network -- #
-# "host.docker.internal" is not a valid hostname for [Windows]
-# in linux use: docker gateway: "172.17.0.1" [Linux]
-
 # -- Dynamic Configuration -- #
 # FIXME: not working with windows (not reload config)
 # =============================================================================================== #

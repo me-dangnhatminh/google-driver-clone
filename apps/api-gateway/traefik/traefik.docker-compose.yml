@@ -12,6 +12,8 @@ services:
     restart: always
     networks:
       - proxy-network
+    extra_hosts:
+      - host.docker.internal:host-gateway # Docker gateway [Linux]
     ports:
       - 80:80/tcp # HTTP for redirect to HTTPS
       - 443:443/tcp # TCP for HTTPS

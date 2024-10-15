@@ -1,6 +1,10 @@
 # ================================= NOTE [Warning] ================================= #
 # Command line notes:
 # docker -H npipe:////./pipe/docker_engine ps -> List all containers (Windows)
+# -- For config network -- #
+# "host.docker.internal" is not a valid hostname for [Windows]
+# in linux use: docker gateway: "172.17.0.1" [Linux]
+# or add 'extra_hosts' in docker-compose.yml (ex: host.docker.internal:host-gateway)
 # =================================================================================== #
 
 global:

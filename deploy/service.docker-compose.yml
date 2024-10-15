@@ -17,7 +17,6 @@ services:
       - proxy-network
     ports:
       - 5432:5432
-    env_file: .env
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
@@ -41,7 +40,6 @@ services:
     image: rabbitmq:3.13-management
     container_name: rabbitmq
     restart: always
-    env_file: .env
     networks:
       - server-network
       - proxy-network
