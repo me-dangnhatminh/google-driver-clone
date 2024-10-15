@@ -83,5 +83,5 @@ services:
       - bootstrap.memory_lock=true
       - ES_JAVA_OPTS=-Xms1g -Xmx1g
       - xpack.security.enabled=false # disable security, not recommended for production
-    volumes:
-      - ./elasticsearch-data:/usr/share/elasticsearch/data
+    # volumes:
+    #   - ./elasticsearch-data:/usr/share/elasticsearch/data (error: maybe these locations are not writable or multiple nodes were started on the same data path?)
