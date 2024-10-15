@@ -1,5 +1,12 @@
 version: "3.9"
 
+volumes:
+  postgres-data: {}
+  redis-data: {}
+  rabbitmq-data: {}
+  vault-data: {}
+  elasticsearch-data: {}
+
 networks:
   proxy-network:
     external: false
@@ -22,7 +29,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-postgres}
     volumes:
-      - ./postgres-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
 
   redis:
     image: redis:6.0.9
@@ -34,7 +41,7 @@ services:
     ports:
       - 6379:6379
     volumes:
-      - ./redis-data:/data
+      - redis-data:/data
 
   rabbitmq:
     image: rabbitmq:3.13-management
@@ -50,7 +57,7 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
     volumes:
-      - ./rabbitmq-data:/var/lib/rabbitmq
+      - rabbitmq-data:/var/lib/rabbitmq
 
   vault:
     image: hashicorp/vault:latest
@@ -64,7 +71,7 @@ services:
     environment:
       VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_DEV_ROOT_TOKEN_ID:-root}
     volumes:
-      - ./vault-data:/vault/file
+      - vault-data:/vault/file
     privileged: true
 
   elasticsearch:
@@ -84,4 +91,4 @@ services:
       - ES_JAVA_OPTS=-Xms1g -Xmx1g
       - xpack.security.enabled=false # disable security, not recommended for production
     # volumes:
-    #   - ./elasticsearch-data:/usr/share/elasticsearch/data (error: maybe these locations are not writable or multiple nodes were started on the same data path?)
+    #   - elasticsearch-data:/usr/share/elasticsearch/data (error: maybe these locations are not writable or multiple nodes were started on the same data path?)
