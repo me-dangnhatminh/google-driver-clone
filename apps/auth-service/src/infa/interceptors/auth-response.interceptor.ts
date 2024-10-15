@@ -24,6 +24,11 @@ export class AuthResponseInterceptor implements NestInterceptor {
           headerName.permissions,
           JSON.stringify(user.permissions),
         );
+        response.setHeader(
+          headerName.userMetadata,
+          JSON.stringify(user.metadata),
+        );
+
         return user;
       }),
     );

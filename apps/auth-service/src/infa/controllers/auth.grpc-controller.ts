@@ -2,6 +2,7 @@ import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 
 import {
+  AuthService,
   ManagementClient,
   ResponseError,
   UserInfoClient,
@@ -17,18 +18,27 @@ export class AuthGrpcController {
   constructor(
     private readonly userInfo: UserInfoClient,
     private readonly manager: ManagementClient,
+    private readonly authService: AuthService,
   ) {}
+
+  @GrpcMethod(SERVICE_NAME, 'verifyToken')
+  async verifyToken(request) {
+    return await this.authService.verifyToken(request.token);
+  }
 
   @GrpcMethod(SERVICE_NAME, 'ping')
   ping() {
     return { message: 'pong' };
   }
 
-  @GrpcMethod(SERVICE_NAME, 'verifyToken')
-  verifyToken(request) {
+  @GrpcMethod(SERVICE_NAME, 'validate')
+  validate(request) {
     const get = this.userInfo
       .getUserInfo(request.token)
-      .then((res) => res.data)
+      .then((res) => {
+        console.log(res);
+        return res.data;
+      })
       .then(({ sub, email, email_verified, name, permissions, auth, pay }) => {
         const _auth = auth as any;
         return {

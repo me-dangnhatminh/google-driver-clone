@@ -56,6 +56,7 @@ export const authConfigSchema = z.object({
       strict: z.string().default('x-strict'),
       roles: z.string().default('x-user-roles'),
       permissions: z.string().default('x-user-permissions'),
+      userMetadata: z.string().default('x-user-metadata'),
     })
     .default({}),
 });

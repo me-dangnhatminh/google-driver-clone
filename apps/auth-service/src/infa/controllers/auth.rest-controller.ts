@@ -3,13 +3,13 @@ import {
   Get,
   Headers,
   Inject,
+  Query,
   Res,
   UnauthorizedException,
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
-import { ConfigService } from 'src/config';
 
 import { CacheKey, CacheTTL } from '../adapters';
 import {
@@ -21,10 +21,7 @@ import {
 @ApiTags('auth')
 @ApiBearerAuth()
 export class AuthRestController {
-  constructor(
-    private readonly configService: ConfigService,
-    @Inject('AuthService') private readonly authService,
-  ) {}
+  constructor(@Inject('AuthService') private readonly authService) {}
 
   @Get('validate')
   @UseInterceptors(AuthResponseInterceptor, BearerTokenCacheInterceptor)
@@ -60,18 +57,18 @@ export class AuthRestController {
       }
 
       const user = await this.authService
-        .verifyToken({ token })
+        .validate({ token })
         .toPromise()
         .catch((err) => {
           const message = err.message;
           throw new UnauthorizedException({ type: 'unknown', message });
         });
-
       return user;
     } catch (err) {
       // TODO: move to ExceptionFilter
       if (err instanceof UnauthorizedException) {
-        const msg = err.message;
+        const errRes = err.getResponse();
+        const msg = errRes['message'] ? errRes['message'] : 'Unauthorized';
         res.setHeader('Access-Control-Expose-Headers', 'WWW-Authenticate');
         res.setHeader(
           'WWW-Authenticate',
@@ -80,5 +77,10 @@ export class AuthRestController {
       }
       throw err;
     }
+  }
+
+  @Get('verify')
+  verify(@Query('token') token: string) {
+    return this.authService.verifyToken({ token });
   }
 }

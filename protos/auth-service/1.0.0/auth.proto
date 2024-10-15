@@ -31,7 +31,8 @@ import "google/protobuf/any.proto";
 // =========== AUTH ===========
 service AuthService {
   rpc ping(PingRequest) returns (PingResponse);
-  rpc verifyToken(VerifyTokenReq) returns (UserModel);
+  rpc validateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+  rpc verifyToken(VerifyTokenRequest) returns (VerifyTokenResponse);
   // rpc login(LoginRequest) returns (UserModel);
   // rpc logout(LogoutRequest) returns (google.protobuf.Empty);
   // rpc register(RegisterRequest) returns (UserModel);
@@ -40,6 +41,41 @@ service AuthService {
   // rpc changePassword(ChangePasswordRequest) returns (google.protobuf.Empty);
 }
 
+message ValidateTokenRequest {
+  string token = 1;
+}
+
+message VerifyTokenRequest {
+  string token = 1;
+}
+
+message ValidateTokenResponse {
+  string id = 1;
+  string email = 2;
+  string name = 3;
+  string picture = 4;
+  repeated string roles = 5;
+  repeated string permissions = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+  google.protobuf.Timestamp deleted_at = 9;
+  map<string, string> metadata = 10;
+}
+
+message VerifyTokenResponse {
+  optional string iss = 1;
+  repeated string aud = 2;
+  optional string sub = 3;
+  optional int32 iat = 4;
+  optional int32 exp = 5;
+  optional string scope = 6;
+  optional string azp = 7;
+  repeated string permissions = 8;
+  repeated string roles = 9;
+  map<string, string> metadata = 10;
+}
+
+// =========== USER SERVICE ===========
 service UserService {
   rpc ping(PingRequest) returns (PingResponse);
   rpc create(CreateUserRequest) returns (UserModel);
