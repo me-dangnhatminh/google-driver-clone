@@ -92,12 +92,12 @@ export class UserGrpcController {
   }
 
   @GrpcMethod(SERVICE_NAME, 'create')
-  create(messages: any) {
+  create() {
     throw new Error('Not implemented');
   }
 
   @GrpcMethod(SERVICE_NAME, 'update')
-  async update(request: any, metadata: any) {
+  async update(request: any) {
     const { data: user } = await this.userManagement.users.get({
       id: request.id,
     });

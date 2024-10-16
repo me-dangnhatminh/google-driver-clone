@@ -10,18 +10,24 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
+import { Metadata } from '@grpc/grpc-js';
+import { randomUUID as uuid } from 'crypto';
 
 import { CacheKey, CacheTTL } from '../adapters';
 import {
   BearerTokenCacheInterceptor,
   AuthResponseInterceptor,
 } from '../interceptors';
+import Redis from 'ioredis';
 
 @Controller({ path: 'auth', version: '1' })
 @ApiTags('auth')
 @ApiBearerAuth()
 export class AuthRestController {
-  constructor(@Inject('AuthService') private readonly authService) {}
+  constructor(
+    @Inject('AuthService') private readonly authService,
+    @Inject('IDEMPOTENT_SERVICE') private readonly idempotentService: Redis,
+  ) {}
 
   @Get('validate')
   @UseInterceptors(AuthResponseInterceptor, BearerTokenCacheInterceptor)
@@ -65,7 +71,6 @@ export class AuthRestController {
         });
       return user;
     } catch (err) {
-      // TODO: move to ExceptionFilter
       if (err instanceof UnauthorizedException) {
         const errRes = err.getResponse();
         const msg = errRes['message'] ? errRes['message'] : 'Unauthorized';
@@ -80,7 +85,9 @@ export class AuthRestController {
   }
 
   @Get('verify')
-  verify(@Query('token') token: string) {
-    return this.authService.verify({ token });
+  async verify(@Query('token') token: string) {
+    const meta = new Metadata();
+    meta.set('idempotency-key', 'verify-token-aaa');
+    return await this.authService.verify({ token }, meta).toPromise();
   }
 }

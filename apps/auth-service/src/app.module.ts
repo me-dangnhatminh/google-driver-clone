@@ -4,13 +4,20 @@ import { HttpModule } from '@nestjs/axios';
 
 import { ConfigModule } from './config';
 import { AuthClientModule } from '@app/auth-client';
-import { controllers, Auth0Module, CacheModule, LoggerModule } from 'src/infa';
+import {
+  controllers,
+  Auth0Module,
+  CacheModule,
+  LoggerModule,
+  IdempotentModule,
+} from 'src/infa';
 
 @Module({
   imports: [
     ConfigModule,
     LoggerModule,
     CacheModule,
+    IdempotentModule,
     Auth0Module,
     AuthClientModule,
 

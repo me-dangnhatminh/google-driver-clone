@@ -23,18 +23,23 @@ export class Authenticated implements CanActivate {
     );
 
     const request = context.switchToHttp().getRequest();
-    const userId = request.headers['x-user-id'];
-    const anonymous = request.headers['x-anonymous'];
-    const roles = request.headers['x-user-roles'];
-    const permissions = request.headers['x-user-permissions'];
+    const headers = request.headers;
+    const userId = headers['x-user-id'];
+    const anonymous = headers['x-anonymous'];
+    const roles = headers['x-user-roles'];
+    const permissions = headers['x-user-permissions'];
+    const userMetadata = headers['x-user-metadata'];
+
     if (required && !userId) return false;
 
     request.auth = {
       required,
       userId,
+      id: userId,
       anonymous,
       roles: roles && JSON.parse(roles),
       permissions: permissions && JSON.parse(permissions),
+      metadata: userMetadata && JSON.parse(userMetadata),
     };
     return true;
   }
