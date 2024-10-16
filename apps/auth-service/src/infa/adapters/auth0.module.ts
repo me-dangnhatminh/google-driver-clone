@@ -74,7 +74,6 @@ export class AuthService {
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         const domain = configService.getOrThrow('AUTH0_DOMAIN');
-        console.log('domain', domain);
         return new UserInfoClient({ domain });
       },
     },

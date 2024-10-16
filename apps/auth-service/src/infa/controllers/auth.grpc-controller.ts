@@ -1,6 +1,5 @@
 import { Controller, Inject, UseInterceptors } from '@nestjs/common';
-import { GrpcMethod } from '@nestjs/microservices';
-import { randomUUID as uuid } from 'crypto';
+import { GrpcMethod, RpcException } from '@nestjs/microservices';
 
 import { UnauthenticatedRpcException, UnknownRpcException } from '@app/common';
 
@@ -22,6 +21,8 @@ import { Metadata } from '@grpc/grpc-js';
 
 const SERVICE_NAME = 'AuthService';
 @Controller()
+@UseInterceptors(IdempotencyInterceptor)
+@IdempotencyTTL(24 * 60 * 60 * 1000)
 export class AuthGrpcController {
   constructor(
     private readonly userInfo: UserInfoClient,
@@ -29,35 +30,32 @@ export class AuthGrpcController {
     private readonly authService: AuthService,
     @Inject('IDEMPOTENT_SERVICE') private readonly idempotentService: Redis,
   ) {}
-  
+
   @GrpcMethod(SERVICE_NAME, 'ping')
   ping() {
     return { message: 'pong' };
   }
 
   @GrpcMethod(SERVICE_NAME, 'verify')
-  @IdempotencyTTL(5000)
-  @UseInterceptors(IdempotencyInterceptor)
   async verifyToken(request, metadata: Metadata) {
     await new Promise((resolve) => setTimeout(resolve, 3000));
-    const value = { sub: uuid() };
+    const value = await this.authService.verifyToken(request.token);
 
-    const idempotencyKey = metadata.get('idempotency-key')[0] ?? null
-    const idempotencyTtl = metadata.get('idempotency-ttl')[0]?? null
+    const idempotencyKey = metadata.get('idempotency-key')[0] ?? null;
+    const idempotencyTtl = metadata.get('idempotency-ttl')[0] ?? null;
     if (!idempotencyKey) return value;
 
-    await this.idempotentService.set(
-      request.idempotencyKey,
-      JSON.stringify(value),
-      'PX',
-      Number(idempotencyTtl ?? 24 * 60 * 60 * 1000),
-      "NE"
-    ).then(isSet => {
-      if(isSet !== 'OK') throw new Error(`Duplicate Error: key "${idempotencyKey}"`)
-    })
+    const key = String(idempotencyKey);
+    const ttlMs = Number(idempotencyTtl ?? 24 * 60 * 60 * 1000);
+    await this.idempotentService
+      .set(key, JSON.stringify(value), 'PX', ttlMs, 'NX')
+      .then((ok) => {
+        if (ok !== 'OK') {
+          throw new RpcException(`Duplicate Request: key "${idempotencyKey}"`);
+        }
+      });
     return value;
   }
-
 
   @GrpcMethod(SERVICE_NAME, 'validate')
   validate(request) {

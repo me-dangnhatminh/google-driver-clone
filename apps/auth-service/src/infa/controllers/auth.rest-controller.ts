@@ -10,14 +10,13 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
-import { Metadata } from '@grpc/grpc-js';
-import { randomUUID as uuid } from 'crypto';
 
 import { CacheKey, CacheTTL } from '../adapters';
 import {
   BearerTokenCacheInterceptor,
   AuthResponseInterceptor,
 } from '../interceptors';
+
 import Redis from 'ioredis';
 
 @Controller({ path: 'auth', version: '1' })
@@ -86,8 +85,6 @@ export class AuthRestController {
 
   @Get('verify')
   async verify(@Query('token') token: string) {
-    const meta = new Metadata();
-    meta.set('idempotency-key', 'verify-token-aaa');
-    return await this.authService.verify({ token }, meta).toPromise();
+    return await this.authService.verify({ token }).toPromise();
   }
 }
