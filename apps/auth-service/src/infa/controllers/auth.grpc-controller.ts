@@ -1,5 +1,7 @@
+import { Metadata } from '@grpc/grpc-js';
 import { Controller, Inject, UseInterceptors } from '@nestjs/common';
 import { GrpcMethod, RpcException } from '@nestjs/microservices';
+import Redis from 'ioredis';
 
 import { UnauthenticatedRpcException, UnknownRpcException } from '@app/common';
 
@@ -16,13 +18,11 @@ import {
 } from '../adapters/idempotency';
 
 import { ErrorType } from 'src/common';
-import Redis from 'ioredis';
-import { Metadata } from '@grpc/grpc-js';
 
 const SERVICE_NAME = 'AuthService';
 @Controller()
 @UseInterceptors(IdempotencyInterceptor)
-@IdempotencyTTL(24 * 60 * 60 * 1000)
+@IdempotencyTTL(24 * 60 * 60 * 1000) // 24 hours
 export class AuthGrpcController {
   constructor(
     private readonly userInfo: UserInfoClient,
@@ -37,29 +37,15 @@ export class AuthGrpcController {
   }
 
   @GrpcMethod(SERVICE_NAME, 'verify')
-  async verifyToken(request, metadata: Metadata) {
+  async verifyToken(request, metadata) {
     await new Promise((resolve) => setTimeout(resolve, 3000));
     const value = await this.authService.verifyToken(request.token);
-
-    const idempotencyKey = metadata.get('idempotency-key')[0] ?? null;
-    const idempotencyTtl = metadata.get('idempotency-ttl')[0] ?? null;
-    if (!idempotencyKey) return value;
-
-    const key = String(idempotencyKey);
-    const ttlMs = Number(idempotencyTtl ?? 24 * 60 * 60 * 1000);
-    await this.idempotentService
-      .set(key, JSON.stringify(value), 'PX', ttlMs, 'NX')
-      .then((ok) => {
-        if (ok !== 'OK') {
-          throw new RpcException(`Duplicate Request: key "${idempotencyKey}"`);
-        }
-      });
-    return value;
+    return await this.handleIdempotency(value, metadata);
   }
 
   @GrpcMethod(SERVICE_NAME, 'validate')
-  validate(request) {
-    return this.userInfo
+  async validate(request, metadata) {
+    const result = await this.userInfo
       .getUserInfo(request.token)
       .then((res) => {
         console.log(res);
@@ -99,5 +85,25 @@ export class AuthGrpcController {
           message: err.message,
         });
       });
+
+    return await this.handleIdempotency(result, metadata);
+  }
+
+  private async handleIdempotency<T>(value: T, metadata: Metadata): Promise<T> {
+    //TODO: move to interceptor (error)
+    const idempotencyKey = metadata.get('idempotency-key')[0] ?? null;
+    const idempotencyTtl = metadata.get('idempotency-ttl')[0] ?? null;
+    if (!idempotencyKey) return value;
+    const ok = await this.idempotentService.set(
+      String(idempotencyKey),
+      JSON.stringify(value),
+      'PX',
+      Number(idempotencyTtl ?? 24 * 60 * 60 * 1000),
+      'NX',
+    );
+    if (ok !== 'OK') {
+      throw new RpcException(`Duplicate request with key: ${idempotencyKey}`);
+    }
+    return value;
   }
 }
