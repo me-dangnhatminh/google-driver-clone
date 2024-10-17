@@ -5,10 +5,14 @@ import { FolderIcon } from "lucide-react";
 import ItemActions, { ItemActionsRef } from "./item-action";
 import { useFolder } from "@hooks/storage.hook";
 import { toast } from "sonner";
+import { EmptyBackgroup } from "../helper-component";
+import { useNavigate } from "react-router-dom";
 
 export const GridView = (props: { items: CardItemProps["item"][] }) => {
   const { items } = props;
 
+  const isEmpty = items.length === 0;
+  if (isEmpty) return <EmptyBackgroup />;
   const girdClass = `grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6`;
   return (
     <div className="w-full h-full overflow-y-auto scroll-mx-0 px-4 pb-4 space-y-2 select-auto">
@@ -41,6 +45,8 @@ export type CardItemProps = {
 
 export const CardItem = (props: CardItemProps) => {
   const { item } = props;
+
+  const navigate = useNavigate();
   const [action, setAction] = React.useState<string | null>(null);
   const actionRef = React.useRef<ItemActionsRef>(null);
 
@@ -96,15 +102,17 @@ export const CardItem = (props: CardItemProps) => {
 
   return (
     <div
+      onDoubleClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        navigate("/storage/folders/" + item.id);
+      }}
       className={cn(
         "bg-white dark:bg-neutral-800 rounded-lg p-2 shadow-sm space-y-1 cursor-pointer",
         "hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200 ease-in-out"
       )}
     >
-      <div
-        className="flex items-center justify-between space-x-2"
-        onDoubleClick={(e) => e.stopPropagation()}
-      >
+      <div className="flex items-center justify-between space-x-2">
         <FolderIcon className="w-7 h-5" />
         <div className="w-full overflow-hidden rounded-sm">{TitleELem}</div>
 

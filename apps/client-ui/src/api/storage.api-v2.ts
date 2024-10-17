@@ -1,6 +1,7 @@
 import z from "zod";
 import Api, { RequestOptions } from "./api";
 import { ApiMethod } from "./api-method";
+import { AxiosRequestConfig } from "axios";
 
 const folderMethods = {
   get: ApiMethod.make({ method: "GET", fullPath: "v1/storage/folder/{id}" }),
@@ -225,11 +226,9 @@ export class StorageApi extends Api {
   }
 
   uploadFiles(
-    params: {
-      id: string;
-      files: [File, ...File[]];
-    },
-    options?: RequestOptions
+    params: { id: string; files: File[] },
+    options?: RequestOptions,
+    config?: AxiosRequestConfig
   ) {
     const { files, ...rest } = params;
     const fullPath = storageMethods.folder.upload.makePath(rest);
@@ -237,7 +236,11 @@ export class StorageApi extends Api {
     files.forEach((file) => {
       formData.append("files", file, encodeURIComponent(file.name));
     });
-    return this.post(fullPath, formData, options);
+    return this.post(fullPath, formData, null, {
+      headers: { "Content-Type": "multipart/form-data" },
+      ...config,
+      ...options,
+    });
   }
 
   updateFolder(

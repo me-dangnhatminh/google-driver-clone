@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@components/ui/button";
 import DocActions from "./doc-actions";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { Progress } from "@components/ui/progress";
 import { LucideIcon } from "lucide-react";
 import { useLocation } from "react-router-dom";
@@ -60,13 +60,17 @@ const StorageProcessor = (props: { storageId: string }) => {
 };
 
 function Sidebar(props: SidebarProps) {
+  const params = useParams();
+
   const { user } = useAuth0();
-  const storageId: string | null = useMemo(() => {
+  const storageId: string | undefined = useMemo(() => {
     if (!user) return null;
     const metadata = user["custom_metadata"];
-    if (!metadata) return null;
+    if (!metadata) return undefined;
     return metadata["my-storage"];
   }, [user]);
+
+  const folderId = params.folderId ?? storageId;
 
   // const fetchBillingPortal = useQuery({
   //   queryKey: ["billing-portal"],
@@ -98,7 +102,7 @@ function Sidebar(props: SidebarProps) {
             </Button>
           </PopoverTrigger>
           <PopoverContent className="p-0 mx-2">
-            <DocActions folderId={props.folderId} />
+            {folderId && <DocActions folderId={folderId} />}
           </PopoverContent>
         </Popover>
 

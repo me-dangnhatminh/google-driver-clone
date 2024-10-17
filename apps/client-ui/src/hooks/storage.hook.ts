@@ -89,9 +89,9 @@ export const useUploadFile = (props: { parentId: string }) => {
       signal?: AbortSignal;
     }) {
       const { file } = req.data;
-
-      return StorageApi.uploadFile(
-        { file, parentId },
+      return StorageApiV2.uploadFiles(
+        { files: [file], id: parentId },
+        undefined,
         {
           signal: req.signal,
           onUploadProgress(event) {
@@ -122,17 +122,14 @@ export const useUploadFiles = (props: { parentId: string }) => {
       signal?: AbortSignal;
     }) {
       const { files } = req.data;
-      return StorageApi.uploadFiles(
-        { files, parentId },
-        {
-          signal: req.signal,
-          onUploadProgress(event) {
-            const progress = event.progress;
-            if (!progress) return req.onProgress?.(0);
-            req.onProgress?.(Math.ceil(progress * 100));
-          },
-        }
-      );
+      return StorageApiV2.uploadFiles({ files, id: parentId }, undefined, {
+        signal: req.signal,
+        onUploadProgress(event) {
+          const progress = event.progress;
+          if (!progress) return req.onProgress?.(0);
+          req.onProgress?.(Math.ceil(progress * 100));
+        },
+      });
     },
     onMutate: (values) => values.onProgress?.(0),
     onSuccess: (_data, values) => values.onProgress?.(100),

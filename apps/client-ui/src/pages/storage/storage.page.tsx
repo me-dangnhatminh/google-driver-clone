@@ -12,6 +12,7 @@ import { ItemLabel } from "@api";
 import DocActions from "./doc-actions";
 import { useAuth0 } from "@auth0/auth0-react";
 import { GridView } from "./folder-content/gird-view";
+import { useParams } from "react-router-dom";
 
 namespace StoragePage {
   export type Props = { folderId?: string; label?: ItemLabel };
@@ -75,25 +76,29 @@ const TitleBar = (props: {
 };
 
 const MyStoragePage = (props: { storageId: string }) => {
+  const params = useParams<StoragePage.Props>();
+
   const storage = useStorage(props.storageId);
   if (storage.isLoading) return <div>Loading...</div>;
   const data = storage.data;
   if (!data) return <div>No data</div>;
 
+  const folderId = params.folderId ?? data.id;
+
   return (
     <div className="w-full h-full px-6 pb-4 select-none">
       <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex flex-col space-y-4 p-2 rounded-lg">
         <TitleBar
-          folderId={data.id}
+          folderId={folderId}
           layout={{ value: "grid", toggle: () => {} }}
         />
-        {<FolderComponent folderId={data.id} />}
+        {<FolderComponent folderId={folderId} />}
       </div>
     </div>
   );
 };
 
-export const StoragePage = (props: StoragePage.Props) => {
+export const StoragePage = () => {
   const { user } = useAuth0();
   const storageId: string | null = useMemo(() => {
     if (!user) return null;
