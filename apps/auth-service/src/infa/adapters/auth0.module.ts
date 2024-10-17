@@ -84,7 +84,11 @@ export class AuthService {
         const domain = configService.getOrThrow('AUTH0_DOMAIN');
         const clientId = configService.getOrThrow('AUTH0_CLIENT_ID');
         const clientSecret = configService.getOrThrow('AUTH0_CLIENT_SECRET');
-        return new ManagementClient({ domain, clientId, clientSecret });
+        return new ManagementClient({
+          domain,
+          clientId,
+          clientSecret,
+        });
       },
     },
   ],

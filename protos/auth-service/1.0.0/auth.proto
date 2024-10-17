@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package nest.microservices;
 
-import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/any.proto";
@@ -56,9 +55,9 @@ message ValidateResponse {
   string picture = 4;
   repeated string roles = 5;
   repeated string permissions = 6;
-  google.protobuf.Timestamp created_at = 7;
-  google.protobuf.Timestamp updated_at = 8;
-  google.protobuf.Timestamp deleted_at = 9;
+  string created_at = 7;
+  string updated_at = 8;
+  optional string deleted_at = 9;
   map<string, string> metadata = 10;
 }
 
@@ -109,9 +108,9 @@ message UserModel {
   repeated string roles = 7;
   repeated string permissions = 8;
 
-  google.protobuf.Timestamp created_at = 9;
-  google.protobuf.Timestamp updated_at = 10;
-  optional google.protobuf.Timestamp deleted_at = 11;
+  string created_at = 9;
+  string updated_at = 10;
+  optional string deleted_at = 11;
   
   map<string, string> metadata = 12;
 }
@@ -123,7 +122,7 @@ message CreateUserRequest {
   optional string picture = 4;
   repeated string roles = 5;
   repeated string permissions = 6;
-  optional google.protobuf.Struct metadata = 7;
+  map<string, string> metadata = 7;
 }
 
 message UpdateUserRequest {
@@ -134,7 +133,7 @@ message UpdateUserRequest {
   optional string picture = 4;
   repeated string roles = 5;
   repeated string permissions = 6;
-  optional google.protobuf.Struct metadata = 7;
+  map<string, string> metadata = 7;
 }
 
 message DeleteUserRequest {
@@ -146,7 +145,7 @@ message DeleteManyRequest {
 
   repeated string roles = 5;
   repeated string permissions = 6;
-  optional google.protobuf.Struct metadata = 7;
+  map<string, string> metadata = 7;
 }
 
 message DeleteManyResponse {

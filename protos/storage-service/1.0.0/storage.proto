@@ -54,9 +54,9 @@ message StorageModel {
   optional int64 limit = 4;
   optional string name = 5;
 
-  optional google.protobuf.Timestamp createdAt = 6;
-  optional google.protobuf.Timestamp updatedAt = 7;
-  optional google.protobuf.Timestamp deletedAt = 8;
+  optional string createdAt = 6;
+  optional string updatedAt = 7;
+  optional string deletedAt = 8;
 }
 
 message GetStorageResponse {
@@ -66,9 +66,9 @@ message GetStorageResponse {
   optional int64 limit = 4;
   optional string name = 5;
 
-  optional google.protobuf.Timestamp createdAt = 6;
-  optional google.protobuf.Timestamp updatedAt = 7;
-  optional google.protobuf.Timestamp deletedAt = 8;
+  optional string createdAt = 6;
+  optional string updatedAt = 7;
+  optional string deletedAt = 8;
 }
 
 message ListStorageResponse {
@@ -79,9 +79,9 @@ message ListStorageResponse {
     optional int64 limit = 4;
     optional string name = 5;
 
-    optional google.protobuf.Timestamp createdAt = 6;
-    optional google.protobuf.Timestamp updatedAt = 7;
-    optional google.protobuf.Timestamp deletedAt = 8;
+    optional string createdAt = 6;
+    optional string updatedAt = 7;
+    optional string deletedAt = 8;
   }
 
   repeated Item items = 1;
@@ -98,9 +98,9 @@ message CreateStorageResponse {
   optional int64 limit = 4;
   optional string name = 5;
 
-  optional google.protobuf.Timestamp createdAt = 6;
-  optional google.protobuf.Timestamp updatedAt = 7;
-  optional google.protobuf.Timestamp deletedAt = 8;
+  optional string createdAt = 6;
+  optional string updatedAt = 7;
+  optional string deletedAt = 8;
 }
 
 message UpdateStorageResponse {
@@ -110,9 +110,9 @@ message UpdateStorageResponse {
   optional int64 limit = 4;
   optional string name = 5;
 
-  optional google.protobuf.Timestamp createdAt = 6;
-  optional google.protobuf.Timestamp updatedAt = 7;
-  optional google.protobuf.Timestamp deletedAt = 8;
+  optional string createdAt = 6;
+  optional string updatedAt = 7;
+  optional string deletedAt = 8;
 }
 
 message DeleteStorageResponse {

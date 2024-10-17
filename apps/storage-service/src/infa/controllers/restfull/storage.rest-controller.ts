@@ -32,10 +32,9 @@ export class StorageRestController {
 
       const metadata = new Metadata();
       metadata.add('idempotency-key', `storage-create-${user.id}`);
-      const storage = await this.storageService.create(
-        { ownerId: user.id, used: BigInt(0) },
-        metadata,
-      );
+      const storage = await this.storageService
+        .create({ ownerId: user.id, used: BigInt(0) }, metadata)
+        .toPromise();
 
       await this.userService
         .update(

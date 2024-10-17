@@ -1,13 +1,19 @@
-import { Controller } from '@nestjs/common';
-import { GrpcMethod } from '@nestjs/microservices';
+import { Metadata } from '@grpc/grpc-js';
+import { Controller, Inject, UseInterceptors } from '@nestjs/common';
+import { GrpcMethod, RpcException } from '@nestjs/microservices';
 import { ManagementClient } from 'auth0';
+import Redis from 'ioredis';
 import * as rx from 'rxjs';
+import { IdempotencyInterceptor } from '../adapters';
 
 const SERVICE_NAME = 'UserService';
 
 @Controller()
 export class UserGrpcController {
-  constructor(private readonly userManagement: ManagementClient) {}
+  constructor(
+    private readonly userManagement: ManagementClient,
+    @Inject('IDEMPOTENT_SERVICE') private readonly idempotentService: Redis,
+  ) {}
 
   @GrpcMethod(SERVICE_NAME, 'ping')
   ping() {
@@ -78,8 +84,9 @@ export class UserGrpcController {
   }
 
   @GrpcMethod(SERVICE_NAME, 'getById')
-  getById(messages: any) {
-    const fetch = this.userManagement.users.get({ id: messages.id });
+  @UseInterceptors(IdempotencyInterceptor)
+  getById(request) {
+    const fetch = this.userManagement.users.get({ id: request.id });
     return rx.from(fetch).pipe(
       rx.map((u) => u.data),
       rx.map((user) => ({
@@ -97,15 +104,38 @@ export class UserGrpcController {
   }
 
   @GrpcMethod(SERVICE_NAME, 'update')
-  async update(request: any) {
+  // @UseInterceptors(IdempotencyInterceptor)
+  async update(request, metadata) {
     try {
-      return await this.userManagement.users.update(
+      const user_metadata = { 'my-storage': request.metadata['my-storage'] };
+
+      const value = await await this.userManagement.users.update(
         { id: request.id },
-        { app_metadata: { storageId: request.storageId } },
+        { user_metadata },
       );
+      return value;
+      // return await this.handleIdempotency(value, metadata);
     } catch (error) {
       console.error(error);
       throw new Error('User not found');
     }
+  }
+
+  private async handleIdempotency<T>(value: T, metadata: Metadata): Promise<T> {
+    //TODO: move to interceptor (error)
+    const idempotencyKey = metadata.get('idempotency-key')[0] ?? null;
+    const idempotencyTtl = metadata.get('idempotency-ttl')[0] ?? null;
+    if (!idempotencyKey) return value;
+    const ok = await this.idempotentService.set(
+      String(idempotencyKey),
+      JSON.stringify(value),
+      'PX',
+      Number(idempotencyTtl ?? 24 * 60 * 60 * 1000),
+      'NX',
+    );
+    if (ok !== 'OK') {
+      throw new RpcException(`Duplicate request with key: ${idempotencyKey}`);
+    }
+    return value;
   }
 }

@@ -25,8 +25,8 @@ export class StorageGrpcController {
   }
 
   @Transactional()
-  @UseInterceptors(IdempotencyInterceptor)
   @GrpcMethod('StorageService', 'create')
+  @UseInterceptors(IdempotencyInterceptor)
   async create(request, metadata: Metadata) {
     const now = new Date();
     const id = uuid();
@@ -47,7 +47,6 @@ export class StorageGrpcController {
         ref: { create: root },
       },
     });
-
     return await this.handleIdempotency(result, metadata);
   }
 

@@ -8,7 +8,7 @@ import {
   UnauthorizedException,
   UseInterceptors,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiHeaders, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 
 import { CacheKey, CacheTTL } from '../adapters';
@@ -32,6 +32,18 @@ export class AuthRestController {
   @UseInterceptors(AuthResponseInterceptor, BearerTokenCacheInterceptor)
   @CacheKey('auth:validate')
   @CacheTTL(60 * 60 * 1000) // 1 hour
+  @ApiHeaders([
+    {
+      name: 'authorization',
+      required: false,
+      description: 'Bearer',
+    },
+    {
+      name: 'x-auth-strict',
+      required: false,
+      description: 'true',
+    },
+  ])
   async validate(
     @Res({ passthrough: true }) res: Response,
     @Headers('authorization') authorization?: string,
