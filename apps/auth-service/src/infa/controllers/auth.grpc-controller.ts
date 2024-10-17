@@ -48,18 +48,28 @@ export class AuthGrpcController {
     const result = await this.userInfo
       .getUserInfo(request.token)
       .then((res) => res.data)
-      .then(({ sub, email, email_verified, name, permissions, auth, pay }) => {
-        const _auth = auth as any;
-        return {
-          id: sub,
+      .then(
+        ({
+          sub,
           email,
+          email_verified,
           name,
           permissions,
-          email_verified,
-          metadata: Object.assign({}, auth, pay),
-          ..._auth,
-        };
-      })
+          metadata,
+          overide, // custom field for overide
+        }) => {
+          const _overide = overide as any;
+          return {
+            id: sub,
+            email,
+            name,
+            permissions,
+            email_verified,
+            ..._overide,
+            metadata: Object.assign({}, metadata),
+          };
+        },
+      )
       .catch((err: ResponseError) => {
         const status = err.statusCode;
         if (status === 401) {

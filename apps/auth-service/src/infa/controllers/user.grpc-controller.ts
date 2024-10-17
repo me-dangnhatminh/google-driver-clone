@@ -109,10 +109,10 @@ export class UserGrpcController {
   @IdempotencyTTL(24 * 60 * 60 * 1000)
   async update(request, metadata) {
     try {
-      const user_metadata = { 'my-storage': request.metadata['my-storage'] };
+      const app_metadata = { 'my-storage': request.metadata['my-storage'] };
       const value = await await this.userManagement.users.update(
         { id: request.id },
-        { user_metadata },
+        { app_metadata },
       );
 
       const metaObj = grpcMetadataToObj(metadata);
