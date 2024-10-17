@@ -48,12 +48,14 @@ export class ListFolderHandler implements IQueryHandler<ListFolderQuery> {
       skip: cursor ? 1 : 0,
     });
 
-    const totalCount = await this.tx.folder.count({ where });
-    const newCursor = folders.length > limit ? folders[limit].id : null;
+    const total = await this.tx.folder.count({ where });
+    const nextCursor = folders.length > limit ? folders[limit].id : null;
     return {
       items: folders.slice(0, limit),
-      total: totalCount,
-      cursor: newCursor,
+      total,
+      limit,
+      prevCursor: cursor,
+      nextCursor,
     };
   }
 

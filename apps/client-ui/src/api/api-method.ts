@@ -19,7 +19,6 @@ const defaultSpecMethod: Omit<
 
 export class ApiMethod {
   protected readonly spec: SpecMethod;
-
   private strictMode: boolean = true;
 
   public readonly extractedParams: string[] = [];
@@ -50,9 +49,10 @@ export class ApiMethod {
     return this;
   }
 
-  makePath(params: Record<string, string> = {}) {
+  makePath(params: Record<string, string | number | boolean> = {}) {
     return this.extractedParams.reduce((acc, param) => {
-      return acc.replace(`{${param}}`, params[param]);
+      const v = String(params[param]);
+      return acc.replace(`{${param}}`, v);
     }, this.spec.fullPath);
   }
 

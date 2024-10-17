@@ -5,6 +5,12 @@ import { ApiMethod } from "./api-method";
 const folderMethods = {
   get: ApiMethod.make({ method: "GET", fullPath: "v1/storage/folder/{id}" }),
   list: ApiMethod.make({ method: "GET", fullPath: "v1/storage/folder" }),
+  create: ApiMethod.make({ method: "POST", fullPath: "v1/storage/folder" }),
+  update: ApiMethod.make({
+    method: "PATCH",
+    fullPath: "v1/storage/folder/{id}",
+  }),
+  delete: ApiMethod.make({ method: "DELETE", fullPath: "v1/storage/folder" }),
   content: ApiMethod.make({
     method: "GET",
     fullPath: "v1/storage/folder/{id}/content",
@@ -13,9 +19,10 @@ const folderMethods = {
     method: "POST",
     fullPath: "v1/storage/folder/{id}/content:upload",
   }),
-  create: ApiMethod.make({ method: "POST", fullPath: "v1/storage/folder" }),
-  update: ApiMethod.make({ method: "PATCH", fullPath: "v1/storage/folder" }),
-  delete: ApiMethod.make({ method: "DELETE", fullPath: "v1/storage/folder" }),
+  action: ApiMethod.make({
+    method: "PATCH",
+    fullPath: "v1/storage/folder/{id}/action",
+  }),
 };
 
 const fileMethods = {
@@ -69,30 +76,40 @@ const buildSort = (sort: Record<string, string>) => {
   return "";
 };
 
-const buildQuery = (query: {
-  limit?: number;
-  offset?: string;
-  filter?: Record<string, unknown>;
-  sort?: Record<string, string>;
-}) => {
+const buildQuery = (
+  query: {
+    limit?: number;
+    offset?: string;
+    filter?: Record<string, unknown>;
+    sort?: Record<string, string>;
+  } = {}
+) => {
   const parts = [];
   if (query.filter) parts.push(buildFilter(query.filter));
   if (query.sort) parts.push(`sort=${buildSort(query.sort)}`);
   parts.push(buildPaginate(query.limit, query.offset));
-  return parts
+
+  const notEmpty = parts
     .map((part) => part.trim())
-    .filter((part) => part.length)
-    .join("&");
+    .filter((part) => part.length);
+  if (!notEmpty.length) return "";
+  return `?${notEmpty.join("&")}`;
 };
 
 // ============= SCHEMA =============
+export type Storage = z.infer<typeof StorageSchema>;
+export type Folder = z.infer<typeof FolderSchema>;
+export type FolderCreateParams = z.infer<typeof FolderCreateSchema>;
+export type FolderUpdateParams = z.infer<typeof FolderUpdateSchema>;
+export type FolderContentItem = z.infer<typeof FolderContentItemSchema>;
+export type FolderContent = z.infer<typeof FolderContentSchema>;
+
 export const StorageSchema = z.object({
   id: z.string(),
   ownerId: z.string(),
   used: z.coerce.number(),
   limit: z.coerce.number().optional(),
 });
-export type Storage = z.infer<typeof StorageSchema>;
 
 export const FolderSchema = z.object({
   id: z.string(),
@@ -103,11 +120,10 @@ export const FolderSchema = z.object({
   modifiedAt: z.string().optional(),
 });
 
-export const CreateFolderSchema = FolderSchema.partial().required({
+export const FolderCreateSchema = FolderSchema.partial().required({
   name: true,
   parentId: true,
 });
-export type CreateFolderParams = z.infer<typeof CreateFolderSchema>;
 
 export const FolderContentItemSchema = z.object({
   id: z.string(),
@@ -117,6 +133,8 @@ export const FolderContentItemSchema = z.object({
   parentId: z.string().optional(),
   createdAt: z.string().optional(),
   modifiedAt: z.string().optional(),
+  pinnedAt: z.string().optional(),
+  archivedAt: z.string().optional(),
   size: z.coerce.number().optional(),
   owner: z
     .object({
@@ -130,10 +148,35 @@ export const FolderContentItemSchema = z.object({
 export const FolderContentSchema = z.object({
   items: z.array(FolderContentItemSchema),
   total: z.coerce.number(),
-  limit: z.coerce.number().optional(), // TODO: fix
+  limit: z.coerce.number().optional(),
+});
+
+export const FolderUpdateSchema = z.object({
+  id: z.string(),
+  name: z.string().optional(),
+  parentId: z.string().optional(),
+  ownerId: z.string().optional(),
+  pinned: z.boolean().optional(),
+  archived: z.boolean().optional(),
 });
 
 export class StorageApi extends Api {
+  list(
+    params?: { [key: string]: string },
+    query?: {
+      limit?: number;
+      offset?: string;
+      filter?: Record<string, string>;
+      sort?: Record<string, string>;
+    },
+    options?: RequestOptions
+  ) {
+    const queryPath = buildQuery(query);
+    const fullPath = storageMethods.list.makePath(params || {});
+    const url = fullPath + queryPath;
+    return this.get(url, undefined, options);
+  }
+
   myStorage(options?: RequestOptions) {
     const fullPath = storageMethods.myStorage.makePath();
     return Api.get(fullPath, undefined, options);
@@ -172,6 +215,16 @@ export class StorageApi extends Api {
     });
   }
 
+  createFolder(params: FolderCreateParams, options?: RequestOptions) {
+    const fullPath = folderMethods.create.makePath();
+    return this.post(fullPath, params, options);
+  }
+
+  deleteFolder(params: { id: string }, options?: RequestOptions) {
+    const fullPath = folderMethods.delete.makePath(params);
+    return this.delete(fullPath, undefined, options);
+  }
+
   uploadFiles(
     params: {
       id: string;
@@ -188,33 +241,50 @@ export class StorageApi extends Api {
     return this.post(fullPath, formData, options);
   }
 
-  list(
-    params?: { [key: string]: string },
-    query?: {
-      limit?: number;
-      offset?: string;
-      filter?: Record<string, string>;
-      sort?: Record<string, string>;
+  updateFolder(
+    params: {
+      id: string;
+      name?: string;
+      parentId?: string;
+      ownerId?: string;
+      pinned?: boolean;
+      archived?: boolean;
     },
     options?: RequestOptions
   ) {
-    const queryPath = query ? `?${buildQuery(query)}` : "";
-    const fullPath = storageMethods.list.makePath(params || {});
-    const url = fullPath + queryPath;
-    return this.get(url, undefined, options);
+    const { id, ...rest } = params;
+    const fullPath = folderMethods.update.makePath({ id });
+    return this.patch(fullPath, rest, undefined, options);
   }
 
-  createFolder(params: CreateFolderParams, options?: RequestOptions) {
-    const fullPath = folderMethods.create.makePath();
-    return this.post(fullPath, params, options);
+  updateFile(
+    params: {
+      id: string;
+      name?: string;
+      parentId?: string;
+      ownerId?: string;
+      pinned?: boolean;
+      archived?: boolean;
+    },
+    options?: RequestOptions
+  ) {
+    const fullPath = fileMethods.update.makePath(params);
+    return this.patch(fullPath, undefined, options);
+  }
+
+  deleteFile(params: { id: string }, options?: RequestOptions) {
+    const fullPath = fileMethods.delete.makePath(params);
+    return this.delete(fullPath, undefined, options);
   }
 
   private static storageApi = new StorageApi();
-  static myStorage = StorageApi.storageApi.myStorage;
   static list = StorageApi.storageApi.list;
+  static myStorage = StorageApi.storageApi.myStorage;
   static getStorage = StorageApi.storageApi.getStorage;
   static getFolder = StorageApi.storageApi.getFolder;
   static folderContent = StorageApi.storageApi.folderContent;
   static createFolder = StorageApi.storageApi.createFolder;
   static uploadFiles = StorageApi.storageApi.uploadFiles;
+  static deleteFolder = StorageApi.storageApi.deleteFolder;
+  static updateFolder = StorageApi.storageApi.updateFolder;
 }

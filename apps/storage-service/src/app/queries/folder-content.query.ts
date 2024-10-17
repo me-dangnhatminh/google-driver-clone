@@ -35,6 +35,7 @@ export class ContentFolderHandler implements IQueryHandler<ContentFolderQuery> {
         where: { parentId: id },
         cursor: folderCursor ? { id: folderCursor } : undefined,
         take: limit + 1,
+        orderBy: { createdAt: 'desc' },
       }),
       this.tx.fileInFolder
         .findMany({
@@ -42,6 +43,7 @@ export class ContentFolderHandler implements IQueryHandler<ContentFolderQuery> {
           cursor: fileCursor ? { fileId: fileCursor } : undefined,
           include: { file: true },
           take: limit + 1,
+          orderBy: { file: { createdAt: 'desc' } },
         })
         .then((files) => files.map((f) => f.file)),
     ]);

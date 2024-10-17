@@ -27,13 +27,17 @@ export const useFolder = (id: string) => {
 
   const folderContent = useFolderContent({ id }, { enabled: false });
   const folderCreate = useCreateFolder({ parentId: id });
+  const folderUpdate = useUpdateFolder({ id });
+  const folderDelete = useDeleteFolder({ id });
   const fileUpload = useUploadFile({ parentId: id });
   const filesUpload = useUploadFiles({ parentId: id });
 
   return {
     ...data,
-    folderContent,
     folderCreate,
+    folderUpdate,
+    folderDelete,
+    folderContent,
     fileUpload,
     filesUpload,
   };
@@ -57,12 +61,16 @@ export const useFolderContent = (
 };
 
 export const useCreateFolder = (props: { parentId: string }) => {
+  const queryClient = useQueryClient();
   const { parentId } = props;
   return useMutation({
     mutationKey: ["folder", parentId, "create"],
     throwOnError: false,
-    mutationFn: (data: Omit<apiV2.CreateFolderParams, "parentId">) => {
+    mutationFn: (data: Omit<apiV2.FolderCreateParams, "parentId">) => {
       return StorageApiV2.createFolder({ ...data, parentId });
+    },
+    onSuccess: () => {
+      queryClient.refetchQueries({ queryKey: ["folder", parentId, "content"] });
     },
   });
 };
@@ -132,6 +140,36 @@ export const useUploadFiles = (props: { parentId: string }) => {
   return mutation;
 };
 
+export const useUpdateFolder = (props: { id: string }) => {
+  const { id } = props;
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ["folder", id, "update"],
+    throwOnError: false,
+    mutationFn: (data: Omit<apiV2.FolderUpdateParams, "id">) => {
+      return StorageApiV2.updateFolder({ ...data, id });
+    },
+    onSuccess: () => {
+      queryClient.refetchQueries({ queryKey: ["folder", id] });
+    },
+  });
+};
+
+export const useDeleteFolder = (props: { id: string }) => {
+  const { id } = props;
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationKey: ["folder", id, "delete"],
+    throwOnError: false,
+    mutationFn: () => {
+      return StorageApiV2.deleteFolder({ id });
+    },
+    onSuccess: () => {
+      queryClient.refetchQueries({ queryKey: ["folder", id] });
+    },
+  });
+};
+
 // ====== OLD HOOKS ======
 
 export const useFolderInfinite = (refId?: string, label?: ItemLabel) => {
@@ -145,31 +183,31 @@ export const useFolderInfinite = (refId?: string, label?: ItemLabel) => {
   });
 };
 
-export const useUpdateFile = (refId?: string) => {
-  const queryClient = useQueryClient();
+// export const useUpdateFile = (id: string) => {
+//   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationKey: ["updateFile"],
-    throwOnError: false,
-    mutationFn: StorageApi.updateFile,
-    onSuccess: () => {
-      queryClient.refetchQueries({ queryKey: ["folder", refId] });
-    },
-  });
-};
+//   return useMutation({
+//     mutationKey: ["
+//     throwOnError: false,
+//     mutationFn: StorageApi.updateFile,
+//     onSuccess: () => {
+//       queryClient.refetchQueries({ queryKey: ["folder", refId] });
+//     },
+//   });
+// };
 
-export const useUpdateFolder = (refId?: string) => {
-  const queryClient = useQueryClient();
+// export const useUpdateFolder = (refId?: string) => {
+//   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationKey: ["updateFolder", refId],
-    throwOnError: false,
-    mutationFn: StorageApi.updateFolder,
-    onSuccess: () => {
-      queryClient.refetchQueries({ queryKey: ["folder", refId] });
-    },
-  });
-};
+//   return useMutation({
+//     mutationKey: ["updateFolder", refId],
+//     throwOnError: false,
+//     mutationFn: StorageApi.updateFolder,
+//     onSuccess: () => {
+//       queryClient.refetchQueries({ queryKey: ["folder", refId] });
+//     },
+//   });
+// };
 
 export const useHardDelete = () => {
   const queryClient = useQueryClient();

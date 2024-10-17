@@ -189,6 +189,8 @@ export class FolderRestController {
         name: { type: 'string' },
         ownerId: { type: 'string' },
         parentId: { type: 'string' },
+        pinned: { type: 'boolean' },
+        archived: { type: 'boolean' },
       },
     },
   })

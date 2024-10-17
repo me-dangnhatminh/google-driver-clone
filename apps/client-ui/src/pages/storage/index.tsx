@@ -9,8 +9,6 @@ import { ItemLabel } from "@api";
 import { RoutesPath } from "@constants";
 import { useAuth0 } from "@auth0/auth0-react";
 
-import DocModal from "./doc-modal";
-
 import StoragePage from "./storage.page";
 
 export default function Index() {
@@ -32,7 +30,7 @@ export default function Index() {
   if (!isAuth) return null;
   return (
     <DefaultLayout
-      modal={<DocModal folderId={folderId} />}
+      // modal={<DocModal folderId={folderId} />}
       toast={<Toaster />}
       header={<Navbar />}
       sidebar={<Sidebar folderId={folderId} />}
