@@ -22,9 +22,9 @@ export type Response<T> = {
 
 export const DEFAULT_API_CONFIG: ApiConfigRequired = {
   host: "localhost",
-  port: 3000,
+  port: 80,
   protocol: "http",
-  apiVersion: "v1",
+  apiVersion: "",
   timeout: 5000,
   prefix: "api",
   maxNetworkRetries: 3,

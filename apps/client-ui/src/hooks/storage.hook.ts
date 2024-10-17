@@ -10,12 +10,41 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
-export const useStorage = () => {
+import * as apiV2 from "@api/storage.api-v2";
+const StorageApiV2 = apiV2.StorageApi;
+
+export const useStorage = (id: string) => {
   return useQuery({
-    queryKey: ["storage"],
-    queryFn: StorageApi.myStorage,
+    queryKey: ["storage", "id"],
+    queryFn: () => {
+      return StorageApiV2.getStorage({ id });
+    },
   });
 };
+
+export const useFolder = (id: string) => {
+  return useQuery({
+    queryKey: ["folder", id],
+    queryFn: () => StorageApiV2.getFolder({ id }),
+    enabled: true,
+  });
+};
+
+export const useFolderContent = (props: {
+  id: string;
+  limit?: number;
+  offset?: string;
+  filter?: Record<string, unknown>;
+  sort?: Record<string, string>;
+}) => {
+  return useQuery({
+    queryKey: ["folderContent", props.id, props.limit, props.offset].filter(
+      Boolean
+    ),
+    queryFn: () => StorageApiV2.folderContent(props),
+  });
+};
+// ====== OLD HOOKS ======
 
 export const useFolderInfinite = (refId?: string, label?: ItemLabel) => {
   return useInfiniteQuery({
@@ -25,15 +54,6 @@ export const useFolderInfinite = (refId?: string, label?: ItemLabel) => {
     },
     initialPageParam: { folderCursor: undefined, fileCursor: undefined },
     getNextPageParam: (lastPage) => lastPage.nextCursor,
-  });
-};
-
-export const useFolder = (refId?: string, label?: ItemLabel) => {
-  const storage = useStorage();
-  return useQuery({
-    queryKey: ["folder", refId, label],
-    queryFn: () => StorageApi.getFolder({ id: refId, label }),
-    enabled: !refId ? storage.isSuccess : true,
   });
 };
 

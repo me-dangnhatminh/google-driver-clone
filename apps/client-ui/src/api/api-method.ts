@@ -50,7 +50,7 @@ export class ApiMethod {
     return this;
   }
 
-  makePath(params: Record<string, string>) {
+  makePath(params: Record<string, string> = {}) {
     return this.extractedParams.reduce((acc, param) => {
       return acc.replace(`{${param}}`, params[param]);
     }, this.spec.fullPath);

@@ -6,6 +6,7 @@ import {
   Get,
   Inject,
   Logger,
+  Param,
   Res,
   UseGuards,
 } from '@nestjs/common';
@@ -41,6 +42,16 @@ export class StorageRestController {
     const storage = await this.storageService
       .get({ id: storageId })
       .toPromise();
+    if (!storage) {
+      this.logger.error('Storage not found');
+      throw new BadRequestException('Storage not found');
+    }
+    return storage;
+  }
+
+  @Get(':id')
+  async get(@Param('id') id: string) {
+    const storage = await this.storageService.get({ id }).toPromise();
     if (!storage) {
       this.logger.error('Storage not found');
       throw new BadRequestException('Storage not found');

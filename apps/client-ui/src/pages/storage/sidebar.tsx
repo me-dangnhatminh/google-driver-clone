@@ -14,9 +14,60 @@ import FileUtils from "@/lib/file.utils";
 import { useStorage } from "@hooks";
 import { RoutesPath, routesUtils } from "@constants";
 import { cn } from "@/lib/utils";
+import { useAuth0 } from "@auth0/auth0-react";
+import { useMemo } from "react";
 
-type SidebarProps = { folderId?: string };
+type SidebarProps = { folderId?: string; storageId?: string };
+
+const StorageProcessor = (props: { storageId: string }) => {
+  const storage = useStorage(props.storageId);
+  if (!storage.data) return null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data: any = storage.data;
+
+  if (storage.isLoading) {
+    return (
+      <div className="flex flex-col space-y-2 px-4">
+        <div className="w-full flex justify-center">
+          <Loader className="animate-spin text-muted-foreground w-4 h-4" />
+        </div>
+      </div>
+    );
+  }
+
+  // if limit null is unlimited
+  const limit = data.limit;
+  const used = data.used;
+  if (!limit || limit < 0) return <div>Unlimited</div>;
+
+  const percent = limit == 0 ? 100 : (used / limit) * 100;
+  const limitBytes = FileUtils.formatBytes(limit);
+  const usedBytes = FileUtils.formatBytes(used);
+
+  return (
+    <div className="flex flex-col space-y-2 px-4">
+      <Progress className={cn("h-2", "bg-red-50")} value={percent} />
+      <span className="text-sm text-muted-foreground">
+        {[usedBytes, limitBytes].join(" of ")}
+      </span>
+      <Link to="/payment">
+        <Button size="sm" className="w-full rounded-full">
+          Upgrade Storage
+        </Button>
+      </Link>
+    </div>
+  );
+};
+
 function Sidebar(props: SidebarProps) {
+  const { user } = useAuth0();
+  const storageId: string | null = useMemo(() => {
+    if (!user) return null;
+    const metadata = user["custom_metadata"];
+    if (!metadata) return null;
+    return metadata["my-storage"];
+  }, [user]);
+
   // const fetchBillingPortal = useQuery({
   //   queryKey: ["billing-portal"],
   //   queryFn: () =>
@@ -30,7 +81,6 @@ function Sidebar(props: SidebarProps) {
   //   window.location.href = url;
   // };
 
-  const storage = useStorage();
   return (
     <div className="w-full h-full bg-white dark:bg-black px-4">
       <Link to={RoutesPath.STORAGE}>
@@ -59,38 +109,11 @@ function Sidebar(props: SidebarProps) {
             </Link>
           ))}
 
-          {(() => {
-            if (!storage.data) return null;
-            const total = storage.data.total;
-            const used = storage.data.used;
-            const percent = total == 0 ? 100 : (used / total) * 100;
-            const totalBytes = FileUtils.formatBytes(total);
-            const usedBytes = FileUtils.formatBytes(used);
-            return (
-              <div className="flex flex-col space-y-2 px-4">
-                <Progress className={cn("h-2", "bg-red-50")} value={percent} />
-                <span className="text-sm text-muted-foreground">
-                  {[usedBytes, totalBytes].join(" of ")}
-                </span>
-                <Link to="/payment">
-                  <Button size="sm" className="w-full rounded-full">
-                    Upgrade Storage
-                  </Button>
-                </Link>
-              </div>
-            );
-          })()}
-
-          {(() => {
-            if (storage.data) return null;
-            return (
-              <div className="flex flex-col space-y-2 px-4">
-                <div className="w-full flex justify-center">
-                  <Loader className="animate-spin text-muted-foreground w-4 h-4" />
-                </div>
-              </div>
-            );
-          })()}
+          {storageId && (
+            <div className="flex flex-col space-y-2 px-4">
+              <StorageProcessor storageId={storageId} />
+            </div>
+          )}
         </div>
       </div>
     </div>
