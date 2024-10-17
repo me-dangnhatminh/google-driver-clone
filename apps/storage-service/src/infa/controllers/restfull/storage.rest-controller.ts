@@ -38,7 +38,9 @@ export class StorageRestController {
       res.status(201);
       return storage;
     }
-    const storage = await this.storageService.get({ id: storageId });
+    const storage = await this.storageService
+      .get({ id: storageId })
+      .toPromise();
     if (!storage) {
       this.logger.error('Storage not found');
       throw new BadRequestException('Storage not found');

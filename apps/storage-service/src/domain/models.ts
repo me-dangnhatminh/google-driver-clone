@@ -17,7 +17,8 @@ export const OnwerId = z.string();
 export const Bytes = z.coerce.number().min(0);
 export const PastTime = z.coerce
   .date()
-  .refine((d) => d.getTime() <= Date.now());
+  .refine((d) => d.getTime() <= Date.now())
+  .transform((d) => d.toISOString());
 
 export const FileRef = z.object({
   id: UUID,

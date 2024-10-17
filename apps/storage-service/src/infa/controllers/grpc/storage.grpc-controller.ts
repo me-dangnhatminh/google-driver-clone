@@ -11,6 +11,7 @@ import {
   IdempotencyInterceptor,
   IdempotencyTTL,
 } from 'src/infa/adapters';
+import { Storage } from 'src/domain';
 
 @Controller()
 export class StorageGrpcController {
@@ -24,9 +25,11 @@ export class StorageGrpcController {
 
   @GrpcMethod('StorageService', 'get')
   async get(request) {
-    return await this.tx.storage.findFirstOrThrow({
-      where: { id: request.id },
-    });
+    return await this.tx.storage
+      .findFirstOrThrow({
+        where: { id: request.id },
+      })
+      .then((res) => Storage.parse(res));
   }
 
   @GrpcMethod('StorageService', 'create')
