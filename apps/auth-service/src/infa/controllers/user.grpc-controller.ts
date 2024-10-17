@@ -104,17 +104,15 @@ export class UserGrpcController {
   }
 
   @GrpcMethod(SERVICE_NAME, 'update')
-  // @UseInterceptors(IdempotencyInterceptor)
+  @UseInterceptors(IdempotencyInterceptor)
   async update(request, metadata) {
     try {
       const user_metadata = { 'my-storage': request.metadata['my-storage'] };
-
       const value = await await this.userManagement.users.update(
         { id: request.id },
         { user_metadata },
       );
-      return value;
-      // return await this.handleIdempotency(value, metadata);
+      return await this.handleIdempotency(value, metadata);
     } catch (error) {
       console.error(error);
       throw new Error('User not found');
