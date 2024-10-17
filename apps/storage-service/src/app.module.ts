@@ -13,6 +13,7 @@ import {
   CacheModule,
   ElasticsearchModule,
   MulterModule,
+  IdempotentModule,
 } from './infa/adapters';
 
 import { AuthClientModule } from '@app/auth-client';
@@ -29,6 +30,7 @@ import { TerminusModule } from '@nestjs/terminus';
     CacheModule,
     PersistencesModule,
     MulterModule,
+    IdempotentModule,
 
     HttpModule,
     TerminusModule,

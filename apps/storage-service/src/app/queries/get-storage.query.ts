@@ -23,24 +23,24 @@ export class GetStorageHandler implements IQueryHandler<GetStorageQuery, any> {
     private readonly txHost: TransactionHost<TransactionalAdapterPrisma>,
   ) {}
 
-  async execute({ input }: GetStorageQuery) {
-    if ('id' in input && input.id) {
-      return await this.tx.myStorage.findUniqueOrThrow({
-        where: { id: input.id },
-      });
-    }
+  async execute() {
+    // if ('id' in input && input.id) {
+    //   return await this.tx.myStorage.findUniqueOrThrow({
+    //     where: { id: input.id },
+    //   });
+    // }
 
-    if ('ref_if' in input && input.ref_if) {
-      return await this.tx.myStorage.findUniqueOrThrow({
-        where: { refId: input.ref_if },
-      });
-    }
+    // if ('ref_if' in input && input.ref_if) {
+    //   return await this.tx.myStorage.findUniqueOrThrow({
+    //     where: { refId: input.ref_if },
+    //   });
+    // }
 
-    if ('owner_id' in input && input.owner_id) {
-      return await this.tx.myStorage.findUniqueOrThrow({
-        where: { ownerId: input.owner_id },
-      });
-    }
+    // if ('owner_id' in input && input.owner_id) {
+    //   return await this.tx.myStorage.findUniqueOrThrow({
+    //     where: { ownerId: input.owner_id },
+    //   });
+    // }
 
     throw new Error('Invalid input');
   }

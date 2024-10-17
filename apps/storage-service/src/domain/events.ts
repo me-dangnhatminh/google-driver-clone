@@ -1,4 +1,4 @@
-import { FileRef, Folder, FolderInfo, MyStorage } from './models';
+import { FileRef, Folder, FolderInfo, Storage } from './models';
 
 export type BaseEvent<T extends string, D = unknown> = {
   type: T;
@@ -20,7 +20,7 @@ export const EventTypes = {
 
 export type TStorageInitialisedEvent = BaseEvent<
   typeof EventTypes.storage_initialised,
-  MyStorage
+  Storage
 >;
 export type TFileAddedEvent = BaseEvent<typeof EventTypes.file_added, FileRef>;
 export type TFileCreatedEvent = BaseEvent<

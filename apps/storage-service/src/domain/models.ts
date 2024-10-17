@@ -9,7 +9,7 @@ export type Folder = z.infer<typeof Folder>;
 export type FolderInfo = z.infer<typeof FolderInfo>;
 export type FolderContent = z.infer<typeof FolderContent>;
 export type RootFolder = z.infer<typeof RootFolder>;
-export type MyStorage = z.infer<typeof MyStorage>;
+export type Storage = z.infer<typeof Storage>;
 
 // ============================= Schemas ============================= //
 export const UUID = z.string().uuid();
@@ -66,16 +66,13 @@ export const RootFolder = Folder.omit({ files: true, folders: true }).extend({
   pinnedAt: z.literal(null).default(null),
 });
 
-export const MyStorage = z.object({
+export const Storage = z.object({
   id: UUID.default(uuid),
   ownerId: OnwerId,
   name: z.string().optional(),
-
   refId: UUID,
   used: Bytes.default(0),
-  total: Bytes.default(0),
-
-  metadata: z.record(z.string()).default({}),
+  metadata: z.record(z.any()).default({}),
   createdAt: PastTime.default(() => new Date()),
   modifiedAt: PastTime.default(() => new Date()),
   archivedAt: PastTime.nullable().default(null),

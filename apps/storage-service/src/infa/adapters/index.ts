@@ -1,4 +1,6 @@
 export * from './logger';
+export * from './idempotency';
+
 export * from './cache.module';
 export * from './rabbitmq-cqrs.adapter';
 export * from './multer.adapter';

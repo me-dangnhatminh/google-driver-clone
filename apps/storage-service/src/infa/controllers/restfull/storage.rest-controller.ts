@@ -1,4 +1,5 @@
 import { Authenticated, HttpUser } from '@app/auth-client';
+import { Metadata } from '@grpc/grpc-js';
 import {
   BadRequestException,
   Controller,
@@ -28,11 +29,20 @@ export class StorageRestController {
     // crate if null
     if (!storageId) {
       this.logger.warn('Storage not found, creating new one');
-      const storage = await this.storageService.create({ ownerId: user.id });
-      await this.userService.update({
-        id: user.id,
-        metadata: { 'my-storage': storage.id },
-      });
+
+      const metadata = new Metadata();
+      metadata.add('idempotency-key', `storage-create-${user.id}`);
+      const storage = await this.storageService.create(
+        { ownerId: user.id, used: BigInt(0) },
+        metadata,
+      );
+
+      await this.userService
+        .update(
+          { id: user.id, metadata: { 'my-storage': storage.id } },
+          metadata,
+        )
+        .toPromise();
       res.status(201);
       return storage;
     }

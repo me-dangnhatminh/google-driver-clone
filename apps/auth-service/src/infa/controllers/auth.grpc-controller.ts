@@ -47,10 +47,7 @@ export class AuthGrpcController {
   async validate(request, metadata) {
     const result = await this.userInfo
       .getUserInfo(request.token)
-      .then((res) => {
-        console.log(res);
-        return res.data;
-      })
+      .then((res) => res.data)
       .then(({ sub, email, email_verified, name, permissions, auth, pay }) => {
         const _auth = auth as any;
         return {
@@ -64,7 +61,6 @@ export class AuthGrpcController {
         };
       })
       .catch((err: ResponseError) => {
-        console.error(err);
         const status = err.statusCode;
         if (status === 401) {
           const headers = err.headers;

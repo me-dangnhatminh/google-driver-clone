@@ -47,9 +47,12 @@ CREATE TABLE "my_storage" (
     "id" TEXT NOT NULL,
     "owner_id" TEXT NOT NULL,
     "ref_id" TEXT NOT NULL,
+    "used" BIGINT NOT NULL,
+    "total" BIGINT,
     "created_at" TIMESTAMP(3) NOT NULL,
     "modified_at" TIMESTAMP(3) NOT NULL,
     "archived_at" TIMESTAMP(3),
+    "metadata" JSONB NOT NULL,
 
     CONSTRAINT "my_storage_pkey" PRIMARY KEY ("id")
 );
@@ -96,9 +99,6 @@ CREATE TABLE "folder_shared" (
 CREATE INDEX "folder_hierarchy_lft_rgt_idx" ON "folder_hierarchy"("lft", "rgt");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "my_storage_owner_id_key" ON "my_storage"("owner_id");
-
--- CreateIndex
 CREATE UNIQUE INDEX "my_storage_ref_id_key" ON "my_storage"("ref_id");
 
 -- CreateIndex
@@ -117,10 +117,10 @@ ALTER TABLE "folder_hierarchy" ADD CONSTRAINT "folder_hierarchy_parent_id_fkey" 
 ALTER TABLE "folder_hierarchy" ADD CONSTRAINT "folder_hierarchy_root_id_fkey" FOREIGN KEY ("root_id") REFERENCES "folder_hierarchy"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "file_in_folder" ADD CONSTRAINT "file_in_folder_folder_id_fkey" FOREIGN KEY ("folder_id") REFERENCES "folder_hierarchy"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "file_in_folder" ADD CONSTRAINT "file_in_folder_file_id_fkey" FOREIGN KEY ("file_id") REFERENCES "files"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "file_in_folder" ADD CONSTRAINT "file_in_folder_file_id_fkey" FOREIGN KEY ("file_id") REFERENCES "files"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "file_in_folder" ADD CONSTRAINT "file_in_folder_folder_id_fkey" FOREIGN KEY ("folder_id") REFERENCES "folder_hierarchy"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "my_storage" ADD CONSTRAINT "my_storage_ref_id_fkey" FOREIGN KEY ("ref_id") REFERENCES "folder_hierarchy"("id") ON DELETE CASCADE ON UPDATE CASCADE;

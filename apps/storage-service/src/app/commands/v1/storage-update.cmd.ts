@@ -27,12 +27,11 @@ export class StorageUpdateHandler implements ICommandHandler<StorageUpdateCmd> {
     this.tx = txHost.tx;
   }
 
-  async execute(cmd: StorageUpdateCmd) {
-    await this.tx.myStorage.update({
-      where: { id: cmd.input.id },
-      data: cmd.input,
-    });
-
-    this.logger.debug(`Storage updated: ${cmd.input.id}`);
+  async execute() {
+    // await this.tx.myStorage.update({
+    //   where: { id: cmd.input.id },
+    //   data: cmd.input,
+    // });
+    // this.logger.debug(`Storage updated: ${cmd.input.id}`);
   }
 }

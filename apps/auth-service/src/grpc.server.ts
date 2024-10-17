@@ -10,19 +10,16 @@ export const buildGrpcServer = async (app: INestApplication) => {
 
   const grpcConfig = configService.infer('grpc.auth');
 
-  const service = app.connectMicroservice<GrpcOptions>(
-    {
-      transport: Transport.GRPC,
-      options: {
-        ...grpcConfig,
-        credentials: grpc.ServerCredentials.createInsecure(),
-        onLoadPackageDefinition: (pkg, server: grpc.Server) => {
-          new ReflectionService(pkg).addToServer(server);
-        },
+  const service = app.connectMicroservice<GrpcOptions>({
+    transport: Transport.GRPC,
+    options: {
+      ...grpcConfig,
+      credentials: grpc.ServerCredentials.createInsecure(),
+      onLoadPackageDefinition: (pkg, server: grpc.Server) => {
+        new ReflectionService(pkg).addToServer(server);
       },
     },
-    { inheritAppConfig: true },
-  );
+  });
   return service.listen().then(() => {
     Logger.log(
       `gRPC server is running on: ${grpcConfig.url}`,
