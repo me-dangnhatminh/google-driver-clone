@@ -101,7 +101,7 @@ export class UserGrpcController {
     try {
       return await this.userManagement.users.update(
         { id: request.id },
-        { app_metadata: app_metadata },
+        { app_metadata: { storageId: request.storageId } },
       );
     } catch (error) {
       console.error(error);

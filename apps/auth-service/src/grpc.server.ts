@@ -21,10 +21,7 @@ export const buildGrpcServer = async (app: INestApplication) => {
     },
   });
   return service.listen().then(() => {
-    Logger.log(
-      `gRPC server is running on: ${grpcConfig.url}`,
-      'NestMicroservice',
-    );
+    Logger.log(`gRPC server is running on: ${grpcConfig.url}`, 'GrpcServer');
   });
 };
 

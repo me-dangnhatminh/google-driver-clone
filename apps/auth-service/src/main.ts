@@ -23,7 +23,6 @@ async function bootstrap() {
 
   // ----- http server -----
   await buildHttpServer(app);
-
   if (module.hot) {
     module.hot.accept();
     module.hot.dispose(() => app.close());
