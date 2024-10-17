@@ -6,6 +6,7 @@ volumes:
   rabbitmq-data: {}
   vault-data: {}
   elasticsearch-data: {}
+  pgadmin-data: {}
 
 networks:
   proxy-network:
@@ -92,3 +93,19 @@ services:
       - xpack.security.enabled=false # disable security, not recommended for production
     # volumes:
     #   - elasticsearch-data:/usr/share/elasticsearch/data (error: maybe these locations are not writable or multiple nodes were started on the same data path?)
+
+  # === SUPPORT SERVICES === #
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin4
+    restart: always
+    networks:
+      - proxy-network
+      - server-network
+    ports:
+      - 8888:80
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-default@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-default}
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin

@@ -26,22 +26,15 @@ export class StorageRestController {
   @Get('my-storage')
   async my(@HttpUser() user, @Res({ passthrough: true }) res) {
     const storageId = user?.metadata['my-storage'];
-    // crate if null
     if (!storageId) {
       this.logger.warn('Storage not found, creating new one');
-
       const metadata = new Metadata();
-      metadata.add('idempotency-key', `storage-create-${user.id}`);
+      metadata.set('idempotency-key', `storage-create-${user.id}`);
       const storage = await this.storageService
         .create({ ownerId: user.id, used: BigInt(0) }, metadata)
         .toPromise();
-
-      await this.userService
-        .update(
-          { id: user.id, metadata: { 'my-storage': storage.id } },
-          metadata,
-        )
-        .toPromise();
+      const update = { id: user.id, metadata: { 'my-storage': storage.id } };
+      await this.userService.update(update, metadata).toPromise();
       res.status(201);
       return storage;
     }

@@ -12,6 +12,14 @@ import Redis from 'ioredis';
 import * as rx from 'rxjs';
 import { Reflector } from '@nestjs/core';
 
+export const grpcMetadataToObj = (metadata: Metadata) => {
+  const obj = {};
+  Object.entries(metadata.toJSON()).forEach(([key, value]) => {
+    obj[key] = value[0];
+  });
+  return obj;
+};
+
 export type IdempotencyTTLFactory = (cxt: ExecutionContext) => number;
 export const IdempotencyTTL = (ttl: number | IdempotencyTTLFactory) => {
   if (typeof ttl === 'number') {
@@ -41,20 +49,27 @@ export class IdempotencyInterceptor implements NestInterceptor {
     const rpc = context.switchToRpc();
     const metadata: Metadata = rpc.getContext();
 
-    const idempotency = metadata.get('idempotency-key')[0];
-    let idempotencyTtl = metadata.get('idempotency-ttl')[0];
-    const key = idempotency && String(idempotency);
-    if (!key) return next.handle();
+    const idempotencyKey = metadata.get('idempotency-key')[0];
+    const idempotencyTTL = metadata.get('idempotency-ttl')[0];
+    if (!idempotencyKey) return next.handle();
 
+    const key = String(idempotencyKey);
     const value = await this.idempotentService.get(key);
     if (value) return rx.of(JSON.parse(value));
-    idempotencyTtl =
-      idempotencyTtl ??
+
+    const ttlStr =
+      idempotencyTTL ??
       this.reflector.getAllAndOverride('idempotency-ttl', [
         context.getHandler(),
         context.getClass(),
-      ]);
-    metadata.set('idempotency-ttl', String(idempotencyTtl));
+      ]) ??
+      60 * 1000;
+    const ttl = parseInt(String(ttlStr));
+    if (isNaN(ttl)) {
+      throw new Error(`Invalid idempotency-ttl: ${ttlStr}`);
+    }
+
+    if (!idempotencyTTL) metadata.set('idempotency-ttl', ttlStr);
     return next.handle();
   }
 }

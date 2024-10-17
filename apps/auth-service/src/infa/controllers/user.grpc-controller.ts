@@ -1,13 +1,15 @@
-import { Metadata } from '@grpc/grpc-js';
-import { Controller, Inject, UseInterceptors } from '@nestjs/common';
-import { GrpcMethod, RpcException } from '@nestjs/microservices';
+import { Controller, Inject, Logger, UseInterceptors } from '@nestjs/common';
+import { GrpcMethod } from '@nestjs/microservices';
 import { ManagementClient } from 'auth0';
 import Redis from 'ioredis';
 import * as rx from 'rxjs';
-import { IdempotencyInterceptor } from '../adapters';
+import {
+  IdempotencyInterceptor,
+  IdempotencyTTL,
+  grpcMetadataToObj,
+} from '../adapters';
 
 const SERVICE_NAME = 'UserService';
-
 @Controller()
 export class UserGrpcController {
   constructor(
@@ -84,7 +86,6 @@ export class UserGrpcController {
   }
 
   @GrpcMethod(SERVICE_NAME, 'getById')
-  @UseInterceptors(IdempotencyInterceptor)
   getById(request) {
     const fetch = this.userManagement.users.get({ id: request.id });
     return rx.from(fetch).pipe(
@@ -105,6 +106,7 @@ export class UserGrpcController {
 
   @GrpcMethod(SERVICE_NAME, 'update')
   @UseInterceptors(IdempotencyInterceptor)
+  @IdempotencyTTL(24 * 60 * 60 * 1000)
   async update(request, metadata) {
     try {
       const user_metadata = { 'my-storage': request.metadata['my-storage'] };
@@ -112,28 +114,27 @@ export class UserGrpcController {
         { id: request.id },
         { user_metadata },
       );
-      return await this.handleIdempotency(value, metadata);
+
+      const metaObj = grpcMetadataToObj(metadata);
+      return await this.handleIdempotency(value, metaObj);
     } catch (error) {
-      console.error(error);
+      Logger.debug(error, 'Error updating user');
       throw new Error('User not found');
     }
   }
 
-  private async handleIdempotency<T>(value: T, metadata: Metadata): Promise<T> {
-    //TODO: move to interceptor (error)
-    const idempotencyKey = metadata.get('idempotency-key')[0] ?? null;
-    const idempotencyTtl = metadata.get('idempotency-ttl')[0] ?? null;
-    if (!idempotencyKey) return value;
-    const ok = await this.idempotentService.set(
-      String(idempotencyKey),
-      JSON.stringify(value),
-      'PX',
-      Number(idempotencyTtl ?? 24 * 60 * 60 * 1000),
-      'NX',
-    );
-    if (ok !== 'OK') {
-      throw new RpcException(`Duplicate request with key: ${idempotencyKey}`);
-    }
-    return value;
+  private async handleIdempotency<T>(value: T, metadata: any): Promise<T> {
+    const valueStr = JSON.stringify(value);
+    const idempotencyKey = metadata['idempotency-key'] ?? null;
+    const idempotencyTtl = metadata['idempotency-ttl'] ?? null;
+    if (!idempotencyKey || !idempotencyTtl) return JSON.parse(valueStr);
+    const key = String(idempotencyKey);
+    const ttl = parseInt(idempotencyTtl);
+    await this.idempotentService
+      .set(key, valueStr, 'PX', ttl, 'NX')
+      .then((res) => {
+        if (!res) throw new Error('Duplicate request');
+      });
+    return JSON.parse(valueStr);
   }
 }
