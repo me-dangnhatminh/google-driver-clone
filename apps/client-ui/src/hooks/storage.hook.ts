@@ -1,8 +1,4 @@
-import StorageApi, {
-  CreateFolderDTO,
-  ItemLabel,
-  Pagination,
-} from "@api/storage.api";
+import StorageApi, { ItemLabel, Pagination } from "@api/storage.api";
 import {
   useInfiniteQuery,
   useMutation,
@@ -15,7 +11,7 @@ const StorageApiV2 = apiV2.StorageApi;
 
 export const useStorage = (id: string) => {
   return useQuery({
-    queryKey: ["storage", "id"],
+    queryKey: ["storage", id],
     queryFn: () => {
       return StorageApiV2.getStorage({ id });
     },
@@ -23,27 +19,119 @@ export const useStorage = (id: string) => {
 };
 
 export const useFolder = (id: string) => {
-  return useQuery({
+  const data = useQuery({
     queryKey: ["folder", id],
     queryFn: () => StorageApiV2.getFolder({ id }),
     enabled: true,
   });
+
+  const folderContent = useFolderContent({ id }, { enabled: false });
+  const folderCreate = useCreateFolder({ parentId: id });
+  const fileUpload = useUploadFile({ parentId: id });
+  const filesUpload = useUploadFiles({ parentId: id });
+
+  return {
+    ...data,
+    folderContent,
+    folderCreate,
+    fileUpload,
+    filesUpload,
+  };
 };
 
-export const useFolderContent = (props: {
-  id: string;
-  limit?: number;
-  offset?: string;
-  filter?: Record<string, unknown>;
-  sort?: Record<string, string>;
-}) => {
+export const useFolderContent = (
+  props: {
+    id: string;
+    limit?: number;
+    offset?: string;
+    filter?: Record<string, unknown>;
+    sort?: Record<string, string>;
+  },
+  options?: { enabled?: boolean }
+) => {
   return useQuery({
-    queryKey: ["folderContent", props.id, props.limit, props.offset].filter(
-      Boolean
-    ),
+    queryKey: ["folder", props.id, "content"],
     queryFn: () => StorageApiV2.folderContent(props),
+    enabled: options?.enabled,
   });
 };
+
+export const useCreateFolder = (props: { parentId: string }) => {
+  const { parentId } = props;
+  return useMutation({
+    mutationKey: ["folder", parentId, "create"],
+    throwOnError: false,
+    mutationFn: (data: Omit<apiV2.CreateFolderParams, "parentId">) => {
+      return StorageApiV2.createFolder({ ...data, parentId });
+    },
+  });
+};
+
+export const useUploadFile = (props: { parentId: string }) => {
+  const { parentId } = props;
+  const mutation = useMutation({
+    mutationKey: ["folder", parentId, "file", "upload"],
+    throwOnError: (err) => {
+      if (err instanceof Error && err.name === "CanceledError") return false;
+      return true;
+    },
+    mutationFn(req: {
+      data: { file: File };
+      onProgress?: (progress: number) => void;
+      signal?: AbortSignal;
+    }) {
+      const { file } = req.data;
+
+      return StorageApi.uploadFile(
+        { file, parentId },
+        {
+          signal: req.signal,
+          onUploadProgress(event) {
+            const progress = event.progress;
+            if (!progress) return req.onProgress?.(0);
+            req.onProgress?.(Math.ceil(progress * 100));
+          },
+        }
+      );
+    },
+    onMutate: (values) => values.onProgress?.(0),
+    onSuccess: (_data, values) => values.onProgress?.(100),
+  });
+  return mutation;
+};
+
+export const useUploadFiles = (props: { parentId: string }) => {
+  const { parentId } = props;
+  const mutation = useMutation({
+    mutationKey: ["folder", parentId, "files", "upload"],
+    throwOnError: (err) => {
+      if (err instanceof Error && err.name === "CanceledError") return false;
+      return true;
+    },
+    mutationFn(req: {
+      data: { files: File[] };
+      onProgress?: (progress: number) => void;
+      signal?: AbortSignal;
+    }) {
+      const { files } = req.data;
+      return StorageApi.uploadFiles(
+        { files, parentId },
+        {
+          signal: req.signal,
+          onUploadProgress(event) {
+            const progress = event.progress;
+            if (!progress) return req.onProgress?.(0);
+            req.onProgress?.(Math.ceil(progress * 100));
+          },
+        }
+      );
+    },
+    onMutate: (values) => values.onProgress?.(0),
+    onSuccess: (_data, values) => values.onProgress?.(100),
+  });
+  return mutation;
+};
+
 // ====== OLD HOOKS ======
 
 export const useFolderInfinite = (refId?: string, label?: ItemLabel) => {
@@ -55,126 +143,6 @@ export const useFolderInfinite = (refId?: string, label?: ItemLabel) => {
     initialPageParam: { folderCursor: undefined, fileCursor: undefined },
     getNextPageParam: (lastPage) => lastPage.nextCursor,
   });
-};
-
-export const useCreateFolder = (refId?: string) => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationKey: ["createFolder"],
-    throwOnError: false,
-    mutationFn(dto: CreateFolderDTO) {
-      return StorageApi.createFolder({ ...dto, parentId: refId });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["folder", refId] });
-    },
-  });
-};
-
-export const useUploadFile = (refId?: string) => {
-  const queryClient = useQueryClient();
-  const mutation = useMutation({
-    mutationKey: ["uploadFile"],
-    throwOnError: (err) => {
-      if (err instanceof Error && err.name === "CanceledError") return false;
-      return true;
-    },
-    mutationFn(req: {
-      file: File;
-      onProgress?: (progress: number) => void;
-      signal?: AbortSignal;
-    }) {
-      return StorageApi.uploadFile(
-        { file: req.file, parentId: refId },
-        {
-          signal: req.signal,
-          onUploadProgress(event) {
-            const progress = event.progress;
-            if (!progress) return req.onProgress?.(0);
-            req.onProgress?.(Math.ceil(progress * 100));
-          },
-        }
-      );
-    },
-    onMutate: (values) => values.onProgress?.(0),
-    onSuccess: (_data, values) => {
-      values.onProgress?.(100);
-      queryClient.refetchQueries({ queryKey: ["folder", refId] });
-      queryClient.refetchQueries({ queryKey: ["storage"] });
-    },
-  });
-  return mutation;
-};
-
-export const useUploadFiles = (refId?: string) => {
-  const queryClient = useQueryClient();
-  const mutation = useMutation({
-    mutationKey: ["uploadFiles", refId],
-    throwOnError: (err) => {
-      if (err instanceof Error && err.name === "CanceledError") return false;
-      return true;
-    },
-    mutationFn(req: {
-      files: File[];
-      onProgress?: (progress: number) => void;
-      signal?: AbortSignal;
-    }) {
-      return StorageApi.uploadFiles(
-        { files: req.files, parentId: refId },
-        {
-          signal: req.signal,
-          onUploadProgress(event) {
-            const progress = event.progress;
-            if (!progress) return req.onProgress?.(0);
-            req.onProgress?.(Math.ceil(progress * 100));
-          },
-        }
-      );
-    },
-    onMutate: (values) => values.onProgress?.(0),
-    onSuccess: (_data, values) => {
-      values.onProgress?.(100);
-      queryClient.refetchQueries({ queryKey: ["folder", refId] });
-      queryClient.refetchQueries({ queryKey: ["storage"] });
-    },
-  });
-  return mutation;
-};
-
-export const useUploadFolder = (refId?: string) => {
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation({
-    mutationKey: ["uploadFolder", refId],
-    throwOnError: (err) => {
-      if (err instanceof Error && err.name === "CanceledError") return false;
-      return true;
-    },
-    mutationFn(req: {
-      files: File[];
-      onProgress?: (progress: number) => void;
-      signal?: AbortSignal;
-    }) {
-      return StorageApi.uploadFolder(
-        { files: req.files, parentId: refId },
-        {
-          signal: req.signal,
-          onUploadProgress(event) {
-            const progress = event.progress;
-            if (!progress) return req.onProgress?.(0);
-            req.onProgress?.(Math.ceil(progress * 100));
-          },
-        }
-      );
-    },
-    onMutate: (values) => values.onProgress?.(0),
-    onSuccess: (_data, values) => {
-      values.onProgress?.(100);
-      queryClient.refetchQueries({ queryKey: ["folder", refId] });
-      queryClient.refetchQueries({ queryKey: ["storage"] });
-    },
-  });
-  return mutation;
 };
 
 export const useUpdateFile = (refId?: string) => {

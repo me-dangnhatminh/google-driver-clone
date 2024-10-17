@@ -1,3 +1,4 @@
+import { Authenticated, HttpUser } from '@app/auth-client';
 import {
   BadRequestException,
   Body,
@@ -11,12 +12,14 @@ import {
   Put,
   Query,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('folder')
 @ApiBearerAuth()
 @Controller({ path: 'storage/folder', version: '1' })
+@UseGuards(Authenticated)
 export class FolderRestController {
   constructor(@Inject('FolderService') private readonly folderService) {}
 
@@ -167,8 +170,14 @@ export class FolderRestController {
     },
   })
   @Post()
-  async create(@Body() body, @Res({ passthrough: true }) res) {
-    const result = await this.folderService.create(body).toPromise();
+  async create(
+    @Body() body,
+    @Res({ passthrough: true }) res,
+    @HttpUser() user,
+  ) {
+    const result = await this.folderService
+      .create({ ...body, ownerId: user.id })
+      .toPromise();
     res.status(201);
     return result;
   }
@@ -219,13 +228,14 @@ export class FolderRestController {
     @Param('id') id: string,
     @Body() body,
     @Res({ passthrough: true }) res,
+    @HttpUser() user,
   ) {
     const { items } = await this.folderService
       .list({ filter: { id }, limit: 1 })
       .toPromise();
     const folder = items[0];
     if (folder) return this.update(id, body, res);
-    return this.create(body, res);
+    return this.create(body, res, user);
   }
 
   @Delete(':id')

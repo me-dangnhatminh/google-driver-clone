@@ -1,13 +1,42 @@
 import { Separator } from "@components/ui/separator";
 import { FileUp, FolderIcon, FolderUp } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "@components/ui/form";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@components/ui/dialog";
+import { Button } from "@components/ui/button";
+import { Input } from "@components/ui/input";
 import { toast } from "sonner";
-import { useDocModal, useUploadFile, useUploadFolder } from "@hooks";
+import z from "zod";
+import { useFolder } from "@hooks";
+import React from "react";
 
-type DocActionsProps = { folderId?: string };
-function DocActions(props: DocActionsProps) {
-  const uploadFile = useUploadFile(props.folderId);
-  const uploadFolder = useUploadFolder(props.folderId);
-  const { onOpen } = useDocModal();
+const DocActions = (props: { folderId: string }) => {
+  const { folderId } = props;
+  const [isOpen, setOpen] = React.useState(false);
+
+  const open = () => setOpen(true);
+  const close = () => setOpen(false);
+
+  const folder = useFolder(folderId);
+
+  const fileUpload = folder.fileUpload;
+  const filesUpload = folder.filesUpload;
+
+  if (folder.isLoading) return <div>Loading...</div>;
+  const data = folder.data;
+  if (!data) return <div>No data</div>;
 
   const handleFileUpload = () => {
     const input = document.createElement("input");
@@ -23,9 +52,9 @@ function DocActions(props: DocActionsProps) {
         closeButton: true,
         onDismiss: () => controller.abort(),
       };
-      uploadFile.mutate(
+      fileUpload.mutate(
         {
-          file: file,
+          data: { file },
           signal: controller.signal,
           onProgress: (progress) => {
             const msg = `Uploading ${file.name}... ${progress}%`;
@@ -43,7 +72,7 @@ function DocActions(props: DocActionsProps) {
     input.click();
   };
 
-  const handleFolderUpload = () => {
+  const handleFilesUpload = () => {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "*";
@@ -62,9 +91,9 @@ function DocActions(props: DocActionsProps) {
         onDismiss: () => controller.abort(),
       };
 
-      uploadFolder.mutate(
+      filesUpload.mutate(
         {
-          files: Array.from(files),
+          data: { files: Array.from(files) },
           signal: controller.signal,
           onProgress: (progress) => {
             const msg = `Uploading ${foldername}... ${progress}%`;
@@ -88,7 +117,13 @@ function DocActions(props: DocActionsProps) {
   const btnClass = `flex items-center hover:bg-secondary transition py-2 px-4 space-x-2 text-sm`;
   return (
     <div>
-      <div className={btnClass} role="button" onClick={onOpen}>
+      <CreateFolderModal
+        folderId={folderId}
+        isOpen={isOpen}
+        open={open}
+        close={close}
+      />
+      <div className={btnClass} role="button" onClick={open}>
         <FolderIcon className="w-4 h-4" />
         <span>New folder</span>
       </div>
@@ -98,12 +133,86 @@ function DocActions(props: DocActionsProps) {
         <span>File upload</span>
       </div>
 
-      <div className={btnClass} role="button" onClick={handleFolderUpload}>
+      <div className={btnClass} role="button" onClick={handleFilesUpload}>
         <FolderUp className="w-4 h-4" />
         <span>Folder upload</span>
       </div>
     </div>
   );
-}
+};
 
+const CreateFolderSchema = z.object({
+  name: z.string({ required_error: "Folder name is required" }),
+});
+type CreateFolderData = z.infer<typeof CreateFolderSchema>;
+
+const CreateFolderModal = (props: {
+  folderId: string;
+  isOpen: boolean;
+  open: () => void;
+  close: () => void;
+}) => {
+  const { folderId, isOpen } = props;
+
+  const folder = useFolder(folderId);
+  const createFolder = folder.folderCreate;
+
+  const form = useForm({
+    resolver: zodResolver(CreateFolderSchema),
+    defaultValues: { name: "" },
+  });
+
+  const onSubmit = (values: CreateFolderData) => {
+    if (createFolder.isPending) return;
+    const create = createFolder.mutateAsync(values);
+    toast.promise(create, {
+      loading: "Creating folder...",
+      success: "Folder created",
+      error: "Failed to create folder",
+    });
+    props.close();
+  };
+
+  return (
+    <Dialog open={isOpen}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>New folder</DialogTitle>
+        </DialogHeader>
+
+        <div className="flex flex-col space-y-2">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input placeholder="Folder name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-end items-center space-x-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={props.close}
+                  type="button"
+                >
+                  Cancel
+                </Button>
+                <Button variant="outline" size="sm" type="submit">
+                  Create
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
 export default DocActions;

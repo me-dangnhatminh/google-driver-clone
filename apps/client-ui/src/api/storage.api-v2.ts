@@ -9,6 +9,10 @@ const folderMethods = {
     method: "GET",
     fullPath: "v1/storage/folder/{id}/content",
   }),
+  upload: ApiMethod.make({
+    method: "POST",
+    fullPath: "v1/storage/folder/{id}/content:upload",
+  }),
   create: ApiMethod.make({ method: "POST", fullPath: "v1/storage/folder" }),
   update: ApiMethod.make({ method: "PATCH", fullPath: "v1/storage/folder" }),
   delete: ApiMethod.make({ method: "DELETE", fullPath: "v1/storage/folder" }),
@@ -99,6 +103,12 @@ export const FolderSchema = z.object({
   modifiedAt: z.string().optional(),
 });
 
+export const CreateFolderSchema = FolderSchema.partial().required({
+  name: true,
+  parentId: true,
+});
+export type CreateFolderParams = z.infer<typeof CreateFolderSchema>;
+
 export const FolderContentItemSchema = z.object({
   id: z.string(),
   kind: z.union([z.literal("folder"), z.literal("file")]).optional(),
@@ -162,6 +172,22 @@ export class StorageApi extends Api {
     });
   }
 
+  uploadFiles(
+    params: {
+      id: string;
+      files: [File, ...File[]];
+    },
+    options?: RequestOptions
+  ) {
+    const { files, ...rest } = params;
+    const fullPath = storageMethods.folder.upload.makePath(rest);
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append("files", file, encodeURIComponent(file.name));
+    });
+    return this.post(fullPath, formData, options);
+  }
+
   list(
     params?: { [key: string]: string },
     query?: {
@@ -178,18 +204,17 @@ export class StorageApi extends Api {
     return this.get(url, undefined, options);
   }
 
-  createFolder(
-    data: { name: string; parentId?: string },
-    options?: RequestOptions
-  ) {
+  createFolder(params: CreateFolderParams, options?: RequestOptions) {
     const fullPath = folderMethods.create.makePath();
-    return this.post(fullPath, data, options);
+    return this.post(fullPath, params, options);
   }
 
   private static storageApi = new StorageApi();
   static myStorage = StorageApi.storageApi.myStorage;
+  static list = StorageApi.storageApi.list;
   static getStorage = StorageApi.storageApi.getStorage;
   static getFolder = StorageApi.storageApi.getFolder;
   static folderContent = StorageApi.storageApi.folderContent;
   static createFolder = StorageApi.storageApi.createFolder;
+  static uploadFiles = StorageApi.storageApi.uploadFiles;
 }
