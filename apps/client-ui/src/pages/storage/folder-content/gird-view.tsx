@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Input } from "@components/ui/input";
 import { FolderIcon } from "lucide-react";
 import ItemActions, { ItemActionsRef } from "./item-action";
-import { useUpdateFolder } from "@hooks";
+import { useFolder } from "@hooks/storage.hook";
 import { toast } from "sonner";
 
 export const GridView = (props: { items: CardItemProps["item"][] }) => {
@@ -44,13 +44,10 @@ export const CardItem = (props: CardItemProps) => {
   const [action, setAction] = React.useState<string | null>(null);
   const actionRef = React.useRef<ItemActionsRef>(null);
 
-  const update =
-    item.kind === "folder"
-      ? // eslint-disable-next-line react-hooks/rules-of-hooks
-        useUpdateFolder({ id: item.id })
-      : null;
+  const folder = useFolder(item.id, { enabled: false });
 
-  if (!update) return null;
+  const update = folder.folderUpdate;
+  const deleteF = folder.folderDelete;
 
   const TitleELem =
     action === "rename" ? (
@@ -117,6 +114,15 @@ export const CardItem = (props: CardItemProps) => {
           onAction={(a) => {
             setAction(a);
             actionRef.current?.setLoading(true);
+          }}
+          onDelete={() => {
+            deleteF.mutate(undefined, {
+              onSuccess: () => toast.success("Deleted successfully"),
+              onError: (err) => {
+                toast.error(`Failed to delete: ${err.message}`);
+              },
+              onSettled: () => actionRef.current?.setLoading(false),
+            });
           }}
           onPin={() => {
             update.mutate(

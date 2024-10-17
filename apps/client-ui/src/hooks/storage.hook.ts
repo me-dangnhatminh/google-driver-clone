@@ -18,11 +18,11 @@ export const useStorage = (id: string) => {
   });
 };
 
-export const useFolder = (id: string) => {
+export const useFolder = (id: string, options?: { enabled?: boolean }) => {
   const data = useQuery({
     queryKey: ["folder", id],
     queryFn: () => StorageApiV2.getFolder({ id }),
-    enabled: true,
+    enabled: options?.enabled,
   });
 
   const folderContent = useFolderContent({ id }, { enabled: false });

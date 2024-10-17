@@ -10,7 +10,10 @@ const folderMethods = {
     method: "PATCH",
     fullPath: "v1/storage/folder/{id}",
   }),
-  delete: ApiMethod.make({ method: "DELETE", fullPath: "v1/storage/folder" }),
+  delete: ApiMethod.make({
+    method: "DELETE",
+    fullPath: "v1/storage/folder/{id}",
+  }),
   content: ApiMethod.make({
     method: "GET",
     fullPath: "v1/storage/folder/{id}/content",
@@ -18,10 +21,6 @@ const folderMethods = {
   upload: ApiMethod.make({
     method: "POST",
     fullPath: "v1/storage/folder/{id}/content:upload",
-  }),
-  action: ApiMethod.make({
-    method: "PATCH",
-    fullPath: "v1/storage/folder/{id}/action",
   }),
 };
 
