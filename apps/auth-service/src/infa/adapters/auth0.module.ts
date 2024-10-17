@@ -47,8 +47,8 @@ export class AuthService {
         publicKey: signingKey,
       })
       .then((res) => {
-        if (!res['x_metadata']) {
-          this.logger.warn(`No "x_metadata" found in token claims`);
+        if (!res['custom_metadata']) {
+          this.logger.warn(`No "custom_metadata" found in token claims`);
         }
         return {
           iss: res.iss,
@@ -59,7 +59,7 @@ export class AuthService {
           scope: res.scope,
           azp: res.azp,
           permissions: res.permissions,
-          metadata: res['x_metadata'],
+          metadata: res['custom_metadata'] ?? {},
         };
       });
   }
