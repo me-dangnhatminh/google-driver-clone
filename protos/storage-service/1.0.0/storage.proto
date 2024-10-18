@@ -132,6 +132,7 @@ service FolderService {
   rpc update(UpdateFolderRequest) returns (FolderModel);
   rpc delete(DeleteFolderRequest) returns (FolderModel);
   rpc getContent(GetFolderContentRequest) returns (GetFolderContentResponse);
+  rpc addContent(AddFolderContentRequest) returns (AddFolderContentResponse);
 }
 
 message GetFolderRequest {
@@ -155,6 +156,42 @@ message GetFolderContentRequest {
   optional int32 limit = 4;
   optional string cursor = 5;
   optional int32 offset = 6;
+}
+
+message AddFolderContentRequest {
+  message FileRaw {
+    string id = 1;
+    optional string path = 2; // full path
+    optional string parentId = 3;
+    optional string name = 4;
+    optional string originalname = 5;
+    optional string contentType = 6;
+    optional string ownerId = 7;
+    optional string createdAt = 8;
+    optional string pinnedAt = 9;
+    optional string modifiedAt = 10;
+    optional string archivedAt = 11;
+
+    optional int64 size = 12;
+    optional string thumbnail = 13;
+    optional string description = 14;
+
+    optional string pinned = 15;
+    optional string archived = 16;
+
+    optional string created = 17;
+    optional string deleted = 18;
+    optional string updated = 19;
+    map<string, string> metadata = 20;
+  }
+
+  message Content {
+    repeated FileRaw flatten = 1;
+  }
+  
+  string id = 1;
+  Content content = 2; 
+
 }
 
 message CreateFolderRequest {
@@ -339,4 +376,9 @@ message UpdateFolderResponse {
 
 message DeleteFolderResponse {
   string id = 1;
+}
+
+message AddFolderContentResponse {
+  optional string id = 1;
+  optional string path = 2; // full path
 }

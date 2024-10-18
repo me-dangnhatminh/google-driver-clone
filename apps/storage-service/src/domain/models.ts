@@ -47,8 +47,8 @@ export const FolderInfo = z.object({
 });
 
 export const FolderContent = FolderInfo.extend({
-  files: z.lazy(() => z.array(FileRef)),
-  folders: z.lazy(() => z.array(FolderContent)),
+  files: z.lazy(() => z.array(FileRef)).optional(),
+  folders: z.lazy(() => z.array(FolderContent)).optional(),
 });
 
 export const Folder = FolderInfo.extend({

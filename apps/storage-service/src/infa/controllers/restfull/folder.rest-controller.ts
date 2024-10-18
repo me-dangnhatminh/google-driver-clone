@@ -7,14 +7,18 @@ import {
   Get,
   Inject,
   Param,
+  ParseFilePipe,
   Patch,
   Post,
   Put,
   Query,
   Res,
+  UploadedFiles,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { FileFieldsInterceptor as FileFields } from '@nestjs/platform-express';
 
 @ApiTags('folder')
 @ApiBearerAuth()
@@ -153,11 +157,6 @@ export class FolderRestController {
     return result;
   }
 
-  @Post(':id/content\\:\\upload')
-  async upload() {
-    throw new Error('Not implemented');
-  }
-
   @ApiBody({
     schema: {
       type: 'object',
@@ -254,26 +253,15 @@ export class FolderRestController {
     return result;
   }
 
-  // @Post(':id/action:copy')
-  // @Post(':id/action:move')
+  @Post(':id/content\\:\\upload')
+  @UseInterceptors(FileFields([{ name: 'files' }], { preservePath: true }))
+  async upload(
+    @Param('id') id: string,
+    @UploadedFiles(new ParseFilePipe({ fileIsRequired: true })) upload,
+  ) {
+    const result = await this.folderService
+      .addContent({ id, content: { flatten: upload.files } })
+      .toPromise();
+    return result;
+  }
 }
-
-// @Get(':id/children')
-// async getChildren(@Query('id') id: string) {
-//   return { id };
-// }
-
-// @Get(':id/parents')
-// async getParents(@Query('id') id: string) {
-//   return { id };
-// }
-
-// @Get(':id/ancestors')
-// async getAncestors(@Query('id') id: string) {
-//   return { id };
-// }
-
-// @Get(':id/descendants')
-// async getDescendants(@Query('id') id: string) {
-//   return { id };
-// }

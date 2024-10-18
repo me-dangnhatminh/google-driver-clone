@@ -2,6 +2,7 @@
 import { Controller } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { GrpcMethod } from '@nestjs/microservices';
+import { Transactional } from '@nestjs-cls/transactional';
 
 import {
   ContentFolderQuery,
@@ -13,10 +14,10 @@ import {
   CreateFolderCommand,
   DeleteFolderCommand,
   UpdateFolderCommand,
+  AddContentFolderCommand,
 } from 'src/app/commands/v2';
 
 const SERVICE_NAME = 'FolderService';
-
 @Controller()
 export class FolderGrpcController {
   constructor(
@@ -49,6 +50,7 @@ export class FolderGrpcController {
   }
 
   @GrpcMethod(SERVICE_NAME, 'update')
+  @Transactional()
   async updateFolder(request, metadata) {
     const command = new UpdateFolderCommand(request, metadata);
     await this.commandBus.execute(command);
@@ -56,19 +58,18 @@ export class FolderGrpcController {
   }
 
   @GrpcMethod(SERVICE_NAME, 'delete')
+  @Transactional()
   async deleteFolder(request, metadata) {
     const command = new DeleteFolderCommand(request, metadata);
     await this.commandBus.execute(command);
     return command.input;
   }
 
-  @GrpcMethod(SERVICE_NAME, 'copyFolder')
-  async copyFolder(request, metadata) {
-    throw new Error('Not implemented');
-  }
-
-  @GrpcMethod(SERVICE_NAME, 'moveFolder')
-  async moveFolder(request, metadata) {
-    throw new Error('Not implemented');
+  @GrpcMethod(SERVICE_NAME, 'addContent')
+  @Transactional()
+  async addContent(request, metadata) {
+    const command = new AddContentFolderCommand(request, metadata);
+    const result = await this.commandBus.execute(command);
+    return result;
   }
 }

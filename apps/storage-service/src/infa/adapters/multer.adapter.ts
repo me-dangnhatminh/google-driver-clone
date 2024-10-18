@@ -27,6 +27,7 @@ import { FileRef, FolderContent, FolderInfo } from 'src/domain';
 
 // ======= constants =======
 const ROLLBACK_EVENT = Symbol('file-rollback');
+const DEFAULT_STORED_DIR = '.temp';
 
 @Injectable()
 export class DiskStorageService implements MulterOptionsFactory {
@@ -36,10 +37,7 @@ export class DiskStorageService implements MulterOptionsFactory {
   private readonly folderDefaultName = 'Untitled';
 
   constructor(private readonly configService: ConfigService<any, true>) {
-    const rootDirConfigPath = 'storage.disk.rootDir';
-    let rootDir = this.configService.get<string>(rootDirConfigPath) ?? '.temp';
-    if (!rootDir) throw new Error(`Config not found: ${rootDirConfigPath}`);
-
+    let rootDir = DEFAULT_STORED_DIR;
     if (!path.isAbsolute(rootDir)) rootDir = path.resolve(rootDir);
     else rootDir = path.normalize(rootDir);
 
@@ -66,7 +64,7 @@ export class DiskStorageService implements MulterOptionsFactory {
   createMulterOptions(): MulterModuleOptions {
     return {
       storage: multer.diskStorage({
-        destination: (req, file, cb) => {
+        destination: (_, file, cb) => {
           Object.assign(file, { destination: this.destination });
           return cb(null, this.destination);
         },
@@ -78,12 +76,21 @@ export class DiskStorageService implements MulterOptionsFactory {
           const fullpath = path.join(destination, filename);
           file.originalname = decodeURIComponent(file.originalname);
           file.path = fullpath;
+          const now = new Date();
+
+          // replace invalid characters (only child of root)
+          const originalname = file.originalname.replace(
+            /(\.\.\/|\/\.\.|\.\/)/g,
+            '_',
+          );
+
           Object.assign(file, {
             id: id,
             name: file.originalname,
+            originalname,
             contentType: file.mimetype,
-            createdAt: new Date(),
-            modifiedAt: new Date(),
+            createdAt: now.toISOString(),
+            modifiedAt: now.toISOString(),
             archivedAt: null,
             pinnedAt: null,
             description: null,
@@ -286,8 +293,8 @@ export const structureToDoamin = (
       size: file.size,
       contentType: file.mimetype,
       ownerId: ownerId ?? parent.ownerId,
-      createdAt: createdAt,
-      modifiedAt: createdAt,
+      createdAt: createdAt.toISOString(),
+      modifiedAt: createdAt.toISOString(),
       archivedAt: null,
       pinnedAt: null,
       description: null,
@@ -301,8 +308,8 @@ export const structureToDoamin = (
       name: folderName,
       ownerId: ownerId ?? parent.ownerId,
       parentId: parent.id,
-      createdAt: createdAt,
-      modifiedAt: createdAt,
+      createdAt: createdAt.toISOString(),
+      modifiedAt: createdAt.toISOString(),
       archivedAt: null,
       pinnedAt: null,
       size: 0,
