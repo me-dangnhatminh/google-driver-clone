@@ -11,27 +11,19 @@ import {
 import { ApiBearerAuth, ApiHeaders, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 
-import { CacheKey, CacheTTL } from '../adapters';
-import {
-  BearerTokenCacheInterceptor,
-  AuthResponseInterceptor,
-} from '../interceptors';
-
-import Redis from 'ioredis';
+import { AuthResponseInterceptor } from '../interceptors';
+import { Idempotent, IdempotentKey } from '../idempotant';
 
 @Controller({ path: 'auth', version: '1' })
 @ApiTags('auth')
 @ApiBearerAuth()
 export class AuthRestController {
-  constructor(
-    @Inject('AuthService') private readonly authService,
-    @Inject('IDEMPOTENT_SERVICE') private readonly idempotentService: Redis,
-  ) {}
+  constructor(@Inject('AuthService') private readonly authService) {}
 
   @Get('validate')
-  @UseInterceptors(AuthResponseInterceptor, BearerTokenCacheInterceptor)
-  @CacheKey('auth:validate')
-  @CacheTTL(60 * 60 * 1000) // 1 hour
+  @UseInterceptors(AuthResponseInterceptor)
+  // @CacheKey('auth:validate')
+  // @CacheTTL(60 * 60 * 1000) // 1 hour
   @ApiHeaders([
     {
       name: 'authorization',
@@ -67,20 +59,13 @@ export class AuthRestController {
         throw new UnauthorizedException({ type: 'invalid_request', message });
       }
 
-      // handle 'Bearer' token
       if (!token) {
         const message = 'Missing token';
         throw new UnauthorizedException({ type: 'invalid_request', message });
       }
 
-      const user = await this.authService
-        .validate({ token })
-        .toPromise()
-        .catch((err) => {
-          const message = err.message;
-          throw new UnauthorizedException({ type: 'unknown', message });
-        });
-      return user;
+      const result = await this.authService.validate({ token }).toPromise();
+      return result;
     } catch (err) {
       if (err instanceof UnauthorizedException) {
         const errRes = err.getResponse();
@@ -96,7 +81,10 @@ export class AuthRestController {
   }
 
   @Get('verify')
+  @Idempotent()
+  @IdempotentKey('token')
   async verify(@Query('token') token: string) {
-    return await this.authService.verify({ token }).toPromise();
+    const result = await this.authService.verify({ token }).toPromise();
+    return result;
   }
 }

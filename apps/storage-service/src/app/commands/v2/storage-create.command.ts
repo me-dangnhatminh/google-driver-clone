@@ -3,8 +3,9 @@ import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-pr
 import { Inject } from '@nestjs/common';
 import { CommandHandler, ICommand, ICommandHandler } from '@nestjs/cqrs';
 import Redis from 'ioredis';
-import { RootFolder, Storage } from 'src/domain';
+import { FolderModel, StorageModel } from 'src/domain';
 import { randomUUID as uuid } from 'crypto';
+import { OrmFolder, OrmStorage } from 'src/infa/persistence';
 
 export class CreateStorageCommand implements ICommand {
   constructor(
@@ -27,26 +28,55 @@ export class CreateStorageHandler
   async execute({ input, metadata }: CreateStorageCommand) {
     const now = new Date();
     const id = uuid();
-    const root = RootFolder.parse({
+    const rootFolder = new FolderModel({
       id: id,
+      createdAt: now.toISOString(),
+      modifiedAt: now.toISOString(),
+      archivedAt: null,
+      name: 'root',
       ownerId: input.ownerId,
-      name: 'My Storage',
-      createdAt: now,
-      modifiedAt: now,
+      size: 0,
+      parentId: null,
+      pinnedAt: null,
     });
-    const result = await this.tx.storage
-      .create({
-        data: {
-          ...input,
-          id: id,
-          createdAt: now,
-          modifiedAt: now,
-          metadata: input.metadata || {},
-          ref: { create: root },
-        },
-      })
-      .then((s) => Storage.parse(s));
-    return await this.handleIdempotency(result, metadata);
+
+    const storage = StorageModel.create({
+      id: id,
+      createdAt: now.toISOString(),
+      modifiedAt: now.toISOString(),
+      used: 0,
+      metadata: {},
+      ownerId: input.ownerId,
+      refId: rootFolder.props.id,
+      archivedAt: null,
+      name: 'New Storage',
+    });
+
+    // ==
+    const storageOrm = OrmStorage.fromDomain(storage).toOrm();
+    const { orm: folderOrm } = OrmFolder.fromDomain(rootFolder, {
+      rootId: null,
+      depth: 0,
+      lft: 1,
+      rgt: 2,
+    });
+
+    await this.tx.folder.create({ data: folderOrm });
+    await this.tx.storage.create({
+      data: {
+        id: storageOrm.id,
+        createdAt: storageOrm.createdAt,
+        modifiedAt: storageOrm.modifiedAt,
+        used: storageOrm.used,
+        ownerId: storageOrm.ownerId,
+        archivedAt: storageOrm.archivedAt,
+        total: storageOrm.total,
+        refId: storageOrm.refId,
+        metadata: {},
+      },
+    });
+
+    return await this.handleIdempotency(storage.props, metadata);
   }
 
   private async handleIdempotency<T>(value: T, metadata: any): Promise<T> {

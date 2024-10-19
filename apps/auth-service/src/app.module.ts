@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TerminusModule } from '@nestjs/terminus';
 import { HttpModule } from '@nestjs/axios';
+import { JwtModule } from '@nestjs/jwt';
 
 import { ConfigModule } from './config';
 import { AuthClientModule } from '@app/auth-client';
@@ -11,20 +12,23 @@ import {
   LoggerModule,
   IdempotentModule,
 } from 'src/infa';
+import services from './app';
 
 @Module({
   imports: [
     ConfigModule,
     LoggerModule,
     CacheModule,
-    IdempotentModule,
+    JwtModule.register({}),
+    IdempotentModule.forRoot(),
+
     Auth0Module,
     AuthClientModule,
-
     // for health check
     HttpModule,
     TerminusModule,
   ],
+  providers: [...services],
   controllers,
 })
 export class AppModule {}

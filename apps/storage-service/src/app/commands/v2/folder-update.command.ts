@@ -1,19 +1,12 @@
 import { TransactionHost } from '@nestjs-cls/transactional';
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
 import { CommandHandler, ICommand, ICommandHandler } from '@nestjs/cqrs';
+import { UpdateFolderProps } from 'src/domain';
+import { OrmFolder } from 'src/infa/persistence';
 
 export class UpdateFolderCommand implements ICommand {
   constructor(
-    public input: {
-      id: string;
-      name?: string;
-      ownerId?: string;
-      // thumbnail?: string;
-      // description?: string;
-      // metadata?: unknown;
-      pinned?: boolean;
-      archived?: boolean;
-    },
+    public input: { id: string } & UpdateFolderProps,
     public metadata: unknown,
   ) {}
 }
@@ -35,9 +28,10 @@ export class UpdateFolderHandler
   }
 
   async pin(input: UpdateFolderCommand['input']) {
-    const folder = await this.tx.folder.findUniqueOrThrow({
-      where: { id: input.id },
-    });
+    const { props: folder } = await this.tx.folder
+      .findUniqueOrThrow({ where: { id: input.id } })
+      .then(OrmFolder.fromOrm)
+      .then((orm) => orm.domain);
     const isPinned = Boolean(!!folder.pinnedAt);
     if (String(isPinned) === String(input.pinned)) return folder;
     const now = new Date();
@@ -46,9 +40,10 @@ export class UpdateFolderHandler
   }
 
   async archive(input: UpdateFolderCommand['input']) {
-    const folder = await this.tx.folder.findUniqueOrThrow({
-      where: { id: input.id },
-    });
+    const { orm: folder } = await this.tx.folder
+      .findUniqueOrThrow({ where: { id: input.id } })
+      .then(OrmFolder.fromOrm);
+
     const isArchived = Boolean(!!folder.archivedAt);
     if (String(isArchived) === String(input.archived)) return folder;
     const rootId = folder.rootId || folder.id;
@@ -65,9 +60,10 @@ export class UpdateFolderHandler
   }
 
   async update(input: UpdateFolderCommand['input']) {
-    const folder = await this.tx.folder.findUniqueOrThrow({
-      where: { id: input.id },
-    });
+    const { orm: folder } = await this.tx.folder
+      .findUniqueOrThrow({ where: { id: input.id } })
+      .then(OrmFolder.fromOrm);
+
     if (folder.name === input.name) return folder;
     return await this.tx.folder.update({
       where: { id: input.id },

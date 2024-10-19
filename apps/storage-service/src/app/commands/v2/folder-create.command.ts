@@ -1,4 +1,3 @@
-import { randomUUID as uuid } from 'crypto';
 import { Transactional, TransactionHost } from '@nestjs-cls/transactional';
 import { TransactionalAdapterPrisma } from '@nestjs-cls/transactional-adapter-prisma';
 import { CommandHandler, ICommand, ICommandHandler } from '@nestjs/cqrs';
@@ -11,25 +10,12 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import * as rx from 'rxjs';
-import { FolderInfo } from 'src/domain';
-
-export type CreateFolderInput = {
-  id?: string;
-  ownerId: string;
-  parentId?: string;
-  name?: string;
-  createdAt?: Date;
-  pinnedAt?: Date;
-  modifiedAt?: Date;
-  archivedAt?: Date;
-  thumbnail?: string;
-  description?: string;
-  metadata?: Record<string, unknown>;
-};
+import { CreateFolderProps, FolderModel } from 'src/domain';
+import { OrmFolder } from 'src/infa/persistence';
 
 export class CreateFolderCommand implements ICommand {
   constructor(
-    public input: CreateFolderInput,
+    public input: CreateFolderProps,
     public metadata: unknown,
   ) {}
 }
@@ -54,39 +40,28 @@ export class CreateFolderHandler
   implements ICommandHandler<CreateFolderCommand>
 {
   private readonly tx = this.txHost.tx;
-  private DEFAULT_FOLDER_NAME = 'Untitled Folder';
 
   constructor(private txHost: TransactionHost<TransactionalAdapterPrisma>) {}
 
   @Transactional()
   @UseInterceptors(CreateFolderInterceptor)
   async execute(command: CreateFolderCommand) {
-    const { parentId = null, ...input } = command.input;
+    const folderDomain = FolderModel.create(command.input);
+    const folder = folderDomain.props;
 
+    const parentId = folder.parentId;
     const parent = parentId
       ? await this.tx.folder.findUniqueOrThrow({ where: { id: parentId } })
       : null;
-
     const rootId = parent ? (parent.rootId ? parent.rootId : parent.id) : null;
-    const newFolder = {
-      id: input.id || uuid(),
-      ownerId: input.ownerId,
-      name: input.name || this.DEFAULT_FOLDER_NAME,
-      parentId: parent ? parent.id : undefined, // TODO: check if this is correct
-      createdAt: input.createdAt || new Date(),
-      modifiedAt: input.modifiedAt || new Date(),
-      archivedAt: input.archivedAt || null,
-      pinnedAt: input.pinnedAt || null,
-      // thumbnail: input.thumbnail || null,
-      // description: input.description || '',
-      // metadata: input.metadata || {},
-      rootId: rootId,
+
+    // ===== Create new folder ===== //
+    const { orm: newFolder } = OrmFolder.fromDomain(folderDomain, {
+      rootId,
       depth: parent ? parent.depth + 1 : 0,
-      size: 0n,
       lft: parent ? parent.rgt : 0,
       rgt: parent ? parent.rgt + 1 : 1,
-    };
-    FolderInfo.parse(newFolder);
+    });
 
     const tasks: Promise<unknown>[] = [];
     tasks.push(this.tx.folder.create({ data: newFolder }));

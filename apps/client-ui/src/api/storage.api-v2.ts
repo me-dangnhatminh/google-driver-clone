@@ -179,7 +179,9 @@ export class StorageApi extends Api {
 
   myStorage(options?: RequestOptions) {
     const fullPath = storageMethods.myStorage.makePath();
-    return Api.get(fullPath, undefined, options);
+    return Api.get(fullPath, undefined, options).then(({ data }) => {
+      return StorageSchema.parse(data);
+    });
   }
 
   getStorage(params: { id: string }, options?: RequestOptions) {
@@ -290,3 +292,5 @@ export class StorageApi extends Api {
   static deleteFolder = StorageApi.storageApi.deleteFolder;
   static updateFolder = StorageApi.storageApi.updateFolder;
 }
+
+export default StorageApi;

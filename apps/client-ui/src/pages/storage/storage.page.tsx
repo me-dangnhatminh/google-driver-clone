@@ -14,6 +14,8 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { GridView } from "./folder-content/gird-view";
 import { useParams } from "react-router-dom";
 
+import StorageApi from "@api/storage.api-v2";
+
 namespace StoragePage {
   export type Props = { folderId?: string; label?: ItemLabel };
   export type Layout = "list" | "grid";
@@ -102,11 +104,17 @@ export const StoragePage = () => {
   const { user } = useAuth0();
   const storageId: string | null = useMemo(() => {
     if (!user) return null;
-    const metadata = user["custom_metadata"];
-    if (!metadata) return null;
-    return metadata["my-storage"];
+    const metadata = user["custom_metadata"] ?? {};
+    if (metadata["my-storage"]) return metadata["my-storage"];
+    return localStorage.getItem("my-storage");
   }, [user]);
-  if (!storageId) return null;
+
+  if (!storageId) {
+    StorageApi.myStorage().then((storage) => {
+      localStorage.setItem("my-storage", storage.id);
+    });
+    return null;
+  }
   return <MyStoragePage storageId={storageId} />;
 };
 
