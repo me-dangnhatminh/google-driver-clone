@@ -1,10 +1,9 @@
-import { UserSchema } from 'src/domain';
-
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { UserInfoClient } from 'auth0';
 import * as jwksClient from 'jwks-rsa';
+import { UserEntity } from 'src/domain';
 
 @Injectable()
 export class AuthService {
@@ -26,20 +25,22 @@ export class AuthService {
     });
   }
 
-  async validate(input: { token: string }, metadata?: any) {
+  async validate(input: { token: string }) {
     const token = input.token;
-    const result = await this.userInfo
+    const user = await this.userInfo
       .getUserInfo(token)
       .then(({ data }) => data)
-      .then((user) => ({
-        ...user,
-        id: user.sub,
-        roles: user.roles ?? [],
-        permissions: user.permissions ?? [],
-        metadata: Object.assign({}, user.custom_metadata),
-      }))
-      .then((u) => UserSchema.parse(u));
-    return await this.handleIdempotency(result, metadata);
+      .then((user) => {
+        return {
+          ...user,
+          id: user.sub,
+          roles: [],
+          permissions: [],
+          metadata: Object.assign({}, user.custom_metadata),
+        };
+      })
+      .then(UserEntity.new);
+    return user.props;
   }
 
   async verify(input: { token: string }) {
@@ -69,17 +70,5 @@ export class AuthService {
         };
       });
     return result;
-  }
-
-  private async handleIdempotency<T>(value: T, metadata: any): Promise<T> {
-    const valueStr = JSON.stringify(value);
-    const valueObj = JSON.parse(valueStr);
-    const idempotencyKey = metadata['idempotency-key'];
-    const idempotencyTtl = metadata['idempotency-ttl'];
-    if (!idempotencyKey || !idempotencyTtl) return valueObj;
-    const key = String(idempotencyKey);
-    const ttl = parseInt(idempotencyTtl);
-    // await this.idempotentService.set(key, valueStr, ttl);
-    return valueObj;
   }
 }

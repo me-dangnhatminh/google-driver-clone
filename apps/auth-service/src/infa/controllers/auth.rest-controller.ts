@@ -13,6 +13,7 @@ import { Response } from 'express';
 
 import { AuthResponseInterceptor } from '../interceptors';
 import { Idempotent, IdempotentKey } from '../idempotant';
+import { CacheKey, CacheTTL } from '../adapters';
 
 @Controller({ path: 'auth', version: '1' })
 @ApiTags('auth')
@@ -22,8 +23,8 @@ export class AuthRestController {
 
   @Get('validate')
   @UseInterceptors(AuthResponseInterceptor)
-  // @CacheKey('auth:validate')
-  // @CacheTTL(60 * 60 * 1000) // 1 hour
+  @CacheKey('auth:validate')
+  @CacheTTL(60 * 60 * 1000) // 1 hour
   @ApiHeaders([
     {
       name: 'authorization',

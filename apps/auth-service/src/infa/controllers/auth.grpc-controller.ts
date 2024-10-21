@@ -2,6 +2,9 @@ import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 
 import { AuthService } from 'src/app';
+import { UseZodPipes } from '../decorators';
+
+import { TokenValidationSchema } from '../validators';
 
 const SERVICE_NAME = 'AuthService';
 @Controller()
@@ -14,15 +17,15 @@ export class AuthGrpcController {
   }
 
   @GrpcMethod(SERVICE_NAME, 'verify')
-  async verifyToken(request) {
-    const value = await this.authService.verify(request);
-    return value;
+  @UseZodPipes(TokenValidationSchema)
+  async verifyToken(request: TokenValidationSchema) {
+    return await this.authService.verify(request);
   }
 
   @GrpcMethod(SERVICE_NAME, 'validate')
-  async validate(request) {
-    const value = await this.authService.validate(request);
-    return value;
+  @UseZodPipes(TokenValidationSchema)
+  async validate(request: TokenValidationSchema) {
+    return await this.authService.validate(request);
   }
 }
 
