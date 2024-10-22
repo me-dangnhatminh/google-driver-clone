@@ -7,6 +7,7 @@ volumes:
   vault-data: {}
   elasticsearch-data: {}
   pgadmin-data: {}
+  minio-data: {}
 
 networks:
   proxy-network:
@@ -60,20 +61,33 @@ services:
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
 
-  vault:
-    image: hashicorp/vault:latest
-    container_name: vault
-    restart: always
-    networks:
-      - server-network
-      - proxy-network
+  minio:
+    container_name: minio
+    image: "quay.io/minio/minio"
+    command: ["server", "/data", "--console-address", ":9001"]
     ports:
-      - 8200:8200
+      - 9001:9001 # UI minio
+      - 9000:9000 # API minio
     environment:
-      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_DEV_ROOT_TOKEN_ID:-root}
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-admin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-admin@123}
     volumes:
-      - vault-data:/vault/file
-    privileged: true
+      - minio-data:/data
+
+  # vault:
+  #   image: hashicorp/vault:latest
+  #   container_name: vault
+  #   restart: always
+  #   networks:
+  #     - server-network
+  #     - proxy-network
+  #   ports:
+  #     - 8200:8200
+  #   environment:
+  #     VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_DEV_ROOT_TOKEN_ID:-root}
+  #   volumes:
+  #     - vault-data:/vault/file
+  #   privileged: true
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.12.1
@@ -95,17 +109,17 @@ services:
     #   - elasticsearch-data:/usr/share/elasticsearch/data (error: maybe these locations are not writable or multiple nodes were started on the same data path?)
 
   # === SUPPORT SERVICES === #
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: pgadmin4
-    restart: always
-    networks:
-      - proxy-network
-      - server-network
-    ports:
-      - 8888:80
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-default@example.com}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-default}
-    volumes:
-      - pgadmin-data:/var/lib/pgadmin
+  # pgadmin:
+  #   image: dpage/pgadmin4
+  #   container_name: pgadmin4
+  #   restart: always
+  #   networks:
+  #     - proxy-network
+  #     - server-network
+  #   ports:
+  #     - 8888:80
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-default@example.com}
+  #     PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-default}
+  #   volumes:
+  #     - pgadmin-data:/var/lib/pgadmin

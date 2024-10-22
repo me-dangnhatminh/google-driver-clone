@@ -1,10 +1,15 @@
 {
-  "name": "indentity-service",
-  "version": "0.0.1",
+  "name": "auth-service",
+  "version": "0.0.0",
   "description": "",
   "author": "",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
+  "packageManager": "pnpm@9.12.2",
+  "prisma": {
+    "schema": "src/infa/persistence/schema.prisma",
+    "seed": "ts-node src/infa/persistence/seed.ts"
+  },
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"libs/**/*.ts\"",
@@ -18,7 +23,10 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "prepare": "npx prisma generate"
+    "prisma": "prisma",
+    "prisma:generate": "prisma generate",
+    "prisma:seed": "prisma db seed",
+    "prepare": "pnpm prisma:generate"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.11.1",
@@ -118,8 +126,5 @@
       "^@app/common(|/.*)$": "<rootDir>/libs/common/src/$1",
       "^@app/payment-client(|/.*)$": "<rootDir>/libs/payment-client/src/$1"
     }
-  },
-  "prisma": {
-    "schema": "src/infa/persistence/schema.prisma"
   }
 }

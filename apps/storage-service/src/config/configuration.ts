@@ -42,9 +42,19 @@ const loadFileConfig = (configPath: string): unknown => {
 
 const envToConfig = (env): ConfigDeepPartial => ({
   app: {
-    nodeEnv: env.NODE_ENV,
-    port: env.PORT,
-    host: env.HOST,
+    nodeEnv: env.NODE_ENV || 'development',
+    name: env.APP_NAME || 'App',
+    port: env.PORT || 3000,
+    host: env.HOST || 'localhost',
+  },
+  services: {
+    minio: {
+      endPoint: env.MINIO_END_POINT || 'localhost',
+      port: env.MINIO_PORT || 9000,
+      useSSL: env.MINIO_USE_SSL || false,
+      accessKey: env.MINIO_ACCESS_KEY || 'minio',
+      secretKey: env.MINIO_SECRET_KEY || 'minio123',
+    },
   },
   log: {
     enabled: env.LOG_ENABLED,

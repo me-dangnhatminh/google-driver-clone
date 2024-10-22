@@ -26,7 +26,6 @@ export class ConfigService extends NestConfigService<Config, true> {
         `.env.local`,
         `.env.${process.env.NODE_ENV}`,
         `.env.${process.env.NODE_ENV}.local`,
-        `.env.example`,
       ],
       load: [configuration, grpcConfig],
       expandVariables: true,

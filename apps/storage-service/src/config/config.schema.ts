@@ -13,10 +13,23 @@ export type ConfigDeepPartial<T = Config> = {
   [K in keyof T]?: T[K] extends object ? ConfigDeepPartial<T[K]> : T[K];
 };
 
+export const MinioConfigSchema = z.object({
+  endPoint: z.string(),
+  port: z.coerce.number(),
+  useSSL: z.coerce.boolean(),
+  accessKey: z.string(),
+  secretKey: z.string(),
+});
+
 export const appConfigSchema = z.object({
   nodeEnv: z.enum(['development', 'production', 'test']).default('development'),
+  name: z.string().default('App'),
   port: z.coerce.number().int().default(3000),
   host: z.string().default('localhost'),
+});
+
+export const servicesConfigSchema = z.object({
+  minio: MinioConfigSchema,
 });
 
 export const logConfigSchema = z.object({
@@ -88,7 +101,8 @@ export const rabbitmqConfigSchema = z.object({
 });
 
 export const configSchema = z.object({
-  app: appConfigSchema.default({}),
+  app: appConfigSchema,
+  services: servicesConfigSchema,
   log: logConfigSchema.default({}),
   db: dbConfigSchema.default({}),
   swagger: swaggerConfigSchema.default({}),
